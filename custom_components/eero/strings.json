@@ -1,0 +1,74 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "The desired network is already configured"
+        },
+        "error": {
+            "invalid_code": "Invalid code",
+            "invalid_login": "Invalid login"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "login": "Login (email or SMS phone number)"
+                },
+                "description": "Enter the email address or SMS phone number (including country code) associated with your account.",
+                "title": "Login to Eero account"
+            },
+            "verify": {
+                "data": {
+                    "code": "Verification code"
+                },
+                "description": "Enter the verification code that was sent to your email or phone number.",
+                "title": "Verify Eero account"
+            },
+            "networks": {
+                "data": {
+                    "networks": "Networks"
+                },
+                "description": "Select the desired Eero network(s).",
+                "title": "Select Eero networks"
+            },
+            "resources": {
+                "data": {
+                    "eeros": "Eero devices",
+                    "profiles": "Profiles",
+                    "wired_clients": "Wired clients",
+                    "wireless_clients": "Wireless clients"
+                },
+                "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.",
+                "title": "Select network resources"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "networks": {
+                "data": {
+                    "networks": "Networks"
+                },
+                "description": "Select the desired Eero network(s).",
+                "title": "Select Eero networks"
+            },
+            "resources": {
+                "data": {
+                    "eeros": "Eero devices",
+                    "profiles": "Profiles",
+                    "wired_clients": "Wired clients",
+                    "wireless_clients": "Wireless clients"
+                },
+                "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.\n\nDeselecting a resource will delete that device entry and all associated entities.",
+                "title": "Select network resources"
+            },
+            "advanced": {
+                "data": {
+                    "save_responses": "Save server responses to custom_components/eero/api/responses",
+                    "scan_interval": "Polling interval (seconds)",
+                    "timeout": "Polling timeout (seconds)"
+                },
+                "description": "Server responses can be saved to a file for debugging and development support.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
+                "title": "Advanced options"
+            }
+        }
+    }
+}

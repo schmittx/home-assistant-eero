@@ -1,0 +1,66 @@
+
+enable_dns_caching:
+  description: Enable or disable local DNS caching for an Eero network. Network(s) will be automatically restarted as a result.
+  fields:
+    dns_caching_enabled:
+      description: (Required) Target state for local DNS caching. Must be a boolean.
+      example: true
+    network_name:
+      description: (Optional) Name(s) of network(s) to enable local DNS caching for. Defaults to all networks if not specified.
+      example: "My Network"
+
+enable_ipv6:
+  description: Enable or disable IPv6 for an Eero network. Network(s) will be automatically restarted as a result.
+  fields:
+    ipv6_enabled:
+      description: (Required) Target state for IPv6. Must be a boolean.
+      example: true
+    network_name:
+      description: (Optional) Name(s) of network(s) to enable IPv6 for. Defaults to all networks if not specified.
+      example: "My Network"
+
+enable_thread:
+  description: Enable or disable Thread for an Eero network. Network(s) will be automatically restarted as a result.
+  fields:
+    thread_enabled:
+      description: (Required) Target state for Thread. Must be a boolean.
+      example: true
+    network_name:
+      description: (Optional) Name(s) of network(s) to enable Thread for. Defaults to all networks if not specified.
+      example: "My Network"
+
+restart_eero:
+  description: Restart an Eero device.
+  fields:
+    eero_name:
+      description: (Optional) Name(s) of Eero device(s) to restart. Defaults to all Eero devices if not specified.
+      example: "Living Room"
+    network_name:
+      description: (Optional) Name(s) of network(s) in which desired Eero device(s) are located. Defaults to all networks if not specified.
+      example: "My Network"
+
+restart_network:
+  description: Restart an Eero network.
+  fields:
+    network_name:
+      description: (Optional) Name(s) of network(s) to restart. Defaults to all networks if not specified.
+      example: "My Network"
+
+set_nightlight_mode:
+  description: Set the nightlight mode for an Eero Beacon device.
+  fields:
+    mode:
+      description: (Required) Target mode for the nightlight. Valid modes are "disabled", "ambient", or "schedule".
+      example: "ambient"
+    time_on:
+      description: (Optional) Scheduled time for the nightlight to turn on. Only applicable if "mode" is set to "schedule". Required format is "HH:MM".
+      example: "20:00"
+    time_off:
+      description: (Optional) Scheduled time for the nightlight to turn off. Only applicable if "mode" is set to "schedule". Required format is "HH:MM".
+      example: "06:00"
+    eero_name:
+      description: (Optional) Name(s) of Eero Beacon device(s) to set. Defaults to all Eero Beacon devices if not specified.
+      example: "Living Room"
+    network_name:
+      description: (Optional) Name(s) of network(s) in which desired Eero Beacon device(s) are located. Defaults to all networks if not specified.
+      example: "My Network"

@@ -1,0 +1,11 @@
+{
+  "domain": "eero",
+  "name": "eero",
+  "documentation": "https://github.com/schmittx/home-assistant-eero",
+  "issue_tracker": "https://github.com/schmittx/home-assistant-eero/issues",
+  "dependencies": [],
+  "after_dependencies": [],
+  "codeowners": ["@schmittx"],
+  "requirements": [],
+  "config_flow": true
+}

@@ -1,5 +1,8 @@
 # Project specific
-/api/responses/
+responses/
+
+# System specific
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
