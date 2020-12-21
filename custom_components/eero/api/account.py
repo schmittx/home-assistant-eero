@@ -33,5 +33,5 @@ class Account(Resource):
     def networks(self):
         networks = []
         for network in self.data.get("networks", {}).get("data", []):
-            networks.append(Network(self.api, network))
+            networks.append(Network(self.api, self, network))
         return networks

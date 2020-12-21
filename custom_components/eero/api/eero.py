@@ -21,10 +21,6 @@ class Eero(Resource):
         return self.data.get("connected_clients_count")
 
     @property
-    def id(self):
-        return self.url.replace("/2.2/eeros/", "")
-
-    @property
     def is_beacon(self):
         return bool(self.model == MODEL_BEACON)
 
@@ -46,6 +42,10 @@ class Eero(Resource):
     @property
     def location(self):
         return self.data.get("location")
+
+    @property
+    def mac_address(self):
+        return self.data.get("mac_address")
 
     @property
     def model(self):

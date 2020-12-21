@@ -7,8 +7,9 @@ from .resource import Resource
 
 class Network(Resource):
 
-    def __init__(self, api, data):
+    def __init__(self, api, account, data):
         self.api = api
+        self.account = account
         self.data = data
 
     @property
@@ -45,8 +46,20 @@ class Network(Resource):
         )
 
     @property
+    def city(self):
+        return self.data.get("geo_ip", {}).get("city")
+
+    @property
     def clients_count(self):
         return self.data.get("clients", {}).get("count")
+
+    @property
+    def country_code(self):
+        return self.data.get("geo_ip", {}).get("countryCode")
+
+    @property
+    def country_name(self):
+        return self.data.get("geo_ip", {}).get("countryName")
 
     @property
     def dns_caching(self):
@@ -58,6 +71,20 @@ class Network(Resource):
                 url=f"/2.2/networks/{self.id}/dns",
                 json=dict(caching=bool(value)),
         )
+
+    @property
+    def gateway_mac_address(self):
+        for eero in self.eeros:
+            if eero.is_gateway:
+                return eero.mac_address
+        return None
+
+    @property
+    def gateway_name(self):
+        for eero in self.eeros:
+            if eero.is_gateway:
+                return eero.name
+        return None
 
     @property
     def guest_network_enabled(self):
@@ -87,10 +114,6 @@ class Network(Resource):
         return self.data.get("health", {}).get("internet", {}).get("status")
 
     @property
-    def id(self):
-        return self.url.replace("/2.2/networks/", "")
-
-    @property
     def ipv6_upstream(self):
         return self.data.get("ipv6_upstream")
 
@@ -102,12 +125,27 @@ class Network(Resource):
         )
 
     @property
+    def isp(self):
+        return self.data.get("geo_ip", {}).get("isp")
+
+    @property
     def name(self):
         return self.data.get("name")
 
     @property
+    def name_long(self):
+        network_names = [network.name for network in self.account.networks]
+        if network_names.count(self.name) > 1:
+            return f"{self.name} ({self.city, self.region_name})"
+        return self.name
+
+    @property
     def public_ip(self):
         return self.data.get("ip_settings", {}).get("public_ip")
+
+    @property
+    def postal_code(self):
+        return self.data.get("geo_ip", {}).get("postalCode")
 
     @property
     def premium_status(self):
@@ -119,6 +157,14 @@ class Network(Resource):
 
     def reboot(self):
         return self.api.post(url=self.url_reboot)
+
+    @property
+    def region(self):
+        return self.data.get("geo_ip", {}).get("region")
+
+    @property
+    def region_name(self):
+        return self.data.get("geo_ip", {}).get("regionName")
 
     @property
     def speed(self):
@@ -173,6 +219,10 @@ class Network(Resource):
         return self.data.get("timezone", {}).get("value")
 
     @property
+    def update_available(self):
+        return self.data.get("updates", {}).get("can_update_now")
+
+    @property
     def upnp(self):
         return self.data.get("upnp")
 
@@ -185,7 +235,7 @@ class Network(Resource):
 
     @property
     def url_dns_policies(self):
-        return f"/2.2/networks/{self.id}/dns_policies/network"
+        return f"{self.url}/dns_policies/network"
 
     @property
     def url_reboot(self):

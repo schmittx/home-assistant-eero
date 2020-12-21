@@ -5,7 +5,11 @@ import re
 import requests
 
 from .account import Account
-from .const import API_ENDPOINT, MODEL_BEACON, URL_ACCOUNT
+from .const import (
+    API_ENDPOINT,
+    MODEL_BEACON,
+    URL_ACCOUNT,
+)
 
 
 class EeroException(Exception):
@@ -18,7 +22,7 @@ class EeroException(Exception):
 class EeroAPI(object):
 
     def __init__(self, user_token=None, save_location=None):
-        self.data = None
+        self.data = Account(self, {})
         self.session = requests.Session()
         self.user_token = user_token
         self.save_location = save_location
@@ -124,6 +128,7 @@ class EeroAPI(object):
                     network_data[resource] = dict(count=len(resource_data), data=resource_data)
                 networks.append(network_data)
             account["networks"]["data"] = networks
+            self.save_response(response=account, name="update_data")
             self.data = Account(self, account)
         except EeroException as exception:
             return self.data

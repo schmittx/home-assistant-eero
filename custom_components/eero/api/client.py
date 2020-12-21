@@ -26,10 +26,6 @@ class Client(Resource):
         return self.data.get("hostname")
 
     @property
-    def id(self):
-        return self.url.replace(f"/2.2/networks/{self.network.id}/devices/", "")
-
-    @property
     def ip(self):
         return self.data.get("ip")
 
