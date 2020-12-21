@@ -23,6 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 BASIC_TYPES = {
     "connected_clients_count": [[TYPE_EERO], "Connected Clients", None, None, "clients"],
     "nightlight_brightness_percentage": [[TYPE_BEACON], "Nightlight Brightness", None, None, PERCENTAGE],
+    "name": [[TYPE_NETWORK], "SSID", None, None, None],
     "nightlight_status": [[TYPE_BEACON], "Nightlight Status", None, None, None],
     "public_ip": [[TYPE_NETWORK], "Public IP", None, None, None],
     "speed_down": [[TYPE_NETWORK], "Download Speed", None, None, None],
@@ -124,7 +125,14 @@ class EeroSensor(EeroEntity):
     @property
     def device_state_attributes(self):
         attrs = super().device_state_attributes
-        if self.variable == "nightlight_status":
+        if self.variable == "name":
+            attrs["id"] = self.resource.id
+            attrs["isp"] = self.resource.isp
+            attrs["city"] = self.resource.city
+            attrs["region"] = self.resource.region_name
+            attrs["postal_code"] = self.resource.postal_code
+            attrs["country"] = self.resource.country_name
+        elif self.variable == "nightlight_status":
             if self.resource.nightlight_schedule_enabled:
                 schedule = self.resource.nightlight_schedule
                 attrs["on"] = schedule[0]

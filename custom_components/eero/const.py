@@ -1,9 +1,9 @@
 """Constants used by the Eero integration."""
 ATTR_DNS_CACHING_ENABLED = "dns_caching_enabled"
 ATTR_IPV6_ENABLED = "ipv6_enabled"
+ATTR_TARGET_EERO = "target_eero"
+ATTR_TARGET_NETWORK = "target_network"
 ATTR_THREAD_ENABLED = "thread_enabled"
-ATTR_EERO_NAME = "eero_name"
-ATTR_NETWORK_NAME = "network_name"
 ATTR_TIME_OFF = "time_off"
 ATTR_TIME_ON = "time_on"
 

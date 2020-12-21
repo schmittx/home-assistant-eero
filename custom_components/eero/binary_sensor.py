@@ -25,7 +25,7 @@ BASIC_TYPES = {
     "ipv6_upstream": [[TYPE_NETWORK], "IPv6 Enabled", None],
     "dns_caching": [[TYPE_NETWORK], "Local DNS Caching Enabled", None],
     "thread": [[TYPE_NETWORK], "Thread Enabled", None],
-    "update_available": [[TYPE_EERO], "Update Available", None],
+    "update_available": [[TYPE_EERO, TYPE_NETWORK], "Update Available", None],
 }
 
 BINARY_SENSOR_TYPES = {**BASIC_TYPES}
@@ -101,7 +101,8 @@ class EeroBinarySensor(BinarySensorEntity, EeroEntity):
     def device_state_attributes(self):
         attrs = super().device_state_attributes
         if self.variable == "update_available":
-            attrs["installed_version"] = self.resource.os_version
+            if self.resource.is_eero:
+                attrs["installed_version"] = self.resource.os_version
             if self.is_on:
                 attrs["latest_version"] = self.network.target_firmware
         return attrs

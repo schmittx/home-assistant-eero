@@ -97,10 +97,10 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_networks(self, user_input=None):
         if user_input is not None:
-            self.user_input[CONF_NETWORKS] = [network.id for network in self.response.networks if network.name in user_input[CONF_NETWORKS]]
+            self.user_input[CONF_NETWORKS] = [network.id for network in self.response.networks if network.name_long in user_input[CONF_NETWORKS]]
             return await self.async_step_resources()
 
-        network_names = sorted([network.name for network in self.response.networks])
+        network_names = sorted([network.name_long for network in self.response.networks])
 
         return self.async_show_form(
             step_id="networks",
@@ -128,7 +128,6 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             target_network_id = self.user_input[CONF_NETWORKS][self.index]
             for network in self.response.networks:
                 if network.id == target_network_id:
-                    target_network_name = network.name
                     eero_names = sorted(eero.name for eero in network.eeros)
                     profile_names = sorted(profile.name for profile in network.profiles)
                     wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
@@ -144,7 +143,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_WIRELESS_CLIENTS, default=[]): cv.multi_select(wireless_client_names),
                 }
             ),
-            description_placeholders={"network": target_network_name},
+            description_placeholders={"network": network.name_long},
         )
 
     @staticmethod
@@ -174,11 +173,11 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_networks(self, user_input=None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            self.user_input[CONF_NETWORKS] = [network.id for network in self.coordinator.data.networks if network.name in user_input[CONF_NETWORKS]]
+            self.user_input[CONF_NETWORKS] = [network.id for network in self.coordinator.data.networks if network.name_long in user_input[CONF_NETWORKS]]
             return await self.async_step_resources()
 
-        conf_networks = [network.name for network in self.coordinator.data.networks if network.id in self.options.get(CONF_NETWORKS, self.data[CONF_NETWORKS])]
-        network_names = sorted([network.name for network in self.coordinator.data.networks])
+        conf_networks = [network.name_long for network in self.coordinator.data.networks if network.id in self.options.get(CONF_NETWORKS, self.data[CONF_NETWORKS])]
+        network_names = sorted([network.name_long for network in self.coordinator.data.networks])
 
         return self.async_show_form(
             step_id="networks",
@@ -209,7 +208,6 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
             target_network_id = self.user_input[CONF_NETWORKS][self.index]
             for network in self.coordinator.data.networks:
                 if network.id == target_network_id:
-                    target_network_name = network.name
 
                     conf_eeros = [eero.name for eero in network.eeros if eero.id in self.options.get(CONF_EEROS, self.data.get(CONF_EEROS, []))]
                     conf_profiles = [profile.name for profile in network.profiles if profile.id in self.options.get(CONF_PROFILES, self.data.get(CONF_PROFILES, []))]
@@ -231,7 +229,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(CONF_WIRELESS_CLIENTS, default=conf_wireless_clients): cv.multi_select(wireless_client_names),
                 }
             ),
-            description_placeholders={"network": target_network_name},
+            description_placeholders={"network": network.name_long},
         )
 
     async def async_step_advanced(self, user_input=None):

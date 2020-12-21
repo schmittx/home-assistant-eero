@@ -21,9 +21,9 @@ from .api import EeroAPI, EeroException
 from .const import (
     ATTR_DNS_CACHING_ENABLED,
     ATTR_IPV6_ENABLED,
+    ATTR_TARGET_EERO,
+    ATTR_TARGET_NETWORK,
     ATTR_THREAD_ENABLED,
-    ATTR_EERO_NAME,
-    ATTR_NETWORK_NAME,
     ATTR_TIME_OFF,
     ATTR_TIME_ON,
     ATTRIBUTION,
@@ -65,34 +65,34 @@ from .util import validate_time_format
 ENABLE_DNS_CACHING_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_DNS_CACHING_ENABLED): cv.boolean,
-        vol.Optional(ATTR_NETWORK_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
 )
 
 ENABLE_IPV6_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_IPV6_ENABLED): cv.boolean,
-        vol.Optional(ATTR_NETWORK_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
 )
 
 ENABLE_THREAD_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_THREAD_ENABLED): cv.boolean,
-        vol.Optional(ATTR_NETWORK_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
 )
 
 RESTART_EERO_SCHEMA = vol.Schema(
     {
-        vol.Optional(ATTR_EERO_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(ATTR_NETWORK_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_TARGET_EERO, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
+        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
 )
 
 RESTART_NETWORK_SCHEMA = vol.Schema(
     {
-        vol.Optional(ATTR_NETWORK_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
 )
 
@@ -101,8 +101,8 @@ SET_NIGHTLIGHT_MODE_SCHEMA = vol.Schema(
         vol.Required(ATTR_MODE): vol.In(NIGHTLIGHT_MODES),
         vol.Optional(ATTR_TIME_ON): validate_time_format,
         vol.Optional(ATTR_TIME_OFF): validate_time_format,
-        vol.Optional(ATTR_EERO_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(ATTR_NETWORK_NAME, default=[]): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_TARGET_EERO, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
+        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
 )
 
@@ -180,45 +180,42 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     def enable_dns_caching(service):
         _enable_network_attribute(
-            network_name=service.data[ATTR_NETWORK_NAME],
+            target_network=service.data[ATTR_TARGET_NETWORK],
             attribute="dns_caching",
             enabled=service.data[ATTR_DNS_CACHING_ENABLED],
         )
 
     def enable_ipv6(service):
         _enable_network_attribute(
-            network_name=service.data[ATTR_NETWORK_NAME],
+            target_network=service.data[ATTR_TARGET_NETWORK],
             attribute="ipv6",
             enabled=service.data[ATTR_IPV6_ENABLED],
         )
 
     def enable_thread(service):
         _enable_network_attribute(
-            network_name=service.data[ATTR_NETWORK_NAME],
+            target_network=service.data[ATTR_TARGET_NETWORK],
             attribute="thread",
             enabled=service.data[ATTR_THREAD_ENABLED],
         )
 
     def restart_eero(service):
-        target_eeros = [eero.lower() for eero in service.data[ATTR_EERO_NAME]]
-        target_networks = [network.lower() for network in service.data[ATTR_NETWORK_NAME]]
-        for eero in _validate_eeros(target_eeros, target_networks):
+        for eero in _validate_eero(
+            target_eero=service.data[ATTR_TARGET_EERO],
+            target_network=service.data[ATTR_TARGET_NETWORK],
+        ):
             eero.reboot()
 
     def restart_network(service):
-        target_networks = [network.lower() for network in service.data[ATTR_NETWORK_NAME]]
-        for network in coordinator.data.networks:
-            if target_networks:
-                if network.name.lower() in target_networks:
-                    network.reboot()
-            else:
-                network.reboot()
+        for network in _validate_network(target_network=service.data[ATTR_TARGET_NETWORK]):
+            network.reboot()
 
     async def async_set_nightlight_mode(service):
         mode = service.data[ATTR_MODE]
-        target_eeros = [eero.lower() for eero in service.data[ATTR_EERO_NAME]]
-        target_networks = [network.lower() for network in service.data[ATTR_NETWORK_NAME]]
-        for eero in _validate_eeros(target_eeros, target_networks):
+        for eero in _validate_eero(
+            target_eero=service.data[ATTR_TARGET_EERO],
+            target_network=service.data[ATTR_TARGET_NETWORK],
+        ):
             if eero.is_beacon:
                 if mode == NIGHTLIGHT_MODE_DISABLED:
                     await hass.async_add_executor_job(eero.set_nightlight_disabled)
@@ -232,34 +229,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                     await hass.async_add_executor_job(eero.set_nightlight_schedule, on, off)
         await coordinator.async_request_refresh()
 
-    def _enable_network_attribute(network_name, attribute, enabled):
-        target_networks = [network.lower() for network in network_name]
-        for network in coordinator.data.networks:
-            if target_networks:
-                if network.name.lower() in target_networks:
-                    setattr(network, attribute, enabled)
-            else:
-                setattr(network, attribute, enabled)
+    def _enable_network_attribute(attribute, enabled, target_network):
+        for network in _validate_network(target_network=target_network):
+            setattr(network, attribute, enabled)
 
-    def _validate_eeros(target_eeros, target_networks):
-        validated_eeros = []
+    def _validate_eero(target_eero, target_network):
+        validated_eero = []
+        for network in _validate_network(target_network=target_network):
+            for eero in network.eeros:
+                if any([not target_eero, eero.id in target_eero, eero.name in target_eero]):
+                    validated_eero.append(eero)
+        return validated_eero
+
+    def _validate_network(target_network):
+        validated_network = []
         for network in coordinator.data.networks:
-            if target_networks:
-                if network.name.lower() in target_networks:
-                    for eero in network.eeros:
-                        if target_eeros:
-                            if eero.name.lower() in target_eeros:
-                                validated_eeros.append(eero)
-                        else:
-                            validated_eeros.append(eero)
-            else:
-                for eero in network.eeros:
-                    if target_eeros:
-                        if eero.name.lower() in target_eeros:
-                            validated_eeros.append(eero)
-                    else:
-                        validated_eeros.append(eero)
-        return validated_eeros
+            if any([not target_network, network.id in target_network, network.name in target_network]):
+                validated_network.append(network)
+        return validated_network
 
     if conf_networks:
         hass.services.async_register(
