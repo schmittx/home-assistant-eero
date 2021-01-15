@@ -1,13 +1,9 @@
 """Eero API"""
+from .client import Client
 from .resource import Resource
 
 
 class Profile(Resource):
-
-    def __init__(self, api, network, data):
-        self.api = api
-        self.network = network
-        self.data = data
 
     @property
     def block_gaming_content(self):
@@ -98,6 +94,14 @@ class Profile(Resource):
         )
 
     @property
+    def connected(self):
+        return bool(self.connected_clients_count != 0)
+
+    @property
+    def connected_clients_count(self):
+        return len([client for client in self.clients if client.connected])
+
+    @property
     def name(self):
         return self.data.get("name")
 
@@ -141,3 +145,10 @@ class Profile(Resource):
                 url=self.url_dns_policies,
                 json=dict(youtube_restricted=bool(value)),
         )
+
+    @property
+    def clients(self):
+        clients = []
+        for client in self.data.get("devices", []):
+            clients.append(Client(self.api, self, client))
+        return clients

@@ -33,7 +33,7 @@ MODEL_EERO = "eero"
 MODEL_NETWORK = "Network"
 MODEL_PROFILE = "Profile"
 
-NIGHTLIGHT_MODE_DISABLED= "disabled"
+NIGHTLIGHT_MODE_DISABLED = "disabled"
 NIGHTLIGHT_MODE_AMBIENT = "ambient"
 NIGHTLIGHT_MODE_SCHEDULE = "schedule"
 NIGHTLIGHT_MODES = [
@@ -49,12 +49,6 @@ SERVICE_RESTART_EERO = "restart_eero"
 SERVICE_RESTART_NETWORK = "restart_network"
 SERVICE_SET_NIGHTLIGHT_MODE = "set_nightlight_mode"
 
-TYPE_BEACON = "beacon"
-TYPE_CLIENT = "client"
-TYPE_EERO = "eero"
-TYPE_NETWORK = "network"
-TYPE_PROFILE = "profile"
-
 UNDO_UPDATE_LISTENER = "undo_update_listener"
 
 CONF_SAVE_RESPONSES = "save_responses"
@@ -67,3 +61,5 @@ DEFAULT_SAVE_LOCATION = "/config/custom_components/eero/api/responses"
 DEFAULT_SAVE_RESPONSES = False
 DEFAULT_SCAN_INTERVAL = VALUES_SCAN_INTERVAL[2]
 DEFAULT_TIMEOUT = VALUES_TIMEOUT[0]
+
+EERO_LOGO_ICON = "/config/custom_components/eero/icon@2x.png"

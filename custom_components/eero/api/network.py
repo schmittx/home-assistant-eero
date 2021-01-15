@@ -1,6 +1,7 @@
 """Eero API"""
 from .client import Client
-from .eero import Eero
+from .const import MODEL_BEACON
+from .eero import Eero, EeroBeacon
 from .profile import Profile
 from .resource import Resource
 
@@ -8,9 +9,8 @@ from .resource import Resource
 class Network(Resource):
 
     def __init__(self, api, account, data):
-        self.api = api
+        super().__init__(api=api, network=None, data=data)
         self.account = account
-        self.data = data
 
     @property
     def ad_block(self):
@@ -54,6 +54,14 @@ class Network(Resource):
         return self.data.get("clients", {}).get("count")
 
     @property
+    def connected_clients_count(self):
+        return len([client for client in self.clients if client.connected])
+
+    @property
+    def connected_guest_clients_count(self):
+        return len([client for client in self.clients if client.connected and client.is_guest])
+
+    @property
     def country_code(self):
         return self.data.get("geo_ip", {}).get("countryCode")
 
@@ -87,6 +95,10 @@ class Network(Resource):
         return None
 
     @property
+    def guest_connected(self):
+        return bool(self.connected_guest_clients_count != 0)
+
+    @property
     def guest_network_enabled(self):
         return self.data.get("guest_network", {}).get("enabled")
 
@@ -102,6 +114,10 @@ class Network(Resource):
         return self.data.get("guest_network", {}).get("name")
 
     @property
+    def guest_network_password(self):
+        return self.data.get("guest_network", {}).get("password")
+
+    @property
     def health_eero_network_status(self):
         return self.data.get("health", {}).get("eero_network", {}).get("status")
 
@@ -112,6 +128,10 @@ class Network(Resource):
     @property
     def health_internet_status(self):
         return self.data.get("health", {}).get("internet", {}).get("status")
+
+    @property
+    def id(self):
+        return self.url.replace("/2.2/networks/", "")
 
     @property
     def ipv6_upstream(self):
@@ -167,22 +187,24 @@ class Network(Resource):
         return self.data.get("geo_ip", {}).get("regionName")
 
     @property
-    def speed(self):
-        return (
-            self.data.get("speed", {}).get("down", {}).get("value"),
-            self.data.get("speed", {}).get("up", {}).get("value"),
-        )
-
-    @property
     def speed_date(self):
         return self.data.get("speed", {}).get("date")
 
     @property
-    def speed_units(self):
-        return (
-            self.data.get("speed", {}).get("down", {}).get("units"),
-            self.data.get("speed", {}).get("up", {}).get("units"),
-        )
+    def speed_down(self):
+        return self.data.get("speed", {}).get("down", {}).get("value")
+
+    @property
+    def speed_down_units(self):
+        return self.data.get("speed", {}).get("down", {}).get("units")
+
+    @property
+    def speed_up(self):
+        return self.data.get("speed", {}).get("up", {}).get("value")
+
+    @property
+    def speed_up_units(self):
+        return self.data.get("speed", {}).get("up", {}).get("units")
 
     @property
     def sqm(self):
@@ -194,6 +216,10 @@ class Network(Resource):
                 url=self.url_settings,
                 json=dict(sqm=bool(value)),
         )
+
+    @property
+    def ssid(self):
+        return self.name
 
     @property
     def status(self):
@@ -260,7 +286,10 @@ class Network(Resource):
     def eeros(self):
         eeros = []
         for eero in self.data.get("eeros", {}).get("data", []):
-            eeros.append(Eero(self.api, self, eero))
+            if eero["model"] == MODEL_BEACON:
+                eeros.append(EeroBeacon(self.api, self, eero))
+            else:
+                eeros.append(Eero(self.api, self, eero))
         return eeros
 
     @property

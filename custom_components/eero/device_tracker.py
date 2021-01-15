@@ -1,4 +1,4 @@
-"""Support for Eero device trackers."""
+"""Support for Eero device tracker entities."""
 import logging
 
 from homeassistant.components.device_tracker.config_entry import ScannerEntity
@@ -16,29 +16,29 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up a Eero device tracker based on a config entry."""
+    """Set up an Eero device tracker entity based on a config entry."""
     entry = hass.data[EERO_DOMAIN][entry.entry_id]
     conf_networks = entry[CONF_NETWORKS]
     conf_clients = entry[CONF_CLIENTS]
     coordinator = entry[DATA_COORDINATOR]
 
-    def get_device_trackers():
-        """Get the Eero device trackers."""
-        device_trackers = []
+    def get_entities():
+        """Get the Eero device tracker entities."""
+        entities = []
 
         for network in coordinator.data.networks:
             if network.id in conf_networks:
                 for client in network.clients:
                     if client.id in conf_clients:
-                        device_trackers.append(EeroDeviceTracker(coordinator, network, client, "device_tracker"))
+                        entities.append(EeroDeviceTracker(coordinator, network, client, "device_tracker"))
 
-        return device_trackers
+        return entities
 
-    async_add_entities(await hass.async_add_job(get_device_trackers), True)
+    async_add_entities(await hass.async_add_job(get_entities), True)
 
 
 class EeroDeviceTracker(ScannerEntity, EeroEntity):
-    """Representation of a Eero device tracker."""
+    """Representation of an Eero device tracker entity."""
 
     @property
     def name(self):

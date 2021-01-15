@@ -6,8 +6,7 @@ from .resource import Resource
 class Account(Resource):
 
     def __init__(self, api, data):
-        self.api = api
-        self.data = data
+        super().__init__(api=api, network=None, data=data)
 
     @property
     def email(self):

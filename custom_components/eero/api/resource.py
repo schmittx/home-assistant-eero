@@ -4,6 +4,11 @@ from .const import URL_ACCOUNT
 
 class Resource(object):
 
+    def __init__(self, api, network, data):
+        self.api = api
+        self.network = network
+        self.data = data
+
     @property
     def id(self):
         if self.is_network:
@@ -26,7 +31,11 @@ class Resource(object):
 
     @property
     def is_eero(self):
-        return bool(self.__class__.__name__ == "Eero")
+        return bool(self.__class__.__name__ in ["Eero", "EeroBeacon"])
+
+    @property
+    def is_eero_beacon(self):
+        return bool(self.__class__.__name__ == "EeroBeacon")
 
     @property
     def is_profile(self):

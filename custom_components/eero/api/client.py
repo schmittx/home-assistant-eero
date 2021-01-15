@@ -4,11 +4,6 @@ from .resource import Resource
 
 class Client(Resource):
 
-    def __init__(self, api, network, data):
-        self.api = api
-        self.network = network
-        self.data = data
-
     @property
     def connected(self):
         return self.data.get("connected")
@@ -28,6 +23,10 @@ class Client(Resource):
     @property
     def ip(self):
         return self.data.get("ip")
+
+    @property
+    def is_guest(self):
+        return self.data.get("is_guest")
 
     @property
     def is_private(self):

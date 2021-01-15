@@ -1,14 +1,8 @@
 """Eero API"""
-from .const import MODEL_BEACON
 from .resource import Resource
 
 
 class Eero(Resource):
-
-    def __init__(self, api, network, data):
-        self.api = api
-        self.network = network
-        self.data = data
 
     def _set_nightlight(self, json):
         return self.api.put(
@@ -21,8 +15,8 @@ class Eero(Resource):
         return self.data.get("connected_clients_count")
 
     @property
-    def is_beacon(self):
-        return bool(self.model == MODEL_BEACON)
+    def id(self):
+        return self.url.replace("/2.2/eeros/", "")
 
     @property
     def is_gateway(self):
@@ -60,6 +54,36 @@ class Eero(Resource):
         return f"{self.name} Eero"
 
     @property
+    def os_version(self):
+        return self.data.get("os_version")
+
+    def reboot(self):
+        return self.api.post(url=self.url_reboot)
+
+    @property
+    def serial(self):
+        return self.data.get("serial")
+
+    @property
+    def status(self):
+        return self.data.get("status")
+
+    @property
+    def update_available(self):
+        return self.data.get("update_available")
+
+    @property
+    def url_led(self):
+        return self.data.get("resources", {}).get("led_action")
+
+    @property
+    def url_reboot(self):
+        return self.data.get("resources", {}).get("reboot")
+
+
+class EeroBeacon(Eero):
+
+    @property
     def nightlight_brightness_percentage(self):
         return self.data.get("nightlight", {}).get("brightness_percentage")
 
@@ -79,15 +103,12 @@ class Eero(Resource):
         return self.data.get("nightlight", {}).get("schedule", {}).get("enabled")
 
     @property
-    def os_version(self):
-        return self.data.get("os_version")
-
-    def reboot(self):
-        return self.api.post(url=self.url_reboot)
-
-    @property
-    def serial(self):
-        return self.data.get("serial")
+    def nightlight_status(self):
+        if not self.nightlight_enabled:
+            return "disabled"
+        elif not self.nightlight_schedule_enabled:
+            return "ambient"
+        return "schedule"
 
     def set_nightlight_ambient(self):
         json = dict(enabled=True, schedule=dict(enabled=False))
@@ -104,19 +125,3 @@ class Eero(Resource):
             time_off = self.nightlight_schedule[1]
         json = dict(enabled=True, schedule=dict(enabled=True, on=time_on, off=time_off))
         return self._set_nightlight(json)
-
-    @property
-    def status(self):
-        return self.data.get("status")
-
-    @property
-    def update_available(self):
-        return self.data.get("update_available")
-
-    @property
-    def url_led(self):
-        return self.data.get("resources", {}).get("led_action")
-
-    @property
-    def url_reboot(self):
-        return self.data.get("resources", {}).get("reboot")

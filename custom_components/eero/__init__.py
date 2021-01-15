@@ -106,7 +106,7 @@ SET_NIGHTLIGHT_MODE_SCHEMA = vol.Schema(
     }
 )
 
-PLATFORMS = ["binary_sensor", "device_tracker", "sensor", "switch"]
+PLATFORMS = ["binary_sensor", "camera", "device_tracker", "sensor", "switch"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -216,7 +216,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             target_eero=service.data[ATTR_TARGET_EERO],
             target_network=service.data[ATTR_TARGET_NETWORK],
         ):
-            if eero.is_beacon:
+            if eero.is_eero_beacon:
                 if mode == NIGHTLIGHT_MODE_DISABLED:
                     await hass.async_add_executor_job(eero.set_nightlight_disabled)
                 elif mode == NIGHTLIGHT_MODE_AMBIENT:
@@ -285,7 +285,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             schema=RESTART_EERO_SCHEMA,
         )
 
-        if any([eero.is_beacon for network in coordinator.data.networks for eero in network.eeros]):
+        if any([eero.is_eero_beacon for network in coordinator.data.networks for eero in network.eeros]):
             hass.services.async_register(
                 DOMAIN,
                 SERVICE_SET_NIGHTLIGHT_MODE,
