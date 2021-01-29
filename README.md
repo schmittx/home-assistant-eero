@@ -11,7 +11,7 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 3. Follow the prompts.
 
 ## Options
-- Networks and resources can be updated via integration options.
+- Networks, resources, and activity metrics can be updated via integration options.
 - If `Advanced Mode` is enabled for the current profile, additional options are available (interval, timeout, and response logging).
 
 
@@ -24,7 +24,8 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 - Sensors for various metrics
 - Custom services to control features that require network restarts
 - Custom service to control nightlight features for Eero Beacon devices
-- Camera entity to display QR code for joining guest network (if enabled)
+- Camera entities to display QR code for joining main network and guest network (if enabled)
+- Sensors for activity data (requires Eero Secure subscription)
 
 ## Coming Soon
-- Sensors for activity data (ad blocks, data usage, scans, threat blocks)
+- TBD, feature requests are welcome.
