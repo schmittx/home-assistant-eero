@@ -19,7 +19,7 @@
                 "data": {
                     "code": "Verification code"
                 },
-                "description": "Enter the verification code that was sent to your email or phone number.",
+                "description": "Enter the verification code that was sent to {login}.",
                 "title": "Verify Eero account"
             },
             "networks": {
@@ -38,6 +38,16 @@
                 },
                 "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.",
                 "title": "Select network resources"
+            },
+            "activity": {
+                "data": {
+                    "network": "Network",
+                    "eeros": "Eero devices",
+                    "profiles": "Profiles",
+                    "clients": "Clients"
+                },
+                "description": "Network: {network}\n\nEach metric requires an exclusive call to the eero API and you may encounter timeout errors if selecting multiple metrics.",
+                "title": "Select activity metrics"
             }
         }
     },
@@ -59,6 +69,16 @@
                 },
                 "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.\n\nDeselecting a resource will delete that device entry and all associated entities.",
                 "title": "Select network resources"
+            },
+            "activity": {
+                "data": {
+                    "network": "Network",
+                    "eeros": "Eero devices",
+                    "profiles": "Profiles",
+                    "clients": "Clients"
+                },
+                "description": "Network: {network}\n\nEach metric requires an exclusive call to the eero API and you may encounter timeout errors if selecting multiple metrics.",
+                "title": "Select activity metrics"
             },
             "advanced": {
                 "data": {

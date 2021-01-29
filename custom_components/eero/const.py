@@ -1,4 +1,39 @@
 """Constants used by the Eero integration."""
+from .api.const import (
+    ACTIVITY_ADBLOCK_DAY,
+    ACTIVITY_ADBLOCK_MONTH,
+    ACTIVITY_ADBLOCK_WEEK,
+    ACTIVITY_BLOCKED_DAY,
+    ACTIVITY_BLOCKED_MONTH,
+    ACTIVITY_BLOCKED_WEEK,
+    ACTIVITY_DATA_USAGE_DAY,
+    ACTIVITY_DATA_USAGE_MONTH,
+    ACTIVITY_DATA_USAGE_WEEK,
+    ACTIVITY_INSPECTED_DAY,
+    ACTIVITY_INSPECTED_MONTH,
+    ACTIVITY_INSPECTED_WEEK,
+)
+
+
+ACTIVITY_MAP_TO_EERO = {
+    "Ad Blocks (Day)": ACTIVITY_ADBLOCK_DAY,
+    "Ad Blocks (Week)": ACTIVITY_ADBLOCK_WEEK,
+    "Ad Blocks (Month)": ACTIVITY_ADBLOCK_MONTH,
+    "Data Usage (Day)": ACTIVITY_DATA_USAGE_DAY,
+    "Data Usage (Week)": ACTIVITY_DATA_USAGE_WEEK,
+    "Data Usage (Month)": ACTIVITY_DATA_USAGE_MONTH,
+    "Scans (Day)": ACTIVITY_INSPECTED_DAY,
+    "Scans (Week)": ACTIVITY_INSPECTED_WEEK,
+    "Scans (Month)": ACTIVITY_INSPECTED_MONTH,
+    "Threat Blocks (Day)": ACTIVITY_BLOCKED_DAY,
+    "Threat Blocks (Week)": ACTIVITY_BLOCKED_WEEK,
+    "Threat Blocks (Month)": ACTIVITY_BLOCKED_MONTH,
+}
+ACTIVITY_MAP_TO_HASS = {v: k for k, v in ACTIVITY_MAP_TO_EERO.items()}
+
+ALL_ACTIVITIES = list(ACTIVITY_MAP_TO_EERO.keys())
+DATA_USAGE_ACTIVITIES = [key for key, value in ACTIVITY_MAP_TO_EERO.items() if value in [ACTIVITY_DATA_USAGE_DAY, ACTIVITY_DATA_USAGE_MONTH, ACTIVITY_DATA_USAGE_WEEK]]
+
 ATTR_DNS_CACHING_ENABLED = "dns_caching_enabled"
 ATTR_IPV6_ENABLED = "ipv6_enabled"
 ATTR_TARGET_EERO = "target_eero"
@@ -9,6 +44,11 @@ ATTR_TIME_ON = "time_on"
 
 ATTRIBUTION = "Data provided by Eero"
 
+CONF_ACTIVITY = "activity"
+CONF_ACTIVITY_CLIENTS = "clients"
+CONF_ACTIVITY_EEROS = "eeros"
+CONF_ACTIVITY_NETWORK = "network"
+CONF_ACTIVITY_PROFILES = "profiles"
 CONF_CLIENTS = "clients"
 CONF_CODE = "code"
 CONF_EEROS = "eeros"
@@ -62,4 +102,4 @@ DEFAULT_SAVE_RESPONSES = False
 DEFAULT_SCAN_INTERVAL = VALUES_SCAN_INTERVAL[2]
 DEFAULT_TIMEOUT = VALUES_TIMEOUT[0]
 
-EERO_LOGO_ICON = "/config/custom_components/eero/icon@2x.png"
+EERO_LOGO_ICON = "/config/custom_components/eero/logo_icon.png"

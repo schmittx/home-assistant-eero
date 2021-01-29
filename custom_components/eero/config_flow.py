@@ -1,7 +1,6 @@
 """Adds config flow for Eero integration."""
 
 import logging
-
 import voluptuous as vol
 
 from homeassistant import config_entries, exceptions
@@ -11,6 +10,14 @@ import homeassistant.helpers.config_validation as cv
 
 from .api import EeroAPI, EeroException
 from .const import (
+    ACTIVITY_MAP_TO_EERO,
+    ACTIVITY_MAP_TO_HASS,
+    ALL_ACTIVITIES,
+    CONF_ACTIVITY,
+    CONF_ACTIVITY_EEROS,
+    CONF_ACTIVITY_CLIENTS,
+    CONF_ACTIVITY_NETWORK,
+    CONF_ACTIVITY_PROFILES,
     CONF_CODE,
     CONF_EEROS,
     CONF_LOGIN,
@@ -22,6 +29,7 @@ from .const import (
     CONF_WIRED_CLIENTS,
     CONF_WIRELESS_CLIENTS,
     DATA_COORDINATOR,
+    DATA_USAGE_ACTIVITIES,
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TIMEOUT,
@@ -50,6 +58,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
+            self.user_input[CONF_LOGIN] = user_input[CONF_LOGIN]
             self.api = EeroAPI()
 
             try:
@@ -92,6 +101,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="verify",
             data_schema=vol.Schema({vol.Required(CONF_CODE): cv.string}),
+            description_placeholders={"login": self.user_input[CONF_LOGIN]},
             errors=errors,
         )
 
@@ -113,38 +123,82 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_resources(self, user_input=None):
         if user_input is not None:
-            target_network_id = self.user_input[CONF_NETWORKS][self.index]
             for network in self.response.networks:
-                if network.id == target_network_id:
-                    self.user_input[CONF_EEROS] = [eero.id for eero in network.eeros if eero.name in user_input[CONF_EEROS]]
-                    self.user_input[CONF_PROFILES] = [profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]]
-                    self.user_input[CONF_WIRED_CLIENTS] = [client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]]
-                    self.user_input[CONF_WIRELESS_CLIENTS] = [client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]]
+                if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                    self.user_input[CONF_EEROS].extend([eero.id for eero in network.eeros if eero.name in user_input[CONF_EEROS]])
+                    self.user_input[CONF_PROFILES].extend([profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]])
+                    self.user_input[CONF_WIRED_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]])
+                    self.user_input[CONF_WIRELESS_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]])
+                    self.index += 1
+
+        if self.index == len(self.user_input[CONF_NETWORKS]):
+            self.index = 0
+            return await self.async_step_activity()
+        elif self.index == 0:
+            for conf in [CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
+                self.user_input[conf] = []
+
+        for network in self.response.networks:
+            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                eero_names = sorted(eero.name for eero in network.eeros)
+                profile_names = sorted(profile.name for profile in network.profiles)
+                wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
+                wireless_client_names = sorted(client.name_mac for client in network.clients if client.wireless)
+
+                return self.async_show_form(
+                    step_id="resources",
+                    data_schema=vol.Schema(
+                        {
+                            vol.Optional(CONF_EEROS, default=eero_names): cv.multi_select(eero_names),
+                            vol.Optional(CONF_PROFILES, default=profile_names): cv.multi_select(profile_names),
+                            vol.Optional(CONF_WIRED_CLIENTS, default=[]): cv.multi_select(wired_client_names),
+                            vol.Optional(CONF_WIRELESS_CLIENTS, default=[]): cv.multi_select(wireless_client_names),
+                        }
+                    ),
+                    description_placeholders={"network": network.name_long},
+                )
+
+    async def async_step_activity(self, user_input=None):
+        if user_input is not None:
+            for network in self.response.networks:
+                if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                    self.user_input[CONF_ACTIVITY][network.id] = {
+                            CONF_ACTIVITY_NETWORK: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input[CONF_ACTIVITY_NETWORK]],
+                            CONF_ACTIVITY_EEROS: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_EEROS, [])],
+                            CONF_ACTIVITY_PROFILES: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_PROFILES, [])],
+                            CONF_ACTIVITY_CLIENTS: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_CLIENTS, [])],
+                    }
                     self.index += 1
 
         if self.index == len(self.user_input[CONF_NETWORKS]):
             return self.async_create_entry(title=self.user_input[CONF_NAME], data=self.user_input)
-        else:
-            target_network_id = self.user_input[CONF_NETWORKS][self.index]
-            for network in self.response.networks:
-                if network.id == target_network_id:
-                    eero_names = sorted(eero.name for eero in network.eeros)
-                    profile_names = sorted(profile.name for profile in network.profiles)
-                    wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
-                    wireless_client_names = sorted(client.name_mac for client in network.clients if client.wireless)
+        elif self.index == 0:
+            self.user_input[CONF_ACTIVITY] = {}
 
-        return self.async_show_form(
-            step_id="resources",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CONF_EEROS, default=eero_names): cv.multi_select(eero_names),
-                    vol.Optional(CONF_PROFILES, default=profile_names): cv.multi_select(profile_names),
-                    vol.Optional(CONF_WIRED_CLIENTS, default=[]): cv.multi_select(wired_client_names),
-                    vol.Optional(CONF_WIRELESS_CLIENTS, default=[]): cv.multi_select(wireless_client_names),
+        for network in self.response.networks:
+            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                if not network.premium_status_active:
+                    self.index += 1
+                    return await self.async_step_activity()
+
+                data_schema = {
+                        vol.Optional(CONF_ACTIVITY_NETWORK, default=[]): cv.multi_select(ALL_ACTIVITIES),
                 }
-            ),
-            description_placeholders={"network": network.name_long},
-        )
+
+                if any([bool(eero.id in self.user_input[CONF_EEROS]) for eero in network.eeros]):
+                    data_schema[vol.Optional(CONF_ACTIVITY_EEROS, default=[])] = cv.multi_select(DATA_USAGE_ACTIVITIES)
+
+                if any([bool(profile.id in self.user_input[CONF_PROFILES]) for profile in network.profiles]):
+                    data_schema[vol.Optional(CONF_ACTIVITY_PROFILES, default=[])] = cv.multi_select(ALL_ACTIVITIES)
+
+                if any([bool(client.id in self.user_input[CONF_WIRED_CLIENTS] + self.user_input[CONF_WIRELESS_CLIENTS]) for client in network.clients]):
+                    data_schema[vol.Optional(CONF_ACTIVITY_CLIENTS, default=[])] = cv.multi_select(ALL_ACTIVITIES)
+
+                return self.async_show_form(
+                    step_id="activity",
+                    data_schema=vol.Schema(data_schema),
+                    description_placeholders={"network": network.name_long},
+                )
 
     @staticmethod
     @callback
@@ -191,46 +245,95 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_resources(self, user_input=None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            target_network_id = self.user_input[CONF_NETWORKS][self.index]
             for network in self.coordinator.data.networks:
-                if network.id == target_network_id:
-                    self.user_input[CONF_EEROS] = [eero.id for eero in network.eeros if eero.name in user_input[CONF_EEROS]]
-                    self.user_input[CONF_PROFILES] = [profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]]
-                    self.user_input[CONF_WIRED_CLIENTS] = [client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]]
-                    self.user_input[CONF_WIRELESS_CLIENTS] = [client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]]
+                if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                    self.user_input[CONF_EEROS].extend([eero.id for eero in network.eeros if eero.name in user_input[CONF_EEROS]])
+                    self.user_input[CONF_PROFILES].extend([profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]])
+                    self.user_input[CONF_WIRED_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]])
+                    self.user_input[CONF_WIRELESS_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]])
+                    self.index += 1
+
+        if self.index == len(self.user_input[CONF_NETWORKS]):
+            self.index = 0
+            return await self.async_step_activity()
+        elif self.index == 0:
+            for conf in [CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
+                self.user_input[conf] = []
+
+        for network in self.coordinator.data.networks:
+            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                conf_eeros = [eero.name for eero in network.eeros if eero.id in self.options.get(CONF_EEROS, self.data.get(CONF_EEROS, []))]
+                conf_profiles = [profile.name for profile in network.profiles if profile.id in self.options.get(CONF_PROFILES, self.data.get(CONF_PROFILES, []))]
+                conf_wired_clients = [client.name_mac for client in network.clients if client.id in self.options.get(CONF_WIRED_CLIENTS, self.data.get(CONF_WIRED_CLIENTS, []))]
+                conf_wireless_clients = [client.name_mac for client in network.clients if client.id in self.options.get(CONF_WIRELESS_CLIENTS, self.data.get(CONF_WIRELESS_CLIENTS, []))]
+
+                eero_names = sorted(eero.name for eero in network.eeros)
+                profile_names = sorted(profile.name for profile in network.profiles)
+                wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
+                wireless_client_names = sorted(client.name_mac for client in network.clients if client.wireless)
+
+                return self.async_show_form(
+                    step_id="resources",
+                    data_schema=vol.Schema(
+                        {
+                            vol.Optional(CONF_EEROS, default=conf_eeros): cv.multi_select(eero_names),
+                            vol.Optional(CONF_PROFILES, default=conf_profiles): cv.multi_select(profile_names),
+                            vol.Optional(CONF_WIRED_CLIENTS, default=conf_wired_clients): cv.multi_select(wired_client_names),
+                            vol.Optional(CONF_WIRELESS_CLIENTS, default=conf_wireless_clients): cv.multi_select(wireless_client_names),
+                        }
+                    ),
+                    description_placeholders={"network": network.name_long},
+                )
+
+    async def async_step_activity(self, user_input=None):
+        if user_input is not None:
+            for network in self.coordinator.data.networks:
+                if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                    self.user_input[CONF_ACTIVITY][network.id] = {
+                            CONF_ACTIVITY_NETWORK: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input[CONF_ACTIVITY_NETWORK]],
+                            CONF_ACTIVITY_EEROS: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_EEROS, [])],
+                            CONF_ACTIVITY_PROFILES: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_PROFILES, [])],
+                            CONF_ACTIVITY_CLIENTS: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_CLIENTS, [])],
+                    }
                     self.index += 1
 
         if self.index == len(self.user_input[CONF_NETWORKS]):
             if self.show_advanced_options:
                 return await self.async_step_advanced()
             return self.async_create_entry(title="", data=self.user_input)
-        else:
-            target_network_id = self.user_input[CONF_NETWORKS][self.index]
-            for network in self.coordinator.data.networks:
-                if network.id == target_network_id:
+        elif self.index == 0:
+            self.user_input[CONF_ACTIVITY] = {}
 
-                    conf_eeros = [eero.name for eero in network.eeros if eero.id in self.options.get(CONF_EEROS, self.data.get(CONF_EEROS, []))]
-                    conf_profiles = [profile.name for profile in network.profiles if profile.id in self.options.get(CONF_PROFILES, self.data.get(CONF_PROFILES, []))]
-                    conf_wired_clients = [client.name_mac for client in network.clients if client.id in self.options.get(CONF_WIRED_CLIENTS, self.data.get(CONF_WIRED_CLIENTS, []))]
-                    conf_wireless_clients = [client.name_mac for client in network.clients if client.id in self.options.get(CONF_WIRELESS_CLIENTS, self.data.get(CONF_WIRELESS_CLIENTS, []))]
+        for network in self.coordinator.data.networks:
+            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                if not network.premium_status_active:
+                    self.index += 1
+                    return await self.async_step_activity()
 
-                    eero_names = sorted(eero.name for eero in network.eeros)
-                    profile_names = sorted(profile.name for profile in network.profiles)
-                    wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
-                    wireless_client_names = sorted(client.name_mac for client in network.clients if client.wireless)
+                conf_activity = self.options.get(CONF_ACTIVITY, self.data.get(CONF_ACTIVITY, {})).get(network.id, {})
+                conf_activity_network = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_NETWORK]]
+                conf_activity_eero = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_EEROS]]
+                conf_activity_profile = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_PROFILES]]
+                conf_activity_client = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_CLIENTS]]
 
-        return self.async_show_form(
-            step_id="resources",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CONF_EEROS, default=conf_eeros): cv.multi_select(eero_names),
-                    vol.Optional(CONF_PROFILES, default=conf_profiles): cv.multi_select(profile_names),
-                    vol.Optional(CONF_WIRED_CLIENTS, default=conf_wired_clients): cv.multi_select(wired_client_names),
-                    vol.Optional(CONF_WIRELESS_CLIENTS, default=conf_wireless_clients): cv.multi_select(wireless_client_names),
+                data_schema = {
+                        vol.Optional(CONF_ACTIVITY_NETWORK, default=conf_activity_network): cv.multi_select(ALL_ACTIVITIES),
                 }
-            ),
-            description_placeholders={"network": network.name_long},
-        )
+
+                if any([bool(eero.id in self.user_input[CONF_EEROS]) for eero in network.eeros]):
+                    data_schema[vol.Optional(CONF_ACTIVITY_EEROS, default=conf_activity_eero)] = cv.multi_select(DATA_USAGE_ACTIVITIES)
+
+                if any([bool(profile.id in self.user_input[CONF_PROFILES]) for profile in network.profiles]):
+                    data_schema[vol.Optional(CONF_ACTIVITY_PROFILES, default=conf_activity_profile)] = cv.multi_select(ALL_ACTIVITIES)
+
+                if any([bool(client.id in self.user_input[CONF_WIRED_CLIENTS] + self.user_input[CONF_WIRELESS_CLIENTS]) for client in network.clients]):
+                    data_schema[vol.Optional(CONF_ACTIVITY_CLIENTS, default=conf_activity_client)] = cv.multi_select(ALL_ACTIVITIES)
+
+                return self.async_show_form(
+                    step_id="activity",
+                    data_schema=vol.Schema(data_schema),
+                    description_placeholders={"network": network.name_long},
+                )
 
     async def async_step_advanced(self, user_input=None):
         """Handle a flow initialized by the user."""

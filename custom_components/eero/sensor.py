@@ -5,6 +5,11 @@ from homeassistant.const import PERCENTAGE
 
 from . import EeroEntity
 from .const import (
+    CONF_ACTIVITY,
+    CONF_ACTIVITY_CLIENTS,
+    CONF_ACTIVITY_EEROS,
+    CONF_ACTIVITY_NETWORK,
+    CONF_ACTIVITY_PROFILES,
     CONF_CLIENTS,
     CONF_EEROS,
     CONF_NETWORKS,
@@ -12,6 +17,7 @@ from .const import (
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
+from .util import format_data_usage
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,11 +36,6 @@ BASIC_TYPES = {
         "Nightlight Brightness",
         None,
         PERCENTAGE,
-    ],
-    "ssid": [
-        "SSID",
-        None,
-        None,
     ],
     "nightlight_status": [
         "Nightlight Status",
@@ -63,7 +64,70 @@ BASIC_TYPES = {
     ],
 }
 
-SENSOR_TYPES = {**BASIC_TYPES}
+PREMIUM_TYPES = {
+    "adblock_day": [
+        "Ad Blocks Day",
+        None,
+        "ads",
+    ],
+    "adblock_month": [
+        "Ad Blocks Month",
+        None,
+        "ads",
+    ],
+    "adblock_week": [
+        "Ad Blocks Week",
+        None,
+        "ads",
+    ],
+    "blocked_day": [
+        "Threat Blocks Day",
+        None,
+        "threats",
+    ],
+    "blocked_month": [
+        "Threat Blocks Month",
+        None,
+        "threats",
+    ],
+    "blocked_week": [
+        "Threat Blocks Week",
+        None,
+        "threats",
+    ],
+    "data_usage_day": [
+        "Data Usage Day",
+        None,
+        None,
+    ],
+    "data_usage_month": [
+        "Data Usage Month",
+        None,
+        None,
+    ],
+    "data_usage_week": [
+        "Data Usage Week",
+        None,
+        None,
+    ],
+    "inspected_day": [
+        "Scans Day",
+        None,
+        "scans",
+    ],
+    "inspected_month": [
+        "Scans Month",
+        None,
+        "scans",
+    ],
+    "inspected_week": [
+        "Scans Week",
+        None,
+        "scans",
+    ],
+}
+
+SENSOR_TYPES = {**BASIC_TYPES, **PREMIUM_TYPES}
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -73,6 +137,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     conf_eeros = entry[CONF_EEROS]
     conf_profiles = entry[CONF_PROFILES]
     conf_clients = entry[CONF_CLIENTS]
+    conf_activity = entry[CONF_ACTIVITY]
     coordinator = entry[DATA_COORDINATOR]
 
     def get_entities():
@@ -81,26 +146,43 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
         for network in coordinator.data.networks:
             if network.id in conf_networks:
+                activity = conf_activity.get(network.id, {})
                 for variable in SENSOR_TYPES:
-                    if hasattr(network, variable):
+                    if variable in PREMIUM_TYPES and not network.premium_status_active:
+                        continue
+                    elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_NETWORK, []):
+                        continue
+                    elif hasattr(network, variable):
                         entities.append(EeroSensor(coordinator, network, None, variable))
 
                 for eero in network.eeros:
                     if eero.id in conf_eeros:
                         for variable in SENSOR_TYPES:
-                            if hasattr(eero, variable):
+                            if variable in PREMIUM_TYPES and not network.premium_status_active:
+                                continue
+                            elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_EEROS, []):
+                                continue
+                            elif hasattr(eero, variable):
                                 entities.append(EeroSensor(coordinator, network, eero, variable))
 
                 for profile in network.profiles:
                     if profile.id in conf_profiles:
                         for variable in SENSOR_TYPES:
-                            if hasattr(profile, variable):
+                            if variable in PREMIUM_TYPES and not network.premium_status_active:
+                                continue
+                            elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_PROFILES, []):
+                                continue
+                            elif hasattr(profile, variable):
                                 entities.append(EeroSensor(coordinator, network, profile, variable))
 
                 for client in network.clients:
                     if client.id in conf_clients:
                         for variable in SENSOR_TYPES:
-                            if hasattr(client, variable):
+                            if variable in PREMIUM_TYPES and not network.premium_status_active:
+                                continue
+                            elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_CLIENTS, []):
+                                continue
+                            elif hasattr(client, variable):
                                 entities.append(EeroSensor(coordinator, network, client, variable))
 
         return entities
@@ -128,36 +210,55 @@ class EeroSensor(EeroEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        state = getattr(self.resource, self.variable)
-        if self.variable in ["speed_down", "speed_up"]:
-            return round(state)
-        return state
+        if self.variable in ["blocked_day", "blocked_month", "blocked_week"] and self.resource.is_network:
+            return getattr(self.resource, self.variable)["blocked"]
+        elif self.variable in ["data_usage_day", "data_usage_month", "data_usage_week"]:
+            down, up = getattr(self.resource, self.variable)
+            return format_data_usage(down + up)[0]
+        elif self.variable in ["speed_down", "speed_up"]:
+            return round(getattr(self.resource, self.variable)[0])
+        return getattr(self.resource, self.variable)
 
     @property
     def unit_of_measurement(self):
         """Return the unit the value is expressed in."""
-        if self.variable in ["speed_down", "speed_up"]:
-            return getattr(self.resource, f"{self.variable}_units")
+        if self.variable in ["data_usage_day", "data_usage_month", "data_usage_week"]:
+            down, up = getattr(self.resource, self.variable)
+            return format_data_usage(down + up)[1]
+        elif self.variable in ["speed_down", "speed_up"]:
+            return getattr(self.resource, self.variable)[1]
         return SENSOR_TYPES[self.variable][2]
 
     @property
     def device_state_attributes(self):
         attrs = super().device_state_attributes
-        if self.variable == "nightlight_status":
+        if self.variable in ["blocked_day", "blocked_month", "blocked_week"] and self.resource.is_network:
+            data = getattr(self.resource, self.variable)
+            for key, value in data.items():
+                if key != "blocked":
+                    attrs[key] = value
+        elif self.variable in ["data_usage_day", "data_usage_month", "data_usage_week"]:
+            down, up = getattr(self.resource, self.variable)
+            attrs["download"], attrs["download_units"] = format_data_usage(down)
+            attrs["upload"], attrs["upload_units"] = format_data_usage(up)
+        elif self.variable == "nightlight_status":
             if self.resource.nightlight_schedule_enabled:
                 schedule = self.resource.nightlight_schedule
-                attrs["on"] = schedule[0]
-                attrs["off"] = schedule[1]
+                attrs["on"], attrs["off"] = schedule
         elif self.variable in ["speed_down", "speed_up"]:
             attrs["last_updated"] = self.resource.speed_date
-        elif self.variable == "ssid":
-            attrs["id"] = self.resource.id
-            attrs["isp"] = self.resource.isp
-            attrs["city"] = self.resource.city
-            attrs["region"] = self.resource.region_name
-            attrs["postal_code"] = self.resource.postal_code
-            attrs["country"] = self.resource.country_name
         elif self.variable == "status" and self.resource.is_network:
-            for attr in ["health_eero_network_status", "health_internet_isp_up", "health_internet_status"]:
+            for attr in [
+                "ssid",
+                "id",
+                "isp",
+                "city",
+                "region_name",
+                "postal_code",
+                "country_name",
+                "health_eero_network_status",
+                "health_internet_isp_up",
+                "health_internet_status",
+            ]:
                 attrs[attr] = getattr(self.resource, attr)
         return attrs

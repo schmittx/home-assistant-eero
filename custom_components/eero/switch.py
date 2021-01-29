@@ -43,20 +43,38 @@ PREMIUM_TYPES = {
     "ad_block": [
         "Ad Blocking",
     ],
+    "block_gaming_content": [
+        "Gaming Content Filter",
+    ],
     "block_illegal_content": [
-        "Illegal Content Filter",
+        "Illegal or Criminal Content Filter",
     ],
     "block_malware": [
         "Advanced Security",
     ],
+    "block_messaging_content": [
+        "Chat and Messaging Content Filter",
+    ],
     "block_pornographic_content": [
         "Adult Content Filter",
+    ],
+    "block_shopping_content": [
+        "Shopping Content Filter",
+    ],
+    "block_social_content": [
+        "Social Media Content Filter",
+    ],
+    "block_streaming_content": [
+        "Streaming Content Filter",
     ],
     "block_violent_content": [
         "Violent Content Filter",
     ],
     "safe_search_enabled": [
         "SafeSearch Content Filter",
+    ],
+    "youtube_restricted": [
+        "YouTube Restricted Content Filter",
     ],
 }
 

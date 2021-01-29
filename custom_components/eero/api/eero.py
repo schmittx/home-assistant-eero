@@ -5,9 +5,10 @@ from .resource import Resource
 class Eero(Resource):
 
     def _set_nightlight(self, json):
-        return self.api.put(
-                url=f"/2.2/eeros/{self.id}/nightlight/settings",
-                json=json,
+        return self.api.call(
+            method="put",
+            url=f"/2.2/eeros/{self.id}/nightlight/settings",
+            json=json,
         )
 
     @property
@@ -15,8 +16,25 @@ class Eero(Resource):
         return self.data.get("connected_clients_count")
 
     @property
-    def id(self):
-        return self.url.replace("/2.2/eeros/", "")
+    def data_usage_day(self):
+        for eero in self.network.data.get("activity", {}).get("eeros", {}).get("data_usage_day", []):
+            if eero["url"] == self.url:
+                return (eero["download"], eero["upload"])
+        return (None, None)
+
+    @property
+    def data_usage_month(self):
+        for eero in self.network.data.get("activity", {}).get("eeros", {}).get("data_usage_month", []):
+            if eero["url"] == self.url:
+                return (eero["download"], eero["upload"])
+        return (None, None)
+
+    @property
+    def data_usage_week(self):
+        for eero in self.network.data.get("activity", {}).get("eeros", {}).get("data_usage_week", []):
+            if eero["url"] == self.url:
+                return (eero["download"], eero["upload"])
+        return (None, None)
 
     @property
     def is_gateway(self):
@@ -28,7 +46,8 @@ class Eero(Resource):
 
     @led_on.setter
     def led_on(self, value):
-        self.api.put(
+        self.api.call(
+            method="put",
             url=self.url_led,
             json=dict(led_on=bool(value)),
         )
@@ -58,7 +77,7 @@ class Eero(Resource):
         return self.data.get("os_version")
 
     def reboot(self):
-        return self.api.post(url=self.url_reboot)
+        return self.api.call(method="post", url=self.url_reboot)
 
     @property
     def serial(self):

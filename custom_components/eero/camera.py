@@ -16,6 +16,20 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+CAMERA_TYPES = {
+    "guest_network_qr_code": [
+        "guest_network_name",
+        "guest_network_password",
+    ],
+    "main_network_qr_code": [
+        "name",
+        "password",
+    ],
+}
+
+STATE_DISABLED = "Disabled"
+STATE_ENABLED = "Enabled"
+
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up an Eero camera entity based on a config entry."""
@@ -29,7 +43,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
         for network in coordinator.data.networks:
             if network.id in conf_networks:
-                entities.append(EeroCamera(coordinator, network, None, None))
+                for variable in CAMERA_TYPES:
+                    entities.append(EeroCamera(coordinator, network, None, variable))
 
         return entities
 
@@ -47,43 +62,44 @@ class EeroCamera(EeroEntity, Camera):
     @property
     def name(self):
         """Return the name of the entity."""
-        return f"{self.resource.name} Guest Network"
+        return getattr(self.resource, CAMERA_TYPES[self.variable][0])
 
     @property
     def state(self):
         """Return the camera state."""
-        if self.guest_network_enabled:
-            return "Enabled"
-        return "Disabled"
+        if all(
+            [
+                self.variable == "guest_network_qr_code",
+                not getattr(self.resource, "guest_network_enabled"),
+            ]
+        ):
+            return STATE_DISABLED
+        return STATE_ENABLED
 
     @property
     def device_state_attributes(self):
         attrs = super().device_state_attributes
-        if self.guest_network_enabled:
-            attrs["guest_network_name"] = self.resource.guest_network_name
+        attrs["ssid"] = getattr(self.resource, CAMERA_TYPES[self.variable][0])
         return attrs
 
     def camera_image(self):
         """Process the image."""
-        if self.guest_network_enabled:
+        if self.state == STATE_ENABLED:
             return self.qr_code()
         return open(EERO_LOGO_ICON, "rb").read()
 
-    @property
-    def guest_network_enabled(self):
-        return getattr(self.resource, "guest_network_enabled")
-
     def wifi_code(self):
-        password = self.resource.guest_network_password
+        ssid = getattr(self.resource, CAMERA_TYPES[self.variable][0])
+        password = getattr(self.resource, CAMERA_TYPES[self.variable][1])
         if password:
             return "WIFI:S:{ssid};H:{hidden};T:{auth_type};P:{password};;".format(
-                ssid=self.resource.guest_network_name,
+                ssid=ssid,
                 hidden="false",
                 auth_type="WPA/WPA2",
                 password=password,
             )
         return "WIFI:S:{ssid};H:{hidden};T:{auth_type};;".format(
-            ssid=self.resource.guest_network_name,
+            ssid=ssid,
             hidden="false",
             auth_type="nopass",
         )

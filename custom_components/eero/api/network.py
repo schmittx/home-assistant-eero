@@ -1,6 +1,6 @@
 """Eero API"""
 from .client import Client
-from .const import MODEL_BEACON
+from .const import MODEL_BEACON, PERIOD_DAY, PERIOD_WEEK, PERIOD_MONTH
 from .eero import Eero, EeroBeacon
 from .profile import Profile
 from .resource import Resource
@@ -18,10 +18,32 @@ class Network(Resource):
 
     @ad_block.setter
     def ad_block(self, value):
-        return self.api.post(
-                url=self.url_dns_policies,
-                json=dict(ad_block=bool(value)),
+        return self.api.call(
+            method="post",
+            url=self.url_dns_policies,
+            json=dict(ad_block=bool(value)),
         )
+
+    @property
+    def adblock_day(self):
+        for series in self.data.get("activity", {}).get("network", {}).get("adblock_day", []):
+            if series["insight_type"] == "adblock":
+                return series["sum"]
+        return None
+
+    @property
+    def adblock_month(self):
+        for series in self.data.get("activity", {}).get("network", {}).get("adblock_month", []):
+            if series["insight_type"] == "adblock":
+                return series["sum"]
+        return None
+
+    @property
+    def adblock_week(self):
+        for series in self.data.get("activity", {}).get("network", {}).get("adblock_week", []):
+            if series["insight_type"] == "adblock":
+                return series["sum"]
+        return None
 
     @property
     def band_steering(self):
@@ -29,9 +51,10 @@ class Network(Resource):
 
     @band_steering.setter
     def band_steering(self, value):
-        return self.api.put(
-                url=self.url_settings,
-                json=dict(band_steering=bool(value)),
+        return self.api.call(
+            method="put",
+            url=self.url_settings,
+            json=dict(band_steering=bool(value)),
         )
 
     @property
@@ -40,10 +63,35 @@ class Network(Resource):
 
     @block_malware.setter
     def block_malware(self, value):
-        return self.api.post(
-                url=self.url_dns_policies,
-                json=dict(block_malware=bool(value)),
+        return self.api.call(
+            method="post",
+            url=self.url_dns_policies,
+            json=dict(block_malware=bool(value)),
         )
+
+    @property
+    def blocked_day(self):
+        data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
+        for series in self.data.get("activity", {}).get("network", {}).get("blocked_day", []):
+            if series["insight_type"] in list(data.keys()):
+                data[series["insight_type"]] = series["sum"]
+        return data
+
+    @property
+    def blocked_month(self):
+        data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
+        for series in self.data.get("activity", {}).get("network", {}).get("blocked_month", []):
+            if series["insight_type"] in list(data.keys()):
+                data[series["insight_type"]] = series["sum"]
+        return data
+
+    @property
+    def blocked_week(self):
+        data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
+        for series in self.data.get("activity", {}).get("network", {}).get("blocked_week", []):
+            if series["insight_type"] in list(data.keys()):
+                data[series["insight_type"]] = series["sum"]
+        return data
 
     @property
     def city(self):
@@ -70,14 +118,45 @@ class Network(Resource):
         return self.data.get("geo_ip", {}).get("countryName")
 
     @property
+    def data_usage_day(self):
+        down, up = None, None
+        for series in self.data.get("activity", {}).get("network", {}).get("data_usage_day", []):
+            if series["type"] == "download":
+                down = series["sum"]
+            elif series["type"] == "upload":
+                up = series["sum"]
+        return (down, up)
+
+    @property
+    def data_usage_month(self):
+        down, up = None, None
+        for series in self.data.get("activity", {}).get("network", {}).get("data_usage_month", []):
+            if series["type"] == "download":
+                down = series["sum"]
+            elif series["type"] == "upload":
+                up = series["sum"]
+        return (down, up)
+
+    @property
+    def data_usage_week(self):
+        down, up = None, None
+        for series in self.data.get("activity", {}).get("network", {}).get("data_usage_week", []):
+            if series["type"] == "download":
+                down = series["sum"]
+            elif series["type"] == "upload":
+                up = series["sum"]
+        return (down, up)
+
+    @property
     def dns_caching(self):
         return self.data.get("dns", {}).get("caching")
 
     @dns_caching.setter
     def dns_caching(self, value):
-        return self.api.put(
-                url=f"/2.2/networks/{self.id}/dns",
-                json=dict(caching=bool(value)),
+        return self.api.call(
+            method="put",
+            url=f"/2.2/networks/{self.id}/dns",
+            json=dict(caching=bool(value)),
         )
 
     @property
@@ -104,9 +183,10 @@ class Network(Resource):
 
     @guest_network_enabled.setter
     def guest_network_enabled(self, value):
-        return self.api.put(
-                url=f"/2.2/networks/{self.id}/guestnetwork",
-                json=dict(enabled=bool(value)),
+        return self.api.call(
+            method="put",
+            url=f"/2.2/networks/{self.id}/guestnetwork",
+            json=dict(enabled=bool(value)),
         )
 
     @property
@@ -130,8 +210,25 @@ class Network(Resource):
         return self.data.get("health", {}).get("internet", {}).get("status")
 
     @property
-    def id(self):
-        return self.url.replace("/2.2/networks/", "")
+    def inspected_day(self):
+        for series in self.data.get("activity", {}).get("network", {}).get("inspected_day", []):
+            if series["insight_type"] == "inspected":
+                return series["sum"]
+        return None
+
+    @property
+    def inspected_month(self):
+        for series in self.data.get("activity", {}).get("network", {}).get("inspected_month", []):
+            if series["insight_type"] == "inspected":
+                return series["sum"]
+        return None
+
+    @property
+    def inspected_week(self):
+        for series in self.data.get("activity", {}).get("network", {}).get("inspected_week", []):
+            if series["insight_type"] == "inspected":
+                return series["sum"]
+        return None
 
     @property
     def ipv6_upstream(self):
@@ -139,9 +236,10 @@ class Network(Resource):
 
     @ipv6_upstream.setter
     def ipv6_upstream(self, value):
-        return self.api.put(
-                url=self.url_settings,
-                json=dict(ipv6_upstream=bool(value)),
+        return self.api.call(
+            method="put",
+            url=self.url_settings,
+            json=dict(ipv6_upstream=bool(value)),
         )
 
     @property
@@ -160,6 +258,10 @@ class Network(Resource):
         return self.name
 
     @property
+    def password(self):
+        return self.data.get("password")
+
+    @property
     def public_ip(self):
         return self.data.get("ip_settings", {}).get("public_ip")
 
@@ -176,7 +278,7 @@ class Network(Resource):
         return bool(self.premium_status == "active")
 
     def reboot(self):
-        return self.api.post(url=self.url_reboot)
+        return self.api.call(method="post", url=self.url_reboot)
 
     @property
     def region(self):
@@ -192,19 +294,17 @@ class Network(Resource):
 
     @property
     def speed_down(self):
-        return self.data.get("speed", {}).get("down", {}).get("value")
-
-    @property
-    def speed_down_units(self):
-        return self.data.get("speed", {}).get("down", {}).get("units")
+        return (
+            self.data.get("speed", {}).get("down", {}).get("value"),
+            self.data.get("speed", {}).get("down", {}).get("units"),
+        )
 
     @property
     def speed_up(self):
-        return self.data.get("speed", {}).get("up", {}).get("value")
-
-    @property
-    def speed_up_units(self):
-        return self.data.get("speed", {}).get("up", {}).get("units")
+        return (
+            self.data.get("speed", {}).get("up", {}).get("value"),
+            self.data.get("speed", {}).get("up", {}).get("units"),
+        )
 
     @property
     def sqm(self):
@@ -212,9 +312,10 @@ class Network(Resource):
 
     @sqm.setter
     def sqm(self, value):
-        return self.api.put(
-                url=self.url_settings,
-                json=dict(sqm=bool(value)),
+        return self.api.call(
+            method="put",
+            url=self.url_settings,
+            json=dict(sqm=bool(value)),
         )
 
     @property
@@ -235,14 +336,11 @@ class Network(Resource):
 
     @thread.setter
     def thread(self, value):
-        return self.api.put(
-                url=self.url_settings,
-                json=dict(thread=bool(value)),
+        return self.api.call(
+            method="put",
+            url=self.url_settings,
+            json=dict(thread=bool(value)),
         )
-
-    @property
-    def timezone(self):
-        return self.data.get("timezone", {}).get("value")
 
     @property
     def update_available(self):
@@ -254,14 +352,19 @@ class Network(Resource):
 
     @upnp.setter
     def upnp(self, value):
-        return self.api.put(
-                url=self.url_settings,
-                json=dict(upnp=bool(value)),
+        return self.api.call(
+            method="put",
+            url=self.url_settings,
+            json=dict(upnp=bool(value)),
         )
 
     @property
     def url_dns_policies(self):
         return f"{self.url}/dns_policies/network"
+
+    @property
+    def url_insights(self):
+        return self.data.get("resources", {}).get("insights")
 
     @property
     def url_reboot(self):
@@ -277,9 +380,10 @@ class Network(Resource):
 
     @wpa3.setter
     def wpa3(self, value):
-        return self.api.put(
-                url=self.url_settings,
-                json=dict(wpa3=bool(value)),
+        return self.api.call(
+            method="put",
+            url=self.url_settings,
+            json=dict(wpa3=bool(value)),
         )
 
     @property

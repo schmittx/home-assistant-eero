@@ -2,7 +2,6 @@
 from datetime import timedelta
 import async_timeout
 import asyncio
-#import functools as ft
 import logging
 import voluptuous as vol
 
@@ -19,6 +18,7 @@ from homeassistant.helpers.update_coordinator import (
 
 from .api import EeroAPI, EeroException
 from .const import (
+    ACTIVITY_MAP_TO_HASS,
     ATTR_DNS_CACHING_ENABLED,
     ATTR_IPV6_ENABLED,
     ATTR_TARGET_EERO,
@@ -27,6 +27,11 @@ from .const import (
     ATTR_TIME_OFF,
     ATTR_TIME_ON,
     ATTRIBUTION,
+    CONF_ACTIVITY,
+    CONF_ACTIVITY_CLIENTS,
+    CONF_ACTIVITY_EEROS,
+    CONF_ACTIVITY_NETWORK,
+    CONF_ACTIVITY_PROFILES,
     CONF_CLIENTS,
     CONF_EEROS,
     CONF_NETWORKS,
@@ -42,10 +47,8 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TIMEOUT,
     DOMAIN,
-    ERROR_TIME_FORMAT,
     MANUFACTURER,
     MODEL_CLIENT,
-    MODEL_EERO,
     MODEL_NETWORK,
     MODEL_PROFILE,
     NIGHTLIGHT_MODE_AMBIENT,
@@ -123,13 +126,44 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     data = entry.data
     options = entry.options
 
+    conf_networks = options.get(CONF_NETWORKS, data[CONF_NETWORKS])
+    conf_eeros = options.get(CONF_EEROS, data.get(CONF_EEROS, []))
+    conf_profiles = options.get(CONF_PROFILES, data.get(CONF_PROFILES, []))
+    conf_wired_clients = options.get(CONF_WIRED_CLIENTS, data.get(CONF_WIRED_CLIENTS, []))
+    conf_wireless_clients = options.get(CONF_WIRELESS_CLIENTS, data.get(CONF_WIRELESS_CLIENTS, []))
+    conf_clients = conf_wired_clients + conf_wireless_clients
+    conf_activity = options.get(CONF_ACTIVITY, data[CONF_ACTIVITY])
+    if not conf_networks:
+        conf_eeros, conf_profiles, conf_clients = [], [], []
+    conf_identifiers = [(DOMAIN, resource_id) for resource_id in conf_networks + conf_eeros + conf_profiles + conf_clients]
+
+    device_registry = await hass.helpers.device_registry.async_get_registry()
+    entity_registry = await hass.helpers.entity_registry.async_get_registry()
+    for device_entry in hass.helpers.device_registry.async_entries_for_config_entry(device_registry, entry.entry_id):
+        if all([bool(resource_id not in conf_identifiers) for resource_id in device_entry.identifiers]):
+            device_registry.async_remove_device(device_entry.id)
+        else:
+            for entity_entry in hass.helpers.entity_registry.async_entries_for_device(entity_registry, device_entry.id):
+                unique_id = entity_entry.unique_id.split("-")
+                activities = conf_activity[unique_id[0]]
+                if unique_id[-1] in list(ACTIVITY_MAP_TO_HASS.keys()):
+                    if any(
+                        [
+                            device_entry.model == MODEL_NETWORK and unique_id[-1] not in activities[CONF_ACTIVITY_NETWORK],
+                            MANUFACTURER in device_entry.model and unique_id[-1] not in activities[CONF_ACTIVITY_EEROS],
+                            device_entry.model == MODEL_PROFILE and unique_id[-1] not in activities[CONF_ACTIVITY_PROFILES],
+                            device_entry.model == MODEL_CLIENT and unique_id[-1] not in activities[CONF_ACTIVITY_CLIENTS],
+                        ]
+                    ):
+                        entity_registry.async_remove(entity_entry.entity_id)
+
     conf_save_responses = options.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES)
     conf_scan_interval = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     conf_timeout = options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
 
     conf_save_location = DEFAULT_SAVE_LOCATION if conf_save_responses else None
 
-    api = EeroAPI(user_token=data[CONF_USER_TOKEN], save_location=conf_save_location)
+    api = EeroAPI(activity=conf_activity, save_location=conf_save_location, user_token=data[CONF_USER_TOKEN])
 
     async def async_update_data():
         """Fetch data from API endpoint.
@@ -138,8 +172,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         so entities can quickly look up their data.
         """
         try:
-            # Note: asyncio.TimeoutError and aiohttp.ClientError are already
-            # handled by the data update coordinator.
             async with async_timeout.timeout(conf_timeout):
                 return await hass.async_add_executor_job(api.update)
         except EeroException as exception:
@@ -154,26 +186,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
     await coordinator.async_refresh()
 
-    conf_networks = options.get(CONF_NETWORKS, data[CONF_NETWORKS])
-    conf_eeros = options.get(CONF_EEROS, data.get(CONF_EEROS, []))
-    conf_profiles = options.get(CONF_PROFILES, data.get(CONF_PROFILES, []))
-    conf_wired_clients = options.get(CONF_WIRED_CLIENTS, data.get(CONF_WIRED_CLIENTS, []))
-    conf_wireless_clients = options.get(CONF_WIRELESS_CLIENTS, data.get(CONF_WIRELESS_CLIENTS, []))
-    conf_clients = conf_wired_clients + conf_wireless_clients
-    if not conf_networks:
-        conf_eeros = conf_profiles = conf_clients = []
-    conf_identifiers = [(DOMAIN, id) for id in conf_networks + conf_eeros + conf_profiles + conf_clients]
-
-    device_registry = await hass.helpers.device_registry.async_get_registry()
-    for device_entry in hass.helpers.device_registry.async_entries_for_config_entry(device_registry, entry.entry_id):
-        if all([bool(id not in conf_identifiers) for id in device_entry.identifiers]):
-            device_registry.async_remove_device(device_entry.id)
-
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_NETWORKS: conf_networks,
         CONF_EEROS: conf_eeros,
         CONF_PROFILES: conf_profiles,
         CONF_CLIENTS: conf_clients,
+        CONF_ACTIVITY: conf_activity,
         DATA_COORDINATOR: coordinator,
         UNDO_UPDATE_LISTENER: entry.add_update_listener(async_update_listener),
     }
