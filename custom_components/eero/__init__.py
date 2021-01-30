@@ -132,7 +132,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     conf_wired_clients = options.get(CONF_WIRED_CLIENTS, data.get(CONF_WIRED_CLIENTS, []))
     conf_wireless_clients = options.get(CONF_WIRELESS_CLIENTS, data.get(CONF_WIRELESS_CLIENTS, []))
     conf_clients = conf_wired_clients + conf_wireless_clients
-    conf_activity = options.get(CONF_ACTIVITY, data[CONF_ACTIVITY])
+    conf_activity = options.get(CONF_ACTIVITY, data.get(CONF_ACTIVITY, {}))
     if not conf_networks:
         conf_eeros, conf_profiles, conf_clients = [], [], []
     conf_identifiers = [(DOMAIN, resource_id) for resource_id in conf_networks + conf_eeros + conf_profiles + conf_clients]
@@ -145,14 +145,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         else:
             for entity_entry in hass.helpers.entity_registry.async_entries_for_device(entity_registry, device_entry.id):
                 unique_id = entity_entry.unique_id.split("-")
-                activities = conf_activity[unique_id[0]]
+                activity = conf_activity.get(unique_id[0], {})
                 if unique_id[-1] in list(ACTIVITY_MAP_TO_HASS.keys()):
                     if any(
                         [
-                            device_entry.model == MODEL_NETWORK and unique_id[-1] not in activities[CONF_ACTIVITY_NETWORK],
-                            MANUFACTURER in device_entry.model and unique_id[-1] not in activities[CONF_ACTIVITY_EEROS],
-                            device_entry.model == MODEL_PROFILE and unique_id[-1] not in activities[CONF_ACTIVITY_PROFILES],
-                            device_entry.model == MODEL_CLIENT and unique_id[-1] not in activities[CONF_ACTIVITY_CLIENTS],
+                            device_entry.model == MODEL_NETWORK and unique_id[-1] not in activity.get(CONF_ACTIVITY_NETWORK, []),
+                            MANUFACTURER in device_entry.model and unique_id[-1] not in activity.get(CONF_ACTIVITY_EEROS, []),
+                            device_entry.model == MODEL_PROFILE and unique_id[-1] not in activity.get(CONF_ACTIVITY_PROFILES, []),
+                            device_entry.model == MODEL_CLIENT and unique_id[-1] not in activity.get(CONF_ACTIVITY_CLIENTS, []),
                         ]
                     ):
                         entity_registry.async_remove(entity_entry.entity_id)
