@@ -311,10 +311,10 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                     return await self.async_step_activity()
 
                 conf_activity = self.options.get(CONF_ACTIVITY, self.data.get(CONF_ACTIVITY, {})).get(network.id, {})
-                conf_activity_network = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_NETWORK]]
-                conf_activity_eero = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_EEROS]]
-                conf_activity_profile = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_PROFILES]]
-                conf_activity_client = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity[CONF_ACTIVITY_CLIENTS]]
+                conf_activity_network = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity.get(CONF_ACTIVITY_NETWORK, [])]
+                conf_activity_eero = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity.get(CONF_ACTIVITY_EEROS, [])]
+                conf_activity_profile = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity.get(CONF_ACTIVITY_PROFILES, [])]
+                conf_activity_client = [ACTIVITY_MAP_TO_HASS[activity] for activity in conf_activity.get(CONF_ACTIVITY_CLIENTS, [])]
 
                 data_schema = {
                         vol.Optional(CONF_ACTIVITY_NETWORK, default=conf_activity_network): cv.multi_select(ALL_ACTIVITIES),
