@@ -29,13 +29,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
         for network in coordinator.data.networks:
             if network.id in conf_networks:
                 for client in network.clients:
-
-                    # only included tracking devices connected to eero networks which are
-                    # selected as included in configuration
-#                   FIXME: unclear if this is correct...commenting out
-#                   if client.resource.name_long not in CONF_NETWORKS:
-#                        next
-
                     if client.id in conf_clients:
                         entities.append(EeroDeviceTracker(coordinator, network, client, "device_tracker"))
 
@@ -55,7 +48,14 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
     @property
     def is_connected(self):
         """Return true if the device tracker is connected."""
-        return self.resource.connected
+        connected = self.resource.connected
+
+        # FIXME: this should only return true IF the connected resource is on one of the 
+        # networks configured with CONF_NETWORKS
+        #if not self.resource.network.name_long in conf_networks:
+        #    connected = False
+
+        return connected
 
     @property
     def source_type(self):
