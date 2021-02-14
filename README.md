@@ -16,12 +16,11 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 - Networks, resources, and activity metrics can be updated via integration options.
 - If `Advanced Mode` is enabled for the current profile, additional options are available (interval, timeout, and response logging).
 
-
 ## Currently Working
 
-- Multiple networks supported
+- Multiple physically separate networks on a single Eero account
 - Control network properties (i.e. guest network, Eero Secure features, Eero Labs features)
-- Pause access for profiles and/or clients
+- Pause access for profiles or clients
 - Control content filters for profiles
 - Create device trackers for clients
 - Sensors for various metrics
