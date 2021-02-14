@@ -29,6 +29,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
         for network in coordinator.data.networks:
             if network.id in conf_networks:
                 for client in network.clients:
+
+                    # only included tracking devices connected to eero networks which are
+                    # selected as included in configuration
+#                   FIXME: unclear if this is correct...commenting out
+#                   if client.resource.name_long not in CONF_NETWORKS:
+#                        next
+
                     if client.id in conf_clients:
                         entities.append(EeroDeviceTracker(coordinator, network, client, "device_tracker"))
 
@@ -59,7 +66,10 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
     def device_state_attributes(self):
         attrs = super().device_state_attributes
         if self.is_connected:
+            attrs["network"] = self.network.name_long
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type
             attrs["ip_address"] = self.resource.ip
+            attrs["host_name"] = self.resource.host_name
+
         return attrs
