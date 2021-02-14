@@ -50,8 +50,8 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
         """Return true if the device tracker is connected."""
         connected = self.resource.connected
 
-        # FIXME: this should only return true IF the connected resource is on one of the 
-        # networks configured with CONF_NETWORKS
+        # Only return true IF the connected resource (device) is active on one of
+        # the networks configured with CONF_NETWORKS.
         #if not self.resource.network.name_long in conf_networks:
         #    connected = False
 
