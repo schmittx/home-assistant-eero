@@ -62,4 +62,5 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type
             attrs["ip_address"] = self.resource.ip
+            attrs["network_name"] = self.network.name_long
         return attrs

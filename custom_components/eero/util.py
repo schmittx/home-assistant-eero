@@ -36,8 +36,7 @@ def validate_time_format(value):
         raise vol.Invalid(ERROR_TIME_FORMAT.format(value))
 
     try:
-        hour = int(parsed[0])
-        minute = int(parsed[1])
+        hour, minute = int(parsed[0]), int(parsed[1])
     except ValueError as err:
         raise vol.Invalid(ERROR_TIME_FORMAT.format(value)) from err
 

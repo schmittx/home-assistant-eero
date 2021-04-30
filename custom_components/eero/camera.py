@@ -70,7 +70,7 @@ class EeroCamera(EeroEntity, Camera):
         if all(
             [
                 self.variable == "guest_network_qr_code",
-                not getattr(self.resource, "guest_network_enabled"),
+                not self.resource.guest_network_enabled,
             ]
         ):
             return STATE_DISABLED

@@ -5,6 +5,10 @@ from .eero import Eero, EeroBeacon
 from .profile import Profile
 from .resource import Resource
 
+STATE_DISABLED = "disabled"
+STATE_NETWORK = "network"
+STATE_PROFILES = "profiles"
+
 
 class Network(Resource):
 
@@ -14,15 +18,36 @@ class Network(Resource):
 
     @property
     def ad_block(self):
-        return self.data.get("premium_dns", {}).get("dns_policies", {}).get("ad_block")
+        return all(
+            [
+                self.ad_block_enabled,
+                not self.ad_block_profiles,
+            ]
+        )
 
     @ad_block.setter
     def ad_block(self, value):
         return self.api.call(
             method="post",
-            url=self.url_dns_policies,
-            json=dict(ad_block=bool(value)),
+            url=f"{self.url_dns_policies}/adblock",
+            json=dict(enable=bool(value)),
         )
+
+    @property
+    def ad_block_enabled(self):
+        return self.data.get("premium_dns", {}).get("ad_block_settings", {}).get("enabled")
+
+    @property
+    def ad_block_profiles(self):
+        return self.data.get("premium_dns", {}).get("ad_block_settings", {}).get("profiles")
+
+    @property
+    def ad_block_status(self):
+        if self.ad_block:
+            return STATE_NETWORK
+        elif self.ad_block_profiles:
+            return STATE_PROFILES
+        return STATE_DISABLED
 
     @property
     def adblock_day(self):
@@ -65,7 +90,7 @@ class Network(Resource):
     def block_malware(self, value):
         return self.api.call(
             method="post",
-            url=self.url_dns_policies,
+            url=f"{self.url_dns_policies}/network",
             json=dict(block_malware=bool(value)),
         )
 
@@ -360,7 +385,7 @@ class Network(Resource):
 
     @property
     def url_dns_policies(self):
-        return f"{self.url}/dns_policies/network"
+        return f"{self.url}/dns_policies"
 
     @property
     def url_insights(self):
