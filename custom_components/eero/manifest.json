@@ -7,5 +7,6 @@
   "after_dependencies": [],
   "codeowners": ["@schmittx"],
   "requirements": ["pypng==0.0.20", "PyQRCode==1.2.1"],
-  "config_flow": true
+  "config_flow": true,
+  "iot_class": "local_polling"
 }
