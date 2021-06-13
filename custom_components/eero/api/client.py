@@ -103,15 +103,15 @@ class Client(Resource):
     
     @property
     def inspected_day(self):
-        return self._device_activity("inspected_day"):
+        return self._device_activity("inspected_day")
 
     @property
     def inspected_month(self):
-        return self._device_activity("inspected_month"):
+        return self._device_activity("inspected_month")
 
     @property
     def inspected_week(self):
-        return self._device_activity("inspected_week"):
+        return self._device_activity("inspected_week")
 
     @property
     def ip(self):
