@@ -8,6 +8,7 @@ Custom component to allow control of [Eero](https://eero.com) wireless networks 
 - [@jrlucier's eero_tracker project](https://github.com/jrlucier/eero_tracker) - Initial Home Assistant idea
 
 ## Install
+
 1. Ensure Home Assistant is updated to version 2021.4.0 or newer.
 2. Use [HACS](https://hacs.xyz/) and add as a custom repo.
 3. Once the integration is installed, follow the standard setup process via UI and search for `eero`.
@@ -37,5 +38,31 @@ Custom component to allow control of [Eero](https://eero.com) wireless networks 
 
 ## See Also
 
-* [eero Integration Support](https://community.home-assistant.io/t/new-custom-component-eero-integration/244583)
+* [eero Integration Support](https://community.home-assistant.io/t/new-custom-component-eero-integration/244583) - for questions and help regarding this integration
 * [eero Home Assistant Forum](https://community.home-assistant.io/t/eero-support/21153)
+
+
+## Lovelace Examples
+
+Show QR code and WiFi connection details on Home Assistant wall panel:
+
+```yaml
+type: grid
+cards:
+  - type: picture-entity
+    entity: camera.guest_network
+    show_name: false
+    show_state: false
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+  - type: markdown
+    content: |-
+      Scan the QR code to the left to access WiFi, or:
+
+      **SSID:** Guest Network
+      **Password:** yourwelcome
+    title: Connect to WiFi
+columns: 2
+```
