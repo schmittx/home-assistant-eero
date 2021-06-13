@@ -52,7 +52,7 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
         if not self.resource.wireless or include_wireless_in_names:
             return f"{self.network.name} {self.resource.name_connection_type}"
         else:
-            return f"{self.network.name}"
+            return f"{self.network.name} {self.resource.name}"
 
 
     @property
@@ -80,6 +80,6 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type
             attrs["ip_address"] = self.resource.ip
-            attrs["host_name"] = self.resource.host_name
+#            attrs["host_name"] = self.resource.host_name
             attrs["network_name"] = self.network.name_long
         return attrs

@@ -143,6 +143,7 @@ class Client(Resource):
 
     @property
     def name_connection_type(self):
+        # since eero is by design a wireless router, ONLY include connection type suffix
         return f"{self.name} ({self.connection_type.title()})"
 
     @property
