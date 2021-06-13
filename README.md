@@ -8,10 +8,10 @@ Custom component to allow control of [Eero](https://eero.com) wireless networks 
 - [@jrlucier's eero_tracker project](https://github.com/jrlucier/eero_tracker) - Initial Home Assistant idea
 
 ## Install
-
-1. Use [HACS](https://hacs.xyz/) and add as a custom repo.
-2. Once the integration is installed, follow the standard setup process via UI and search for `eero`.
-3. Follow the prompts.
+1. Ensure Home Assistant is updated to version 2021.4.0 or newer.
+2. Use [HACS](https://hacs.xyz/) and add as a custom repo.
+3. Once the integration is installed, follow the standard setup process via UI and search for `eero`.
+4. Follow the prompts.
 
 ## Options
 

@@ -6,6 +6,32 @@ from .resource import Resource
 class Profile(Resource):
 
     @property
+    def ad_block(self):
+        return all(
+            [
+                self.network.ad_block_enabled,
+                self.url in self.network.ad_block_profiles,
+            ]
+        )
+
+    @ad_block.setter
+    def ad_block(self, value):
+        enable = bool(value)
+        profiles = self.network.ad_block_profiles
+        if value:
+            profiles.append(self.url)
+        else:
+            profiles.remove(self.url)
+            if profiles:
+                enable = True
+
+        return self.api.call(
+            method="post",
+            url=f"{self.network.url_dns_policies}/adblock",
+            json=dict(enable=enable, profiles=profiles),
+        )
+
+    @property
     def adblock_day(self):
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("adblock_day", []):
             if profile["insights_url"] == self.url_insights:
