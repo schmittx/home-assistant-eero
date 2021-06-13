@@ -37,4 +37,5 @@ Custom component to allow control of [Eero](https://eero.com) wireless networks 
 
 ## See Also
 
-* [eero Home Assistant Support Forum](https://community.home-assistant.io/t/new-custom-component-eero-integration/244583)
+* [eero Integration Support](https://community.home-assistant.io/t/new-custom-component-eero-integration/244583)
+* [eero Home Assistant Forum](https://community.home-assistant.io/t/eero-support/21153)
