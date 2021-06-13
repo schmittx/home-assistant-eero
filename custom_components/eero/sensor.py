@@ -1,6 +1,7 @@
 """Support for Eero sensor entities."""
 import logging
 
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import PERCENTAGE
 
 from . import EeroEntity
@@ -65,6 +66,14 @@ BASIC_TYPES = {
 }
 
 PREMIUM_TYPES = {
+    "ad_block_status": [
+        "Ad Blocking Status",
+        None,
+        None,
+    ],
+}
+
+PREMIUM_ACTIVITY_TYPES = {
     "adblock_day": [
         "Ad Blocks Day",
         None,
@@ -127,7 +136,7 @@ PREMIUM_TYPES = {
     ],
 }
 
-SENSOR_TYPES = {**BASIC_TYPES, **PREMIUM_TYPES}
+SENSOR_TYPES = {**BASIC_TYPES, **PREMIUM_TYPES, **PREMIUM_ACTIVITY_TYPES}
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -150,7 +159,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 for variable in SENSOR_TYPES:
                     if variable in PREMIUM_TYPES and not network.premium_status_active:
                         continue
-                    elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_NETWORK, []):
+                    elif variable in PREMIUM_ACTIVITY_TYPES and not network.premium_status_active:
+                        continue
+                    elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_NETWORK, []):
                         continue
                     elif hasattr(network, variable):
                         entities.append(EeroSensor(coordinator, network, None, variable))
@@ -160,7 +171,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
                         for variable in SENSOR_TYPES:
                             if variable in PREMIUM_TYPES and not network.premium_status_active:
                                 continue
-                            elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_EEROS, []):
+                            elif variable in PREMIUM_ACTIVITY_TYPES and not network.premium_status_active:
+                                continue
+                            elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_EEROS, []):
                                 continue
                             elif hasattr(eero, variable):
                                 entities.append(EeroSensor(coordinator, network, eero, variable))
@@ -170,7 +183,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
                         for variable in SENSOR_TYPES:
                             if variable in PREMIUM_TYPES and not network.premium_status_active:
                                 continue
-                            elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_PROFILES, []):
+                            elif variable in PREMIUM_ACTIVITY_TYPES and not network.premium_status_active:
+                                continue
+                            elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_PROFILES, []):
                                 continue
                             elif hasattr(profile, variable):
                                 entities.append(EeroSensor(coordinator, network, profile, variable))
@@ -180,7 +195,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
                         for variable in SENSOR_TYPES:
                             if variable in PREMIUM_TYPES and not network.premium_status_active:
                                 continue
-                            elif variable in PREMIUM_TYPES and variable not in activity.get(CONF_ACTIVITY_CLIENTS, []):
+                            elif variable in PREMIUM_ACTIVITY_TYPES and not network.premium_status_active:
+                                continue
+                            elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_CLIENTS, []):
                                 continue
                             elif hasattr(client, variable):
                                 entities.append(EeroSensor(coordinator, network, client, variable))
@@ -190,7 +207,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(await hass.async_add_job(get_entities), True)
 
 
-class EeroSensor(EeroEntity):
+class EeroSensor(SensorEntity, EeroEntity):
     """Representation of an Eero sensor entity."""
 
     @property
@@ -241,10 +258,8 @@ class EeroSensor(EeroEntity):
             down, up = getattr(self.resource, self.variable)
             attrs["download"], attrs["download_units"] = format_data_usage(down)
             attrs["upload"], attrs["upload_units"] = format_data_usage(up)
-        elif self.variable == "nightlight_status":
-            if self.resource.nightlight_schedule_enabled:
-                schedule = self.resource.nightlight_schedule
-                attrs["on"], attrs["off"] = schedule
+        elif self.variable == "nightlight_status" and self.resource.nightlight_schedule_enabled:
+            attrs["on"], attrs["off"] = self.resource.nightlight_schedule
         elif self.variable in ["speed_down", "speed_up"]:
             attrs["last_updated"] = self.resource.speed_date
         elif self.variable == "status" and self.resource.is_network:

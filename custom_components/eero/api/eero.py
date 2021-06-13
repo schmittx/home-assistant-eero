@@ -1,6 +1,10 @@
 """Eero API"""
 from .resource import Resource
 
+STATE_AMBIENT = "ambient"
+STATE_DISABLED = "disabled"
+STATE_SCHEDULE = "schedule"
+
 
 class Eero(Resource):
 
@@ -124,10 +128,10 @@ class EeroBeacon(Eero):
     @property
     def nightlight_status(self):
         if not self.nightlight_enabled:
-            return "disabled"
+            return STATE_DISABLED
         elif not self.nightlight_schedule_enabled:
-            return "ambient"
-        return "schedule"
+            return STATE_AMBIENT
+        return STATE_SCHEDULE
 
     def set_nightlight_ambient(self):
         json = dict(enabled=True, schedule=dict(enabled=False))

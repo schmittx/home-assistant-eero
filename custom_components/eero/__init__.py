@@ -394,7 +394,7 @@ class EeroEntity(CoordinatorEntity):
             "manufacturer": MANUFACTURER,
             "model": model,
         }
-        if hasattr(self.resource, "os_version"):
+        if self.resource.is_eero:
             device_info["sw_version"] = self.resource.os_version
         if any(
             [
