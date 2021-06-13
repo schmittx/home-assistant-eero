@@ -1,14 +1,16 @@
 # Eero Home Assistant Integration
 
-Custom component to allow control of Eero networks in [Home Assistant](https://home-assistant.io).
+Custom component to allow control of [Eero](https://eero.com) networks in [Home Assistant](https://home-assistant.io).
+
 ## Credit
 
 - [@343max's eero-client project](https://github.com/343max/eero-client) - Basic API auth and refresh methods
 - [@jrlucier's eero_tracker project](https://github.com/jrlucier/eero_tracker) - Initial Home Assistant idea
+
 ## Install
 
 1. Use [HACS](https://hacs.xyz/) and add as a custom repo.
-2. Once the integration is installed follow the standard process to setup via UI and search for `eero`.
+2. Once the integration is installed, follow the standard setup process via UI and search for `eero`.
 3. Follow the prompts.
 
 ## Options
