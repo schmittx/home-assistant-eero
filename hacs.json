@@ -1,5 +1,5 @@
 {
-	"name": "eero",
+	"name": "eero Wireless",
 	"content_in_root": false,
 	"iot_class": "Cloud Polling",
 	"render_readme": true

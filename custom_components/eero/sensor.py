@@ -213,11 +213,22 @@ class EeroSensor(SensorEntity, EeroEntity):
     @property
     def name(self):
         """Return the name of the entity."""
+        sensor_type = SENSOR_TYPES[self.variable][0]
+
         if self.resource.is_client:
-            return f"{self.network.name} {self.resource.name_connection_type} {SENSOR_TYPES[self.variable][0]}"
+            name = self.resource.name
+            
+            # Since eero is a WiFi router, only add the connection type annotation to the device name
+            # for non-wireless devices.
+            if not self.resource.wireless:
+                name = self.resource.name_connection_type
+                
+            return f"{self.network.name} {name} {sensor_type}"
+
         elif self.resource.is_eero or self.resource.is_profile:
-            return f"{self.network.name} {self.resource.name} {SENSOR_TYPES[self.variable][0]}"
-        return f"{self.resource.name} {SENSOR_TYPES[self.variable][0]}"
+            return f"{self.network.name} {self.resource.name} {sensor_type}"
+        
+        return f"{self.resource.name} {sensor_type}"
 
     @property
     def device_class(self):

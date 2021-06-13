@@ -136,11 +136,22 @@ class EeroSwitch(SwitchEntity, EeroEntity):
     @property
     def name(self):
         """Return the name of the entity."""
+        switch_type = SWITCH_TYPES[self.variable][0]
+
         if self.resource.is_client:
-            return f"{self.network.name} {self.resource.name_connection_type} {SWITCH_TYPES[self.variable][0]}"
+            name = self.resource.name
+            
+            # Since eero is a WiFi router, only add the connection type annotation to the device name
+            # for non-wireless devices.
+            if not self.resource.wireless:
+                name = self.resource.name_connection_type
+
+            return f"{self.network.name} {name} {switch_type}"
+
         elif self.resource.is_eero or self.resource.is_profile:
-            return f"{self.network.name} {self.resource.name} {SWITCH_TYPES[self.variable][0]}"
-        return f"{self.resource.name} {SWITCH_TYPES[self.variable][0]}"
+            return f"{self.network.name} {self.resource.name} {switch_type}"
+
+        return f"{self.resource.name} {switch_type}"
 
     @property
     def device_class(self):
