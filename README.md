@@ -1,6 +1,6 @@
 # Eero Home Assistant Integration
 
-Custom component to allow control of [Eero](https://eero.com) networks in [Home Assistant](https://home-assistant.io).
+Custom component to allow control of [Eero](https://eero.com) wireless networks in [Home Assistant](https://home-assistant.io).
 
 ## Credit
 
@@ -34,3 +34,7 @@ Custom component to allow control of [Eero](https://eero.com) networks in [Home 
 ## Coming Soon
 
 - TBD, feature requests are welcome.
+
+## See Also
+
+* [eero Home Assistant Support Forum](https://community.home-assistant.io/t/new-custom-component-eero-integration/244583)
