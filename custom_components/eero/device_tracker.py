@@ -46,13 +46,14 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
 
         # Since eero is a WiFi router, only add the connection type suffix to the device name
         # for non-wireless devices.
-        #
+        name = self.resource.name
+
         # FIXME: add backwards compatiblity mode to keep wireless name suffixes
         include_wireless_in_names = False
         if not self.resource.wireless or include_wireless_in_names:
-            return f"{self.network.name} {self.resource.name_connection_type}"
-        else:
-            return f"{self.network.name} {self.resource.name}"
+            name = self.resource.name_connection_type
+            
+        return f"{self.network.name} {name}"
 
 
     @property
