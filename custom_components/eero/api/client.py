@@ -4,89 +4,60 @@ from .resource import Resource
 
 class Client(Resource):
 
-    @property
-    def adblock_day(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("adblock_day", []):
+    def _network_activity(self, aspect)):
+        for device in self.network.data.get("activity", {}).get("network", {}).get(aspect, []):
             if device["insights_url"] == self.url_insights:
                 return device["sum"]
         return None
+    
+    @property
+    def adblock_day(self):
+        return self._network_activity("adblock_day")
 
     @property
     def adblock_month(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("adblock_month", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("adblock_month")
 
     @property
     def adblock_week(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("adblock_week", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("adblock_week")
 
     @property
     def blocked_day(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("blocked_day", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("blocked_day")
 
     @property
     def blocked_month(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("blocked_month", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("blocked_month")
 
     @property
     def blocked_week(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("blocked_week", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("blocked_week")
 
     @property
     def adblock_day(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("adblock_day", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("adblock_day")
 
     @property
     def adblock_month(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("adblock_month", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("adblock_month")
 
     @property
     def adblock_week(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("adblock_week", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("adblock_week")
 
     @property
     def blocked_day(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("blocked_day", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("blocked_day")
 
     @property
     def blocked_month(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("blocked_month", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("blocked_month")
 
     @property
     def blocked_week(self):
-        for device in self.network.data.get("activity", {}).get("network", {}).get("blocked_week", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._network_activity("blocked_week")
+    
     @property
     def connected(self):
         return self.data.get("connected")
@@ -97,21 +68,21 @@ class Client(Resource):
 
     @property
     def data_usage_day(self):
-        for device in self.network.data.get("activity", {}).get("devices", {}).get("data_usage_day", []):
+        for device in self._devices_activity.get("data_usage_day", []):
             if device["url"] == self.url:
                 return (device["download"], device["upload"])
         return (None, None)
 
     @property
     def data_usage_month(self):
-        for device in self.network.data.get("activity", {}).get("devices", {}).get("data_usage_month", []):
+        for device in self._devices_activity.get("data_usage_month", []):
             if device["url"] == self.url:
                 return (device["download"], device["upload"])
         return (None, None)
 
     @property
     def data_usage_week(self):
-        for device in self.network.data.get("activity", {}).get("devices", {}).get("data_usage_week", []):
+        for device in self._devices_activity.get("data_usage_week", []):
             if device["url"] == self.url:
                 return (device["download"], device["upload"])
         return (None, None)
@@ -123,27 +94,24 @@ class Client(Resource):
     @property
     def hostname(self):
         return self.data.get("hostname")
-
-    @property
-    def inspected_day(self):
-        for device in self.network.data.get("activity", {}).get("devices", {}).get("inspected_day", []):
+    
+    def _device_activity(self, aspect):
+        for device in self.network.data.get("activity", {}).get("devices", {}).get(aspect, []):
             if device["insights_url"] == self.url_insights:
                 return device["sum"]
         return None
+    
+    @property
+    def inspected_day(self):
+        return self._device_activity("inspected_day"):
 
     @property
     def inspected_month(self):
-        for device in self.network.data.get("activity", {}).get("devices", {}).get("inspected_month", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._device_activity("inspected_month"):
 
     @property
     def inspected_week(self):
-        for device in self.network.data.get("activity", {}).get("devices", {}).get("inspected_week", []):
-            if device["insights_url"] == self.url_insights:
-                return device["sum"]
-        return None
+        return self._device_activity("inspected_week"):
 
     @property
     def ip(self):
