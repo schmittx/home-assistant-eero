@@ -48,7 +48,7 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
         # for non-wireless devices.
         #
         # FIXME: add backwards compatiblity mode to keep wireless name suffixes
-        include_wireless_in_names = True
+        include_wireless_in_names = False
         if not self.resource.wireless or include_wireless_in_names:
             return f"{self.network.name} {self.resource.name_connection_type}"
         else:
