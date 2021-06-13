@@ -43,17 +43,27 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
     @property
     def name(self):
         """Return the name of the entity."""
-        return f"{self.network.name} {self.resource.name_connection_type}"
+
+        # Since eero is a WiFi router, only add the connection type suffix to the device name
+        # for non-wireless devices.
+        #
+        # FIXME: add backwards compatiblity mode to keep wireless name suffixes
+        include_wireless_in_names = True
+        if not self.resource.wireless or include_wireless_in_names:
+            return f"{self.network.name} {self.resource.name_connection_type}"
+        else:
+            return f"{self.network.name}"
+
 
     @property
     def is_connected(self):
         """Return true if the device tracker is connected."""
         connected = self.resource.connected
 
-        # Only return true IF the connected resource (device) is active on one of
+        # FIXME: Only return true IF the connected resource (device) is active on one of
         # the networks configured with CONF_NETWORKS.
-        #if not self.resource.network.name_long in conf_networks:
-        #    connected = False
+        # if not self.resource.network.name_long in conf_networks:
+        #     connected = False
 
         return connected
 
