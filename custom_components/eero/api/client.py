@@ -4,7 +4,7 @@ from .resource import Resource
 
 class Client(Resource):
 
-    def _network_activity(self, aspect)):
+    def _network_activity(self, aspect):
         for device in self.network.data.get("activity", {}).get("network", {}).get(aspect, []):
             if device["insights_url"] == self.url_insights:
                 return device["sum"]
