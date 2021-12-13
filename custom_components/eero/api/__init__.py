@@ -5,6 +5,8 @@ import os
 import pytz
 import requests
 
+from dateutil import relativedelta
+
 from .account import Account
 from .const import (
     ACTIVITY_MAP,
@@ -74,7 +76,7 @@ class EeroAPI(object):
             cadence = CADENCE_DAILY
         elif period == PERIOD_MONTH:
             start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            end = start.replace(month=start.month+1) - datetime.timedelta(minutes=1)
+            end = start + relativedelta.relativedelta(months=1) - datetime.timedelta(minutes=1)
             cadence = CADENCE_DAILY
         else:
             return (start, end, cadence)
