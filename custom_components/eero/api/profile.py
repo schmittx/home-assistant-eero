@@ -53,6 +53,10 @@ class Profile(Resource):
         return None
 
     @property
+    def block_apps_enabled(self):
+        return bool(self.blocked_applications)
+
+    @property
     def block_gaming_content(self):
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_gaming_content")
 
@@ -146,6 +150,17 @@ class Profile(Resource):
             method="post",
             url=self.url_dns_policies,
             json=dict(block_violent_content=bool(value)),
+        )
+
+    @property
+    def blocked_applications(self):
+        return self.data.get("premium_dns", {}).get("blocked_applications")
+
+    def set_blocked_applications(self, blocked_applications):
+        return self.api.call(
+            method="put",
+            url=f"{self.url_dns_policies}/applications/blocked",
+            json=dict(applications=blocked_applications),
         )
 
     @property

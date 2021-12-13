@@ -1,15 +1,17 @@
 """The Eero integration."""
-from datetime import timedelta
 import async_timeout
-import asyncio
+from collections.abc import Mapping
+from datetime import timedelta
 import logging
+from typing import Any
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_ATTRIBUTION, ATTR_MODE, CONF_NAME, CONF_SCAN_INTERVAL
+from homeassistant.const import ATTR_MODE, CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -17,12 +19,16 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .api import EeroAPI, EeroException
+from .api.network import Network as EeroNetwork
+from .api.resource import Resource as EeroResource
 from .const import (
     ACTIVITY_MAP_TO_HASS,
+    ATTR_BLOCKED_APPS,
     ATTR_DNS_CACHING_ENABLED,
     ATTR_IPV6_ENABLED,
     ATTR_TARGET_EERO,
     ATTR_TARGET_NETWORK,
+    ATTR_TARGET_PROFILE,
     ATTR_THREAD_ENABLED,
     ATTR_TIME_OFF,
     ATTR_TIME_ON,
@@ -60,7 +66,9 @@ from .const import (
     SERVICE_ENABLE_THREAD,
     SERVICE_RESTART_EERO,
     SERVICE_RESTART_NETWORK,
+    SERVICE_SET_BLOCKED_APPS,
     SERVICE_SET_NIGHTLIGHT_MODE,
+    SUPPORTED_APPS,
     UNDO_UPDATE_LISTENER,
 )
 from .util import validate_time_format
@@ -99,6 +107,14 @@ RESTART_NETWORK_SCHEMA = vol.Schema(
     }
 )
 
+SET_BLOCKED_APPS_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_BLOCKED_APPS): vol.All(cv.ensure_list, [vol.In(SUPPORTED_APPS)]),
+        vol.Optional(ATTR_TARGET_PROFILE, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
+        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
+    }
+)
+
 SET_NIGHTLIGHT_MODE_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_MODE): vol.In(NIGHTLIGHT_MODES),
@@ -114,15 +130,8 @@ PLATFORMS = ["binary_sensor", "camera", "device_tracker", "sensor", "switch"]
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the Eero component."""
-    return True
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up a config entry."""
-    hass.data.setdefault(DOMAIN, {})
-
     data = entry.data
     options = entry.options
 
@@ -186,6 +195,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
     await coordinator.async_refresh()
 
+    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_NETWORKS: conf_networks,
         CONF_EEROS: conf_eeros,
@@ -228,6 +238,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         for network in _validate_network(target_network=service.data[ATTR_TARGET_NETWORK]):
             network.reboot()
 
+    async def async_set_blocked_apps(service):
+        blocked_apps = service.data[ATTR_BLOCKED_APPS]
+        for profile in _validate_profile(
+            target_profile=service.data[ATTR_TARGET_PROFILE],
+            target_network=service.data[ATTR_TARGET_NETWORK],
+        ):
+            await hass.async_add_executor_job(profile.set_blocked_applications, blocked_apps)
+        await coordinator.async_request_refresh()
+
     async def async_set_nightlight_mode(service):
         mode = service.data[ATTR_MODE]
         for eero in _validate_eero(
@@ -265,6 +284,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             if any([not target_network, network.id in target_network, network.name in target_network]):
                 validated_network.append(network)
         return validated_network
+
+    def _validate_profile(target_profile, target_network):
+        validated_profile = []
+        for network in _validate_network(target_network=target_network):
+            for profile in network.profiles:
+                if any([not target_profile, profile.id in target_profile, profile.name in target_profile]):
+                    validated_profile.append(profile)
+        return validated_profile
 
     if conf_networks:
         hass.services.async_register(
@@ -311,27 +338,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 schema=SET_NIGHTLIGHT_MODE_SCHEMA,
             )
 
-    for platform in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, platform)
+    if conf_profiles:
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_SET_BLOCKED_APPS,
+            async_set_blocked_apps,
+            schema=SET_BLOCKED_APPS_SCHEMA,
         )
+
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
-    unload_ok = all(
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, platform)
-                for platform in PLATFORMS
-            ]
-        )
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        entry, PLATFORMS
     )
-    hass.data[DOMAIN][entry.entry_id][UNDO_UPDATE_LISTENER]()
-
     if unload_ok:
+        hass.data[DOMAIN][entry.entry_id][UNDO_UPDATE_LISTENER]()
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
@@ -343,40 +369,43 @@ async def async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
 
 
 class EeroEntity(CoordinatorEntity):
-    """Representation of a Eero entity."""
-    def __init__(self, coordinator, network, resource, variable):
+    """Representation of an Eero entity."""
+    def __init__(self, coordinator, network_id, resource_id, variable):
         """Initialize device."""
         super().__init__(coordinator)
-        self._network = network
-        self._resource = resource
+        self.network_id = network_id
+        self.resource_id = resource_id
         self.variable = variable
 
     @property
-    def network(self):
+    def network(self) -> EeroNetwork:
         """Return the state attributes."""
         for network in self.coordinator.data.networks:
-            if network.id == self._network.id:
+            if network.id == self.network_id:
                 return network
 
     @property
-    def resource(self):
+    def resource(self) -> EeroResource:
         """Return the state attributes."""
-        if self._resource:
+        if self.resource_id:
             for resource in self.network.resources:
-                if resource.id == self._resource.id:
+                if resource.id == self.resource_id:
                     return resource
         return self.network
 
     @property
-    def unique_id(self):
-        """Return the unique ID of the entity."""
+    def unique_id(self) -> str:
+        """Return a unique ID."""
         if self.resource.is_network:
             return f"{self.network.id}-{self.variable}"
         return f"{self.network.id}-{self.resource.id}-{self.variable}"
 
     @property
-    def device_info(self):
-        """Return information about the device."""
+    def device_info(self) -> DeviceInfo:
+        """Return device specific attributes.
+
+        Implemented by platform classes.
+        """
         name = self.resource.name
         if self.resource.is_network:
             model = MODEL_NETWORK
@@ -388,14 +417,9 @@ class EeroEntity(CoordinatorEntity):
             model = MODEL_CLIENT
             name = self.resource.name_connection_type
 
-        device_info = {
-            "identifiers": {(DOMAIN, self.resource.id)},
-            "name": name,
-            "manufacturer": MANUFACTURER,
-            "model": model,
-        }
+        sw_version, via_device = None, None
         if self.resource.is_eero:
-            device_info["sw_version"] = self.resource.os_version
+            sw_version = self.resource.os_version
         if any(
             [
                 self.resource.is_eero,
@@ -403,14 +427,29 @@ class EeroEntity(CoordinatorEntity):
                 self.resource.is_client,
             ]
         ):
-            device_info["via_device"] = (DOMAIN, self.network.id)
+            via_device = (DOMAIN, self.network.id)
 
-        return device_info
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.resource.id)},
+            manufacturer=MANUFACTURER,
+            model=model,
+            name=name,
+            sw_version=sw_version,
+            via_device=via_device,
+        )
 
     @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        attrs = {
-            ATTR_ATTRIBUTION: ATTRIBUTION
-        }
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return entity specific state attributes.
+
+        Implemented by platform classes. Convention for attribute names
+        is lowercase snake_case.
+        """
+        attrs = {}
         return attrs
+
+    @property
+    def attribution(self) -> str:
+        """Return the attribution."""
+        return ATTRIBUTION
+

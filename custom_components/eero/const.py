@@ -34,10 +34,12 @@ ACTIVITY_MAP_TO_HASS = {v: k for k, v in ACTIVITY_MAP_TO_EERO.items()}
 ALL_ACTIVITIES = list(ACTIVITY_MAP_TO_EERO.keys())
 DATA_USAGE_ACTIVITIES = [key for key, value in ACTIVITY_MAP_TO_EERO.items() if value in [ACTIVITY_DATA_USAGE_DAY, ACTIVITY_DATA_USAGE_MONTH, ACTIVITY_DATA_USAGE_WEEK]]
 
+ATTR_BLOCKED_APPS = "blocked_apps"
 ATTR_DNS_CACHING_ENABLED = "dns_caching_enabled"
 ATTR_IPV6_ENABLED = "ipv6_enabled"
 ATTR_TARGET_EERO = "target_eero"
 ATTR_TARGET_NETWORK = "target_network"
+ATTR_TARGET_PROFILE = "target_profile"
 ATTR_THREAD_ENABLED = "thread_enabled"
 ATTR_TIME_OFF = "time_off"
 ATTR_TIME_ON = "time_on"
@@ -87,7 +89,83 @@ SERVICE_ENABLE_IPV6 = "enable_ipv6"
 SERVICE_ENABLE_THREAD = "enable_thread"
 SERVICE_RESTART_EERO = "restart_eero"
 SERVICE_RESTART_NETWORK = "restart_network"
+SERVICE_SET_BLOCKED_APPS = "set_blocked_apps"
 SERVICE_SET_NIGHTLIGHT_MODE = "set_nightlight_mode"
+
+SUPPORTED_APPS = [
+    "activision_blizzard",
+    "alibaba",
+    "amazon",
+    "amazon_video",
+    "apple",
+    "apple_itunes",
+    "audible",
+    "badoo",
+    "blizzard",
+    "bytedance",
+    "cbs",
+    "clash_of_clans",
+    "clash_royale",
+    "costco",
+    "craigslist",
+    "discord",
+    "disney",
+    "disney_plus",
+    "disqus",
+    "ebay",
+    "electronic_arts",
+    "epic_games",
+    "etsy",
+    "facebook",
+    "facebook_messenger",
+    "gmail",
+    "google_hangouts",
+    "google_voice",
+    "hbo",
+    "hulu",
+    "iheartradio",
+    "instagram",
+    "kik",
+    "last.fm",
+    "linkedin",
+    "microsoft_outlook",
+    "microsoft_teams",
+    "minecraft",
+    "netflix",
+    "nintendo",
+    "okcupid",
+    "pandora",
+    "pinterest",
+    "playstation",
+    "plex",
+    "reddit",
+    "roblox",
+    "signal",
+    "skype",
+    "slack",
+    "snapchat",
+    "soundcloud",
+    "spotify",
+    "steam",
+    "stream",
+    "target",
+    "ticketmaster",
+    "tiktok",
+    "tinder",
+    "tumblr",
+    "twitch",
+    "twitter",
+    "ubisoft",
+    "vimeo",
+    "walmart",
+    "wechat",
+    "whatsapp",
+    "xbox",
+    "xbox_live",
+    "yahoo_mail",
+    "youtube",
+    "zoom_video",
+]
 
 UNDO_UPDATE_LISTENER = "undo_update_listener"
 

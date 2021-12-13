@@ -173,6 +173,22 @@ class Network(Resource):
         return (down, up)
 
     @property
+    def ddns_enabled(self):
+        return self.data.get("ddns", {}).get("enabled")
+
+    @ddns_enabled.setter
+    def ddns_enabled(self, value):
+        target = "enable" if value else "disable"
+        return self.api.call(
+            method="put",
+            url=f"/2.2/networks/{self.id}/ddns/{target}",
+        )
+
+    @property
+    def ddns_subdomain(self):
+        return self.data.get("ddns", {}).get("subdomain")
+
+    @property
     def dns_caching(self):
         return self.data.get("dns", {}).get("caching")
 

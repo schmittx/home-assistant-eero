@@ -1,8 +1,11 @@
 """Support for Eero sensor entities."""
+from collections.abc import Mapping
 import logging
+from typing import Any, final
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import PERCENTAGE
+from homeassistant.helpers.typing import StateType
 
 from . import EeroEntity
 from .const import (
@@ -164,7 +167,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                     elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_NETWORK, []):
                         continue
                     elif hasattr(network, variable):
-                        entities.append(EeroSensor(coordinator, network, None, variable))
+                        entities.append(EeroSensor(coordinator, network.id, None, variable))
 
                 for eero in network.eeros:
                     if eero.id in conf_eeros:
@@ -176,7 +179,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                             elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_EEROS, []):
                                 continue
                             elif hasattr(eero, variable):
-                                entities.append(EeroSensor(coordinator, network, eero, variable))
+                                entities.append(EeroSensor(coordinator, network.id, eero.id, variable))
 
                 for profile in network.profiles:
                     if profile.id in conf_profiles:
@@ -188,7 +191,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                             elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_PROFILES, []):
                                 continue
                             elif hasattr(profile, variable):
-                                entities.append(EeroSensor(coordinator, network, profile, variable))
+                                entities.append(EeroSensor(coordinator, network.id, profile.id, variable))
 
                 for client in network.clients:
                     if client.id in conf_clients:
@@ -200,7 +203,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                             elif variable in PREMIUM_ACTIVITY_TYPES and variable not in activity.get(CONF_ACTIVITY_CLIENTS, []):
                                 continue
                             elif hasattr(client, variable):
-                                entities.append(EeroSensor(coordinator, network, client, variable))
+                                entities.append(EeroSensor(coordinator, network.id, client.id, variable))
 
         return entities
 
@@ -211,7 +214,7 @@ class EeroSensor(SensorEntity, EeroEntity):
     """Representation of an Eero sensor entity."""
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the entity."""
         if self.resource.is_client:
             return f"{self.network.name} {self.resource.name_connection_type} {SENSOR_TYPES[self.variable][0]}"
@@ -220,13 +223,13 @@ class EeroSensor(SensorEntity, EeroEntity):
         return f"{self.resource.name} {SENSOR_TYPES[self.variable][0]}"
 
     @property
-    def device_class(self):
-        """Return the device class of the sensor."""
+    def device_class(self) -> SensorDeviceClass:
+        """Return the class of this entity."""
         return SENSOR_TYPES[self.variable][1]
 
     @property
-    def state(self):
-        """Return the state of the sensor."""
+    def state(self) -> StateType:
+        """Return the state of the entity."""
         if self.variable in ["blocked_day", "blocked_month", "blocked_week"] and self.resource.is_network:
             return getattr(self.resource, self.variable)["blocked"]
         elif self.variable in ["data_usage_day", "data_usage_month", "data_usage_week"]:
@@ -236,9 +239,10 @@ class EeroSensor(SensorEntity, EeroEntity):
             return round(getattr(self.resource, self.variable)[0])
         return getattr(self.resource, self.variable)
 
+    @final
     @property
-    def unit_of_measurement(self):
-        """Return the unit the value is expressed in."""
+    def unit_of_measurement(self) -> str:
+        """Return the unit of measurement of the entity, after unit conversion."""
         if self.variable in ["data_usage_day", "data_usage_month", "data_usage_week"]:
             down, up = getattr(self.resource, self.variable)
             return format_data_usage(down + up)[1]
@@ -247,8 +251,13 @@ class EeroSensor(SensorEntity, EeroEntity):
         return SENSOR_TYPES[self.variable][2]
 
     @property
-    def device_state_attributes(self):
-        attrs = super().device_state_attributes
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return entity specific state attributes.
+
+        Implemented by platform classes. Convention for attribute names
+        is lowercase snake_case.
+        """
+        attrs = super().extra_state_attributes
         if self.variable in ["blocked_day", "blocked_month", "blocked_week"] and self.resource.is_network:
             data = getattr(self.resource, self.variable)
             for key, value in data.items():

@@ -1,5 +1,7 @@
 """Support for Eero device tracker entities."""
+from collections.abc import Mapping
 import logging
+from typing import Any
 
 from homeassistant.components.device_tracker.config_entry import ScannerEntity
 from homeassistant.components.device_tracker.const import SOURCE_TYPE_ROUTER
@@ -30,7 +32,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             if network.id in conf_networks:
                 for client in network.clients:
                     if client.id in conf_clients:
-                        entities.append(EeroDeviceTracker(coordinator, network, client, "device_tracker"))
+                        entities.append(EeroDeviceTracker(coordinator, network.id, client.id, "device_tracker"))
 
         return entities
 
@@ -41,23 +43,28 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
     """Representation of an Eero device tracker entity."""
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the entity."""
         return f"{self.network.name} {self.resource.name_connection_type}"
 
     @property
-    def is_connected(self):
-        """Return true if the device tracker is connected."""
+    def is_connected(self) -> bool:
+        """Return true if the device is connected to the network."""
         return self.resource.connected
 
     @property
-    def source_type(self):
+    def source_type(self) -> str:
         """Return the source type, eg gps or router, of the device."""
         return SOURCE_TYPE_ROUTER
 
     @property
-    def device_state_attributes(self):
-        attrs = super().device_state_attributes
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return entity specific state attributes.
+
+        Implemented by platform classes. Convention for attribute names
+        is lowercase snake_case.
+        """
+        attrs = super().extra_state_attributes
         if self.is_connected:
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type

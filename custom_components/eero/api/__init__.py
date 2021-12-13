@@ -1,11 +1,10 @@
 """Eero API"""
 import datetime
+from dateutil import relativedelta
 import json
 import os
 import pytz
 import requests
-
-from dateutil import relativedelta
 
 from .account import Account
 from .const import (
@@ -68,11 +67,11 @@ class EeroAPI(object):
         now = datetime.datetime.now(tz=pytz.timezone(timezone))
         if period == PERIOD_DAY:
             start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            end = start.replace(day=start.day+1) - datetime.timedelta(minutes=1)
+            end = start + relativedelta.relativedelta(days=1) - datetime.timedelta(minutes=1)
             cadence = CADENCE_HOURLY
         elif period == PERIOD_WEEK:
             start = now.replace(day=now.day-(now.weekday()+1), hour=0, minute=0, second=0, microsecond=0)
-            end = start.replace(day=start.day+7) - datetime.timedelta(minutes=1)
+            end = start + relativedelta.relativedelta(weeks=1) - datetime.timedelta(minutes=1)
             cadence = CADENCE_DAILY
         elif period == PERIOD_MONTH:
             start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)

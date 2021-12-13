@@ -1,7 +1,9 @@
 """Support for Eero switch entities."""
+from collections.abc import Mapping
 import logging
+from typing import Any
 
-from homeassistant.components.switch import DEVICE_CLASS_SWITCH, SwitchEntity
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 
 from . import EeroEntity
 from .const import (
@@ -70,6 +72,9 @@ PREMIUM_TYPES = {
     "block_violent_content": [
         "Violent Content Filter",
     ],
+    "ddns_enabled": [
+        "Dynamic DNS",
+    ],
     "safe_search_enabled": [
         "SafeSearch Content Filter",
     ],
@@ -99,7 +104,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                     if variable in PREMIUM_TYPES and not network.premium_status_active:
                         continue
                     elif hasattr(network, variable):
-                        entities.append(EeroSwitch(coordinator, network, None, variable))
+                        entities.append(EeroSwitch(coordinator, network.id, None, variable))
 
                 for eero in network.eeros:
                     if eero.id in conf_eeros:
@@ -107,7 +112,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                             if variable in PREMIUM_TYPES and not network.premium_status_active:
                                 continue
                             elif hasattr(eero, variable):
-                                entities.append(EeroSwitch(coordinator, network, eero, variable))
+                                entities.append(EeroSwitch(coordinator, network.id, eero.id, variable))
 
                 for profile in network.profiles:
                     if profile.id in conf_profiles:
@@ -115,7 +120,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                             if variable in PREMIUM_TYPES and not network.premium_status_active:
                                 continue
                             elif hasattr(profile, variable):
-                                entities.append(EeroSwitch(coordinator, network, profile, variable))
+                                entities.append(EeroSwitch(coordinator, network.id, profile.id, variable))
 
                 for client in network.clients:
                     if client.id in conf_clients:
@@ -123,7 +128,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                             if variable in PREMIUM_TYPES and not network.premium_status_active:
                                 continue
                             elif hasattr(client, variable):
-                                entities.append(EeroSwitch(coordinator, network, client, variable))
+                                entities.append(EeroSwitch(coordinator, network.id, client.id, variable))
 
         return entities
 
@@ -134,7 +139,7 @@ class EeroSwitch(SwitchEntity, EeroEntity):
     """Representation of an Eero switch entity."""
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the entity."""
         if self.resource.is_client:
             return f"{self.network.name} {self.resource.name_connection_type} {SWITCH_TYPES[self.variable][0]}"
@@ -143,35 +148,44 @@ class EeroSwitch(SwitchEntity, EeroEntity):
         return f"{self.resource.name} {SWITCH_TYPES[self.variable][0]}"
 
     @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_SWITCH
+    def device_class(self) -> SwitchDeviceClass:
+        """Return the class of this entity."""
+        return SwitchDeviceClass.SWITCH
 
     @property
-    def is_on(self):
-        """Return true if the switch is on."""
+    def is_on(self) -> bool:
+        """Return True if entity is on."""
         return bool(getattr(self.resource, self.variable))
 
     @property
-    def device_state_attributes(self):
-        attrs = super().device_state_attributes
-        if self.variable == "guest_network_enabled" and self.is_on:
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return entity specific state attributes.
+
+        Implemented by platform classes. Convention for attribute names
+        is lowercase snake_case.
+        """
+        attrs = super().extra_state_attributes
+        if self.variable == "ddns_enabled" and self.is_on:
+            attrs["domain"] = self.resource.ddns_subdomain
+        elif self.variable == "guest_network_enabled" and self.is_on:
             attrs["guest_network_name"] = self.resource.guest_network_name
             attrs["connected_guest_clients"] = self.resource.connected_guest_clients_count
         return attrs
 
-    def turn_on(self, **kwargs):
-        """Turn the device on."""
+    def turn_on(self, **kwargs: Any) -> None:
+        """Turn the entity on."""
         setattr(self.resource, self.variable, True)
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the entity on."""
         await super().async_turn_on()
         await self.coordinator.async_request_refresh()
 
-    def turn_off(self, **kwargs):
-        """Turn the device off."""
+    def turn_off(self, **kwargs: Any) -> None:
+        """Turn the entity off."""
         setattr(self.resource, self.variable, False)
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the entity off."""
         await super().async_turn_off()
         await self.coordinator.async_request_refresh()

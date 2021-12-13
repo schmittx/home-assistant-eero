@@ -1,8 +1,9 @@
 """Support for Eero camera entities."""
+from collections.abc import Mapping
 import io
 import logging
-import png
 import pyqrcode
+from typing import Any, final
 
 from homeassistant.components.camera import Camera
 
@@ -44,7 +45,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         for network in coordinator.data.networks:
             if network.id in conf_networks:
                 for variable in CAMERA_TYPES:
-                    entities.append(EeroCamera(coordinator, network, None, variable))
+                    entities.append(EeroCamera(coordinator, network.id, None, variable))
 
         return entities
 
@@ -60,12 +61,13 @@ class EeroCamera(EeroEntity, Camera):
         Camera.__init__(self)
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the entity."""
         return getattr(self.resource, CAMERA_TYPES[self.variable][0])
 
+    @final
     @property
-    def state(self):
+    def state(self) -> str:
         """Return the camera state."""
         if all(
             [
@@ -77,13 +79,18 @@ class EeroCamera(EeroEntity, Camera):
         return STATE_ENABLED
 
     @property
-    def device_state_attributes(self):
-        attrs = super().device_state_attributes
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return entity specific state attributes.
+
+        Implemented by platform classes. Convention for attribute names
+        is lowercase snake_case.
+        """
+        attrs = super().extra_state_attributes
         attrs["ssid"] = getattr(self.resource, CAMERA_TYPES[self.variable][0])
         return attrs
 
-    def camera_image(self):
-        """Process the image."""
+    def camera_image(self, width: int, height: int) -> bytes:
+        """Return bytes of camera image."""
         if self.state == STATE_ENABLED:
             return self.qr_code()
         return open(EERO_LOGO_ICON, "rb").read()
