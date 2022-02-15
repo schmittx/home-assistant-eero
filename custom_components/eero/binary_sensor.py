@@ -121,7 +121,7 @@ class EeroBinarySensor(BinarySensorEntity, EeroEntity):
         return getattr(self.resource, self.variable)
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         attrs = super().device_state_attributes
         if self.variable == "update_available":
             if self.resource.is_eero:

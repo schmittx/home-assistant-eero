@@ -77,7 +77,7 @@ class EeroCamera(EeroEntity, Camera):
         return STATE_ENABLED
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         attrs = super().device_state_attributes
         attrs["ssid"] = getattr(self.resource, CAMERA_TYPES[self.variable][0])
         return attrs

@@ -71,7 +71,7 @@ class EeroDeviceTracker(ScannerEntity, EeroEntity):
         return SOURCE_TYPE_ROUTER
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         attrs = super().device_state_attributes
         if self.is_connected:
             attrs["network"] = self.network.name_long

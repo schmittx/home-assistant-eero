@@ -258,7 +258,7 @@ class EeroSensor(SensorEntity, EeroEntity):
         return SENSOR_TYPES[self.variable][2]
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         attrs = super().device_state_attributes
         if self.variable in ["blocked_day", "blocked_month", "blocked_week"] and self.resource.is_network:
             data = getattr(self.resource, self.variable)

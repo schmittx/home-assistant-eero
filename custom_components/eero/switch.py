@@ -164,7 +164,7 @@ class EeroSwitch(SwitchEntity, EeroEntity):
         return bool(getattr(self.resource, self.variable))
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         attrs = super().device_state_attributes
         if self.variable == "guest_network_enabled" and self.is_on:
             attrs["guest_network_name"] = self.resource.guest_network_name
