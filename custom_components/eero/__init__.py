@@ -146,8 +146,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         conf_eeros, conf_profiles, conf_clients = [], [], []
     conf_identifiers = [(DOMAIN, resource_id) for resource_id in conf_networks + conf_eeros + conf_profiles + conf_clients]
 
-    device_registry = await hass.helpers.device_registry.async_get_registry()
-    entity_registry = await hass.helpers.entity_registry.async_get_registry()
+    device_registry = await hass.helpers.device_registry.async_get()
+    entity_registry = await hass.helpers.entity_registry.async_get()
     for device_entry in hass.helpers.device_registry.async_entries_for_config_entry(device_registry, entry.entry_id):
         if all([bool(resource_id not in conf_identifiers) for resource_id in device_entry.identifiers]):
             device_registry.async_remove_device(device_entry.id)
