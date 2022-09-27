@@ -17,6 +17,7 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 
 ## Notes
 - This integration does not support login via Amazon account
+  * A workaround is to create another administrative account. On a separate device create a non-Amazon account, invite that account from your Amazon Eero account and then use the credential of the non-Amazon account to use this integration. 
 
 ## Currently Working
 - Multiple networks supported
