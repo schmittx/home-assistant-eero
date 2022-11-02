@@ -70,7 +70,8 @@ class EeroAPI(object):
             end = start + relativedelta.relativedelta(days=1) - datetime.timedelta(minutes=1)
             cadence = CADENCE_HOURLY
         elif period == PERIOD_WEEK:
-            start = now.replace(day=now.day-(now.weekday()+1), hour=0, minute=0, second=0, microsecond=0)
+            start = now - relativedelta.relativedelta(days=now.weekday()+1)
+            start = start.replace(hour=0, minute=0, second=0, microsecond=0)
             end = start + relativedelta.relativedelta(weeks=1) - datetime.timedelta(minutes=1)
             cadence = CADENCE_DAILY
         elif period == PERIOD_MONTH:
