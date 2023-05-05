@@ -24,8 +24,9 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .api import EeroAPI, EeroException
-from .api.network import Network as EeroNetwork
-from .api.resource import Resource as EeroResource
+from .api.const import STATE_AMBIENT, STATE_DISABLED, STATE_SCHEDULE
+from .api.network import EeroNetwork
+from .api.resource import EeroResource
 from .const import (
     ACTIVITY_MAP_TO_HASS,
     ATTR_BLOCKED_APPS,
@@ -66,9 +67,6 @@ from .const import (
     SERVICE_ENABLE_THREAD,
     SERVICE_SET_BLOCKED_APPS,
     SERVICE_SET_NIGHTLIGHT_MODE,
-    STATE_AMBIENT,
-    STATE_DISABLED,
-    STATE_SCHEDULE,
     SUPPORTED_APPS,
     UNDO_UPDATE_LISTENER,
 )
@@ -375,14 +373,14 @@ class EeroEntity(CoordinatorEntity):
         return self.network
 
     @property
-    def unique_id(self) -> str | None:
+    def unique_id(self) -> str:
         """Return a unique ID."""
         if self.resource.is_network:
             return f"{self.network.id}-{self.entity_description.key}"
         return f"{self.network.id}-{self.resource.id}-{self.entity_description.key}"
 
     @property
-    def device_info(self) -> DeviceInfo | None:
+    def device_info(self) -> DeviceInfo:
         """Return device specific attributes.
 
         Implemented by platform classes.
@@ -424,7 +422,7 @@ class EeroEntity(CoordinatorEntity):
         )
 
     @property
-    def name(self) -> str | None:
+    def name(self) -> str:
         """Return the name of the entity."""
         if self.resource.is_client:
             return f"{self.network.name} {self.resource.name_connection_type} {self.entity_description.name}"

@@ -126,20 +126,21 @@
                     "8pm_9pm": "8 PM - 9 PM",
                     "9pm_10pm": "9 PM - 10 PM",
                     "10pm_11pm": "10 PM - 11 PM",
-                    "11pm_12am": "11 PM - 12 AM"
+                    "11pm_12am": "11 PM - 12 AM",
+                    "ambient": "Ambient",
+                    "disabled": "Disabled",
+                    "schedule": "Schedule"
                 }
             }
         },
         "sensor": {
             "all": {
                 "state": {
-                    "ambient": "Ambient",
                     "connected": "Connected",
                     "disabled": "Disabled",
                     "green": "Green",
                     "network": "Network",
-                    "profiles": "Profiles",
-                    "schedule": "Schedule"
+                    "profiles": "Profiles"
                 }
             }
         }

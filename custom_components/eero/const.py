@@ -92,12 +92,6 @@ SERVICE_ENABLE_THREAD = "enable_thread"
 SERVICE_SET_BLOCKED_APPS = "set_blocked_apps"
 SERVICE_SET_NIGHTLIGHT_MODE = "set_nightlight_mode"
 
-STATE_AMBIENT = "ambient"
-STATE_DISABLED = "disabled"
-STATE_NETWORK = "network"
-STATE_PROFILE = "profile"
-STATE_SCHEDULE = "schedule"
-
 SUPPORTED_APPS = [
     "activision_blizzard",
     "alibaba",

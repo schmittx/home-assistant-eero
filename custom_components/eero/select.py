@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import EeroEntity, EeroEntityDescription
 from .const import (
+    CONF_EEROS,
     CONF_NETWORKS,
     DATA_COORDINATOR,
     DOMAIN,
@@ -27,6 +28,11 @@ SELECT_DESCRIPTIONS: list[EeroSelectEntityDescription] = [
         key="preferred_update_hour",
         name="Preferred Update Time",
         options="preferred_update_hour_options",
+    ),
+    EeroSelectEntityDescription(
+        key="nightlight_mode",
+        name="Nightlight Mode",
+        options="nightlight_mode_options",
     ),
 ]
 
@@ -59,6 +65,21 @@ async def async_setup_entry(
                             description,
                         )
                     )
+
+            for eero in network.eeros:
+                if eero.id in entry[CONF_EEROS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if description.premium_type and not network.premium_status_active:
+                            continue
+                        elif hasattr(eero, key):
+                            entities.append(
+                                EeroSelectEntity(
+                                    coordinator,
+                                    network.id,
+                                    eero.id,
+                                    description,
+                                )
+                            )
 
     async_add_entities(entities)
 

@@ -1,10 +1,12 @@
 """The Eero integration."""
+from __future__ import annotations
+
 import voluptuous as vol
 
 from .const import ERROR_TIME_FORMAT
 
 
-def format_data_usage(value):
+def format_data_usage(value) -> tuple[float, str]:
     index = 0
     power = 2**10
     units = {
@@ -19,8 +21,7 @@ def format_data_usage(value):
         index += 1
     return round(value, 1), units[index]
 
-
-def validate_time_format(value):
+def validate_time_format(value) -> str:
     """Validate time format."""
     if isinstance(value, int):
         raise vol.Invalid("Ensure time value is wrapped in quotes.")

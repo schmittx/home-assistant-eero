@@ -8,7 +8,7 @@ from homeassistant.components.number import (
     NumberEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import PERCENTAGE, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -32,6 +32,30 @@ NUMBER_DESCRIPTIONS: list[EeroNumberEntityDescription] = [
         key="nightlight_brightness_percentage",
         name="Nightlight Brightness",
         native_unit_of_measurement=PERCENTAGE,
+    ),
+    EeroNumberEntityDescription(
+        key="nightlight_schedule_on_hour",
+        name="Nightlight On Hour",
+        native_max_value=23,
+        native_unit_of_measurement=UnitOfTime.HOURS,
+    ),
+    EeroNumberEntityDescription(
+        key="nightlight_schedule_on_minute",
+        name="Nightlight On Minute",
+        native_max_value=59,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+    ),
+    EeroNumberEntityDescription(
+        key="nightlight_schedule_off_hour",
+        name="Nightlight Off Hour",
+        native_max_value=23,
+        native_unit_of_measurement=UnitOfTime.HOURS,
+    ),
+    EeroNumberEntityDescription(
+        key="nightlight_schedule_off_minute",
+        name="Nightlight Off Minute",
+        native_max_value=59,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
     ),
 ]
 
@@ -78,11 +102,11 @@ class EeroNumberEntity(NumberEntity, EeroEntity):
     @property
     def native_value(self) -> float | None:
         """Return the value reported by the number."""
-        return getattr(self.resource, self.entity_description.key)
+        return int(getattr(self.resource, self.entity_description.key))
 
     def set_native_value(self, value: float) -> None:
         """Set new value."""
-        self.resource.set_nightlight_brightness(value=int(value))
+        setattr(self.resource, self.entity_description.key, int(value))
 
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""

@@ -15,6 +15,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import EeroEntity, EeroEntityDescription
+from .api.const import STATE_DISABLED, STATE_ENABLED
 from .const import (
     CONF_NETWORKS,
     DATA_COORDINATOR,
@@ -22,8 +23,6 @@ from .const import (
     EERO_LOGO_ICON,
 )
 
-STATE_DISABLED = "disabled"
-STATE_ENABLED = "enabled"
 
 @dataclass
 class EeroCameraEntityDescription(EeroEntityDescription, CameraEntityDescription):

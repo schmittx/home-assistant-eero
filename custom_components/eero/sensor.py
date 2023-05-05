@@ -20,6 +20,15 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from . import EeroEntity, EeroEntityDescription
+from .api.const import (
+    DEVICE_CATEGORY_COMPUTERS_PERSONAL,
+    DEVICE_CATEGORY_ENTERTAINMENT,
+    DEVICE_CATEGORY_HOME,
+    DEVICE_CATEGORY_OTHER,
+    STATE_DISABLED,
+    STATE_NETWORK,
+    STATE_PROFILE,
+)
 from .const import (
     CONF_ACTIVITY,
     CONF_ACTIVITY_CLIENTS,
@@ -32,13 +41,15 @@ from .const import (
     CONF_PROFILES,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
-    STATE_AMBIENT,
-    STATE_DISABLED,
-    STATE_NETWORK,
-    STATE_PROFILE,
-    STATE_SCHEDULE,
 )
 from .util import format_data_usage
+
+DEVICE_CATEGORIES = [
+    DEVICE_CATEGORY_COMPUTERS_PERSONAL,
+    DEVICE_CATEGORY_ENTERTAINMENT,
+    DEVICE_CATEGORY_HOME,
+    DEVICE_CATEGORY_OTHER,
+]
 
 SPEED_UNIT_MAP = {
     "Kbps": UnitOfDataRate.KILOBYTES_PER_SECOND,
@@ -66,12 +77,6 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         name="Connected Guest Clients",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="clients",
-    ),
-    EeroSensorEntityDescription(
-        key="nightlight_mode",
-        name="Nightlight Mode",
-        device_class=SensorDeviceClass.ENUM,
-        options=[STATE_AMBIENT, STATE_DISABLED, STATE_SCHEDULE]
     ),
     EeroSensorEntityDescription(
         key="public_ip",
@@ -343,6 +348,9 @@ class EeroSensorEntity(EeroEntity, SensorEntity):
             attrs["total"], attrs["total_units"] = format_data_usage(down + up)
             attrs["download"], attrs["download_units"] = format_data_usage(down)
             attrs["upload"], attrs["upload_units"] = format_data_usage(up)
-        if self.native_value == STATE_SCHEDULE:
-            attrs["on"], attrs["off"] = getattr(self.resource, "nightlight_schedule")
+        if self.entity_description.key.endswith("clients_count"):
+            for category in DEVICE_CATEGORIES:
+                attr = f"{self.entity_description.key}_{category}"
+                if hasattr(self.resource, attr):
+                    attrs[category] = getattr(self.resource, attr)
         return attrs
