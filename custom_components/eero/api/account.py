@@ -1,36 +1,38 @@
 """Eero API"""
-from .network import Network
-from .resource import Resource
+from __future__ import annotations
+
+from .network import EeroNetwork
+from .resource import EeroResource
 
 
-class Account(Resource):
+class EeroAccount(EeroResource):
 
-    def __init__(self, api, data):
+    def __init__(self, api, data) -> None:
         super().__init__(api=api, network=None, data=data)
 
     @property
-    def email(self):
+    def email(self) -> str | None:
         return self.data.get("email", {}).get("value")
 
     @property
-    def log_id(self):
+    def log_id(self) -> str | None:
         return self.data.get("log_id")
 
     @property
-    def name(self):
+    def name(self) -> str | None:
         return self.data.get("name")
 
     @property
-    def phone(self):
+    def phone(self) -> str | None:
         return self.data.get("phone", {}).get("value")
 
     @property
-    def premium_status(self):
+    def premium_status(self) -> str | None:
         return self.data.get("premium_status")
 
     @property
-    def networks(self):
+    def networks(self) -> list[EeroNetwork | None]:
         networks = []
         for network in self.data.get("networks", {}).get("data", []):
-            networks.append(Network(self.api, self, network))
+            networks.append(EeroNetwork(self.api, self, network))
         return networks

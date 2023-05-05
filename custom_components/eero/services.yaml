@@ -1,51 +1,4 @@
 
-enable_dns_caching:
-  description: Enable or disable local DNS caching for an Eero network. Network(s) will be automatically restarted as a result.
-  fields:
-    dns_caching_enabled:
-      description: (Required) Target state for local DNS caching. Must be a boolean.
-      example: true
-    target_network:
-      description: (Optional) Name(s) or ID(s) of network(s) to enable local DNS caching for. Defaults to all networks if not specified.
-      example: My Network or 1234567
-
-enable_ipv6:
-  description: Enable or disable IPv6 for an Eero network. Network(s) will be automatically restarted as a result.
-  fields:
-    ipv6_enabled:
-      description: (Required) Target state for IPv6. Must be a boolean.
-      example: true
-    target_network:
-      description: (Optional) Name(s) or ID(s) of network(s) to enable IPv6 for. Defaults to all networks if not specified.
-      example: My Network or 1234567
-
-enable_thread:
-  description: Enable or disable Thread for an Eero network. Network(s) will be automatically restarted as a result.
-  fields:
-    thread_enabled:
-      description: (Required) Target state for Thread. Must be a boolean.
-      example: true
-    target_network:
-      description: (Optional) Name(s) or ID(s) of network(s) to enable Thread for. Defaults to all networks if not specified.
-      example: My Network or 1234567
-
-restart_eero:
-  description: Restart an Eero device.
-  fields:
-    target_eero:
-      description: (Optional) Name(s) or ID(s) of Eero device(s) to restart. Defaults to all Eero devices if not specified.
-      example: Living Room or 1234567
-    target_network:
-      description: (Optional) Name(s) or ID(s) of network(s) in which desired Eero device(s) are located. Defaults to all networks if not specified.
-      example: My Network or 1234567
-
-restart_network:
-  description: Restart an Eero network.
-  fields:
-    target_network:
-      description: (Optional) Name(s) or ID(s) of network(s) to restart. Defaults to all networks if not specified.
-      example: My Network or 1234567
-
 set_blocked_apps:
   description: Set the blocked apps for a profile.
   fields:
@@ -54,7 +7,7 @@ set_blocked_apps:
       example: netflix
     target_profile:
       description: (Optional) Name(s) or ID(s) of profile(s) to set. Defaults to all profiles if not specified.
-      example: Matt or 1234567
+      example: John Doe or 1234567
     target_network:
       description: (Optional) Name(s) or ID(s) of network(s) in which desired profile(s) are located. Defaults to all networks if not specified.
       example: My Network or 1234567    

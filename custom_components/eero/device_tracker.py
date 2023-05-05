@@ -1,12 +1,28 @@
 """Support for Eero device tracker entities."""
+from __future__ import annotations
+
 from collections.abc import Mapping
-import logging
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, final
 
-from homeassistant.components.device_tracker.config_entry import ScannerEntity
-from homeassistant.components.device_tracker.const import SOURCE_TYPE_ROUTER
+from homeassistant.components.device_tracker import (
+    ATTR_HOST_NAME,
+    ATTR_IP,
+    ATTR_MAC,
+    ATTR_SOURCE_TYPE,
+    SourceType,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    STATE_HOME,
+    STATE_NOT_HOME,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import StateType
 
-from . import EeroEntity
+from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_CLIENTS,
     CONF_NETWORKS,
@@ -14,60 +30,118 @@ from .const import (
     DOMAIN as EERO_DOMAIN,
 )
 
-_LOGGER = logging.getLogger(__name__)
+@dataclass
+class EeroDeviceTrackerEntityDescription(EeroEntityDescription):
+    """Class to describe an Eero device tracker entity."""
+
+    entity_category: str[EntityCategory] | None = EntityCategory.DIAGNOSTIC
+    source_type: str[SourceType] = SourceType.ROUTER
+
+DEVICE_TRACKER_DESCRIPTIONS: list[EeroDeviceTrackerEntityDescription] = [
+    EeroDeviceTrackerEntityDescription(
+        key="device_tracker",
+    ),
+]
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up an Eero device tracker entity based on a config entry."""
-    entry = hass.data[EERO_DOMAIN][entry.entry_id]
-    conf_networks = entry[CONF_NETWORKS]
-    conf_clients = entry[CONF_CLIENTS]
+    entry = hass.data[EERO_DOMAIN][config_entry.entry_id]
     coordinator = entry[DATA_COORDINATOR]
+    entities: list[EeroDeviceTrackerEntity] = []
 
-    def get_entities():
-        """Get the Eero device tracker entities."""
-        entities = []
+    SUPPORTED_KEYS = {
+        description.key: description for description in DEVICE_TRACKER_DESCRIPTIONS
+    }
 
-        for network in coordinator.data.networks:
-            if network.id in conf_networks:
-                for client in network.clients:
-                    if client.id in conf_clients:
-                        entities.append(EeroDeviceTracker(coordinator, network.id, client.id, "device_tracker"))
+    for network in coordinator.data.networks:
+        if network.id in entry[CONF_NETWORKS]:
+            for client in network.clients:
+                if client.id in entry[CONF_CLIENTS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if description.premium_type and not network.premium_status_active:
+                            continue
+                        entities.append(
+                            EeroDeviceTrackerEntity(
+                                coordinator,
+                                network.id,
+                                client.id,
+                                description,
+                            )
+                        )
 
-        return entities
-
-    async_add_entities(await hass.async_add_job(get_entities), True)
+    async_add_entities(entities, True)
 
 
-class EeroDeviceTracker(ScannerEntity, EeroEntity):
+class EeroDeviceTrackerEntity(EeroEntity):
     """Representation of an Eero device tracker entity."""
 
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the entity."""
         return f"{self.network.name} {self.resource.name_connection_type}"
 
     @property
-    def is_connected(self) -> bool:
+    def is_connected(self) -> bool | None:
         """Return true if the device is connected to the network."""
         return self.resource.connected
 
     @property
-    def source_type(self) -> str:
+    def source_type(self) -> SourceType | str:
         """Return the source type, eg gps or router, of the device."""
-        return SOURCE_TYPE_ROUTER
+        return self.entity_description.source_type
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, Any]:
+    def ip_address(self) -> str | None:
+        """Return the primary ip address of the device."""
+        return self.resource.ip
+
+    @property
+    def mac_address(self) -> str | None:
+        """Return the mac address of the device."""
+        return self.resource.mac
+
+    @property
+    def hostname(self) -> str | None:
+        """Return hostname of the device."""
+        return self.resource.hostname
+
+    @property
+    def state(self) -> str:
+        """Return the state of the device."""
+        if self.is_connected:
+            return STATE_HOME
+        return STATE_NOT_HOME
+
+    @final
+    @property
+    def state_attributes(self) -> dict[str, StateType]:
+        """Return the device state attributes."""
+        attr: dict[str, StateType] = {ATTR_SOURCE_TYPE: self.source_type}
+        if self.ip_address is not None:
+            attr[ATTR_IP] = self.ip_address
+        if self.mac_address is not None:
+            attr[ATTR_MAC] = self.mac_address
+        if self.hostname is not None:
+            attr[ATTR_HOST_NAME] = self.hostname
+        return attr
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return entity specific state attributes.
 
         Implemented by platform classes. Convention for attribute names
         is lowercase snake_case.
         """
-        attrs = super().extra_state_attributes
+        attrs = {}
         if self.is_connected:
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type
-            attrs["ip_address"] = self.resource.ip
             attrs["network_name"] = self.network.name_long
         return attrs

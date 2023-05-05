@@ -1,23 +1,31 @@
 """Eero API"""
-from .client import Client
-from .const import MODEL_BEACON, PERIOD_DAY, PERIOD_WEEK, PERIOD_MONTH
-from .eero import Eero, EeroBeacon
-from .profile import Profile
-from .resource import Resource
+from __future__ import annotations
 
-STATE_DISABLED = "disabled"
-STATE_NETWORK = "network"
-STATE_PROFILES = "profiles"
+from .client import EeroClient
+from .const import (
+    DEVICE_CATEGORY_COMPUTERS_PERSONAL,
+    DEVICE_CATEGORY_ENTERTAINMENT,
+    DEVICE_CATEGORY_HOME,
+    DEVICE_CATEGORY_OTHER,
+    MODEL_BEACON,
+    PREFERRED_UPDATE_HOUR_MAP,
+    STATE_DISABLED,
+    STATE_NETWORK,
+    STATE_PROFILE,
+)
+from .eero import EeroDevice, EeroDeviceBeacon
+from .profile import EeroProfile
+from .resource import EeroResource
 
 
-class Network(Resource):
+class EeroNetwork(EeroResource):
 
     def __init__(self, api, account, data):
         super().__init__(api=api, network=None, data=data)
         self.account = account
 
     @property
-    def ad_block(self):
+    def ad_block(self) -> bool:
         return all(
             [
                 self.ad_block_enabled,
@@ -26,76 +34,96 @@ class Network(Resource):
         )
 
     @ad_block.setter
-    def ad_block(self, value):
-        return self.api.call(
+    def ad_block(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=f"{self.url_dns_policies}/adblock",
-            json=dict(enable=bool(value)),
+            json=dict(enable=value),
         )
 
     @property
-    def ad_block_enabled(self):
+    def ad_block_enabled(self) -> bool | None:
         return self.data.get("premium_dns", {}).get("ad_block_settings", {}).get("enabled")
 
     @property
-    def ad_block_profiles(self):
+    def ad_block_profiles(self) -> list[str | None] | None:
         return self.data.get("premium_dns", {}).get("ad_block_settings", {}).get("profiles")
 
     @property
-    def ad_block_status(self):
+    def ad_block_status(self) -> str:
         if self.ad_block:
             return STATE_NETWORK
         elif self.ad_block_profiles:
-            return STATE_PROFILES
+            return STATE_PROFILE
         return STATE_DISABLED
 
     @property
-    def adblock_day(self):
+    def adblock_day(self) -> int | None:
         for series in self.data.get("activity", {}).get("network", {}).get("adblock_day", []):
             if series["insight_type"] == "adblock":
                 return series["sum"]
         return None
 
     @property
-    def adblock_month(self):
+    def adblock_month(self) -> int | None:
         for series in self.data.get("activity", {}).get("network", {}).get("adblock_month", []):
             if series["insight_type"] == "adblock":
                 return series["sum"]
         return None
 
     @property
-    def adblock_week(self):
+    def adblock_week(self) -> int | None:
         for series in self.data.get("activity", {}).get("network", {}).get("adblock_week", []):
             if series["insight_type"] == "adblock":
                 return series["sum"]
         return None
 
     @property
-    def band_steering(self):
+    def backup_internet_enabled(self) -> bool | None:
+        return self.data.get("backup_internet_enabled")
+
+    @backup_internet_enabled.setter
+    def backup_internet_enabled(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
+            method="put",
+            url=f"{self.url}/backupinternet",
+            json=dict(backup_internet_enabled=value),
+        )
+
+    @property
+    def band_steering(self) -> bool | None:
         return self.data.get("band_steering")
 
     @band_steering.setter
-    def band_steering(self, value):
-        return self.api.call(
+    def band_steering(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=self.url_settings,
-            json=dict(band_steering=bool(value)),
+            json=dict(band_steering=value),
         )
 
     @property
-    def block_malware(self):
+    def block_malware(self) -> bool | None:
         return self.data.get("premium_dns", {}).get("dns_policies", {}).get("block_malware")
 
     @block_malware.setter
-    def block_malware(self, value):
-        return self.api.call(
+    def block_malware(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=f"{self.url_dns_policies}/network",
-            json=dict(block_malware=bool(value)),
+            json=dict(block_malware=value),
         )
 
     @property
-    def blocked_day(self):
+    def blocked_day(self) -> dict[str, int | None]:
         data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
         for series in self.data.get("activity", {}).get("network", {}).get("blocked_day", []):
             if series["insight_type"] in list(data.keys()):
@@ -103,7 +131,7 @@ class Network(Resource):
         return data
 
     @property
-    def blocked_month(self):
+    def blocked_month(self) -> dict[str, int | None]:
         data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
         for series in self.data.get("activity", {}).get("network", {}).get("blocked_month", []):
             if series["insight_type"] in list(data.keys()):
@@ -111,7 +139,7 @@ class Network(Resource):
         return data
 
     @property
-    def blocked_week(self):
+    def blocked_week(self) -> dict[str, int | None]:
         data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
         for series in self.data.get("activity", {}).get("network", {}).get("blocked_week", []):
             if series["insight_type"] in list(data.keys()):
@@ -119,31 +147,63 @@ class Network(Resource):
         return data
 
     @property
-    def city(self):
+    def city(self) -> str | None:
         return self.data.get("geo_ip", {}).get("city")
 
     @property
-    def clients_count(self):
+    def clients_count(self) -> int | None:
         return self.data.get("clients", {}).get("count")
 
     @property
-    def connected_clients_count(self):
+    def connected_clients_count(self) -> int:
         return len([client for client in self.clients if client.connected])
 
     @property
-    def connected_guest_clients_count(self):
+    def connected_clients_count_computers_personal(self) -> int:
+        return len([client for client in self.clients if client.connected and client.device_category == DEVICE_CATEGORY_COMPUTERS_PERSONAL])
+
+    @property
+    def connected_clients_count_entertainment(self) -> int:
+        return len([client for client in self.clients if client.connected and client.device_category == DEVICE_CATEGORY_ENTERTAINMENT])
+
+    @property
+    def connected_clients_count_home(self) -> int:
+        return len([client for client in self.clients if client.connected and client.device_category == DEVICE_CATEGORY_HOME])
+
+    @property
+    def connected_clients_count_other(self) -> int:
+        return len([client for client in self.clients if client.connected and client.device_category == DEVICE_CATEGORY_OTHER])
+
+    @property
+    def connected_guest_clients_count(self) -> int:
         return len([client for client in self.clients if client.connected and client.is_guest])
 
     @property
-    def country_code(self):
+    def connected_guest_clients_count_computers_personal(self) -> int:
+        return len([client for client in self.clients if client.connected and client.is_guest and client.device_category == DEVICE_CATEGORY_COMPUTERS_PERSONAL])
+
+    @property
+    def connected_guest_clients_count_entertainment(self) -> int:
+        return len([client for client in self.clients if client.connected and client.is_guest and client.device_category == DEVICE_CATEGORY_ENTERTAINMENT])
+
+    @property
+    def connected_guest_clients_count_home(self) -> int:
+        return len([client for client in self.clients if client.connected and client.is_guest and client.device_category == DEVICE_CATEGORY_HOME])
+
+    @property
+    def connected_guest_clients_count_other(self) -> int:
+        return len([client for client in self.clients if client.connected and client.is_guest and client.device_category == DEVICE_CATEGORY_OTHER])
+
+    @property
+    def country_code(self) -> str | None:
         return self.data.get("geo_ip", {}).get("countryCode")
 
     @property
-    def country_name(self):
+    def country_name(self) -> str | None:
         return self.data.get("geo_ip", {}).get("countryName")
 
     @property
-    def data_usage_day(self):
+    def data_usage_day(self) -> tuple[int | None, int | None]:
         down, up = None, None
         for series in self.data.get("activity", {}).get("network", {}).get("data_usage_day", []):
             if series["type"] == "download":
@@ -153,7 +213,7 @@ class Network(Resource):
         return (down, up)
 
     @property
-    def data_usage_month(self):
+    def data_usage_month(self) -> tuple[int | None, int | None]:
         down, up = None, None
         for series in self.data.get("activity", {}).get("network", {}).get("data_usage_month", []):
             if series["type"] == "download":
@@ -163,7 +223,7 @@ class Network(Resource):
         return (down, up)
 
     @property
-    def data_usage_week(self):
+    def data_usage_week(self) -> tuple[int | None, int | None]:
         down, up = None, None
         for series in self.data.get("activity", {}).get("network", {}).get("data_usage_week", []):
             if series["type"] == "download":
@@ -173,284 +233,338 @@ class Network(Resource):
         return (down, up)
 
     @property
-    def ddns_enabled(self):
+    def ddns_enabled(self) -> bool | None:
         return self.data.get("ddns", {}).get("enabled")
 
     @ddns_enabled.setter
-    def ddns_enabled(self, value):
+    def ddns_enabled(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
         target = "enable" if value else "disable"
-        return self.api.call(
+        self.api.call(
             method="put",
             url=f"/2.2/networks/{self.id}/ddns/{target}",
         )
 
     @property
-    def ddns_subdomain(self):
+    def ddns_subdomain(self) -> str | None:
         return self.data.get("ddns", {}).get("subdomain")
 
     @property
-    def dns_caching(self):
+    def dns_caching(self) -> bool | None:
         return self.data.get("dns", {}).get("caching")
 
     @dns_caching.setter
-    def dns_caching(self, value):
-        return self.api.call(
+    def dns_caching(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=f"/2.2/networks/{self.id}/dns",
-            json=dict(caching=bool(value)),
+            json=dict(caching=value),
         )
 
     @property
-    def gateway_mac_address(self):
+    def gateway_mac_address(self) -> str | None:
         for eero in self.eeros:
             if eero.is_gateway:
                 return eero.mac_address
         return None
 
     @property
-    def gateway_name(self):
+    def gateway_name(self) -> str | None:
         for eero in self.eeros:
             if eero.is_gateway:
                 return eero.name
         return None
 
     @property
-    def guest_connected(self):
-        return bool(self.connected_guest_clients_count != 0)
-
-    @property
-    def guest_network_enabled(self):
+    def guest_network_enabled(self) -> bool | None:
         return self.data.get("guest_network", {}).get("enabled")
 
     @guest_network_enabled.setter
-    def guest_network_enabled(self, value):
-        return self.api.call(
+    def guest_network_enabled(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=f"/2.2/networks/{self.id}/guestnetwork",
-            json=dict(enabled=bool(value)),
+            json=dict(enabled=value),
         )
 
     @property
-    def guest_network_name(self):
+    def guest_network_name(self) -> str | None:
         return self.data.get("guest_network", {}).get("name")
 
     @property
-    def guest_network_password(self):
+    def guest_network_password(self) -> str | None:
         return self.data.get("guest_network", {}).get("password")
 
     @property
-    def health_eero_network_status(self):
+    def health_eero_network_status(self) -> str | None:
         return self.data.get("health", {}).get("eero_network", {}).get("status")
 
     @property
-    def health_internet_isp_up(self):
+    def health_internet_isp_up(self) -> bool | None:
         return self.data.get("health", {}).get("internet", {}).get("isp_up")
 
     @property
-    def health_internet_status(self):
+    def health_internet_status(self) -> str | None:
         return self.data.get("health", {}).get("internet", {}).get("status")
 
     @property
-    def inspected_day(self):
+    def inspected_day(self) -> int | None:
         for series in self.data.get("activity", {}).get("network", {}).get("inspected_day", []):
             if series["insight_type"] == "inspected":
                 return series["sum"]
         return None
 
     @property
-    def inspected_month(self):
+    def inspected_month(self) -> int | None:
         for series in self.data.get("activity", {}).get("network", {}).get("inspected_month", []):
             if series["insight_type"] == "inspected":
                 return series["sum"]
         return None
 
     @property
-    def inspected_week(self):
+    def inspected_week(self) -> int | None:
         for series in self.data.get("activity", {}).get("network", {}).get("inspected_week", []):
             if series["insight_type"] == "inspected":
                 return series["sum"]
         return None
 
     @property
-    def ipv6_upstream(self):
+    def ipv6_upstream(self) -> bool | None:
         return self.data.get("ipv6_upstream")
 
     @ipv6_upstream.setter
-    def ipv6_upstream(self, value):
-        return self.api.call(
+    def ipv6_upstream(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=self.url_settings,
-            json=dict(ipv6_upstream=bool(value)),
+            json=dict(ipv6_upstream=value),
         )
 
     @property
-    def isp(self):
+    def isp(self) -> str | None:
         return self.data.get("geo_ip", {}).get("isp")
 
     @property
-    def name(self):
+    def manifest_resource(self) -> str | None:
+        return self.data.get("updates", {}).get("manifest_resource")
+
+    @property
+    def name(self) -> str | None:
         return self.data.get("name")
 
     @property
-    def name_long(self):
+    def name_long(self) -> str | None:
         network_names = [network.name for network in self.account.networks]
         if network_names.count(self.name) > 1:
             return f"{self.name} ({self.city, self.region_name})"
         return self.name
 
     @property
-    def password(self):
+    def password(self) -> str | None:
         return self.data.get("password")
 
     @property
-    def public_ip(self):
+    def public_ip(self) -> str | None:
         return self.data.get("ip_settings", {}).get("public_ip")
 
     @property
-    def postal_code(self):
+    def postal_code(self) -> str | None:
         return self.data.get("geo_ip", {}).get("postalCode")
 
     @property
-    def premium_status(self):
+    def preferred_update_hour(self) -> str | None:
+        hour = self.data.get("updates", {}).get("preferred_update_hour")
+        if hour is None:
+            return hour
+        return list(PREFERRED_UPDATE_HOUR_MAP.keys())[list(PREFERRED_UPDATE_HOUR_MAP.values()).index(hour)]
+
+    @preferred_update_hour.setter
+    def preferred_update_hour(self, value: str) -> None:
+        if value not in PREFERRED_UPDATE_HOUR_MAP.keys():
+            return
+        self.api.call(
+            method="post",
+            url=f"/2.2/networks/{self.id}/updates/preferred_update_hour",
+            json=dict(preferred_update_hour=PREFERRED_UPDATE_HOUR_MAP[value]),
+        )
+
+    @property
+    def preferred_update_hour_options(self) -> list[str]:
+        return list(PREFERRED_UPDATE_HOUR_MAP.keys())
+
+    @property
+    def premium_status(self) -> str | None:
         return self.data.get("premium_status")
 
     @property
-    def premium_status_active(self):
+    def premium_status_active(self) -> bool:
         return bool(self.premium_status == "active")
 
-    def reboot(self):
-        return self.api.call(method="post", url=self.url_reboot)
+    def reboot(self) -> None:
+        self.api.call(method="post", url=self.url_reboot)
 
     @property
-    def region(self):
+    def region(self) -> str | None:
         return self.data.get("geo_ip", {}).get("region")
 
     @property
-    def region_name(self):
+    def region_name(self) -> str | None:
         return self.data.get("geo_ip", {}).get("regionName")
 
     @property
-    def speed_date(self):
+    def speed_date(self) -> str | None:
         return self.data.get("speed", {}).get("date")
 
     @property
-    def speed_down(self):
+    def speed_down(self) -> tuple[int | None, str | None]:
         return (
             self.data.get("speed", {}).get("down", {}).get("value"),
             self.data.get("speed", {}).get("down", {}).get("units"),
         )
 
     @property
-    def speed_up(self):
+    def speed_up(self) -> tuple[int | None, str | None]:
         return (
             self.data.get("speed", {}).get("up", {}).get("value"),
             self.data.get("speed", {}).get("up", {}).get("units"),
         )
 
     @property
-    def sqm(self):
+    def sqm(self) -> bool | None:
         return self.data.get("sqm")
 
     @sqm.setter
-    def sqm(self, value):
-        return self.api.call(
+    def sqm(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=self.url_settings,
-            json=dict(sqm=bool(value)),
+            json=dict(sqm=value),
         )
 
     @property
-    def ssid(self):
+    def ssid(self) -> str | None:
         return self.name
 
     @property
-    def status(self):
+    def status(self) -> str | None:
         return self.data.get("status")
 
     @property
-    def target_firmware(self):
+    def target_firmware(self) -> str | None:
         return self.data.get("updates", {}).get("target_firmware")
 
     @property
-    def thread(self):
+    def target_firmware_features(self) -> list[str | None] | None:
+        try:
+            return self.data.get("updates", {}).get("release_notes", {}).get("target", {}).get("features")
+        except AttributeError:
+            return None
+
+    @property
+    def target_firmware_title(self) -> str | None:
+        try:
+            return self.data.get("updates", {}).get("release_notes", {}).get("target", {}).get("title")
+        except AttributeError:
+            return None
+
+    @property
+    def thread(self) -> bool | None:
         return self.data.get("thread")
 
     @thread.setter
-    def thread(self, value):
-        return self.api.call(
+    def thread(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=self.url_settings,
-            json=dict(thread=bool(value)),
+            json=dict(thread=value),
         )
 
-    @property
-    def update_available(self):
-        return self.data.get("updates", {}).get("can_update_now")
+    def update(self) -> None:
+        self.api.call(method="post", url=self.url_updates)
 
     @property
-    def upnp(self):
+    def upnp(self) -> bool | None:
         return self.data.get("upnp")
 
     @upnp.setter
-    def upnp(self, value):
-        return self.api.call(
+    def upnp(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=self.url_settings,
-            json=dict(upnp=bool(value)),
+            json=dict(upnp=value),
         )
 
     @property
-    def url_dns_policies(self):
+    def url_dns_policies(self) -> str:
         return f"{self.url}/dns_policies"
 
     @property
-    def url_insights(self):
+    def url_insights(self) -> str | None:
         return self.data.get("resources", {}).get("insights")
 
     @property
-    def url_reboot(self):
+    def url_reboot(self) -> str | None:
         return self.data.get("resources", {}).get("reboot")
 
     @property
-    def url_settings(self):
+    def url_settings(self) -> str | None:
         return self.data.get("resources", {}).get("settings")
 
     @property
-    def wpa3(self):
+    def url_updates(self) -> str | None:
+        return self.data.get("resources", {}).get("updates")
+
+    @property
+    def wpa3(self) -> bool | None:
         return self.data.get("wpa3")
 
     @wpa3.setter
-    def wpa3(self, value):
-        return self.api.call(
+    def wpa3(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="put",
             url=self.url_settings,
-            json=dict(wpa3=bool(value)),
+            json=dict(wpa3=value),
         )
 
     @property
-    def eeros(self):
+    def eeros(self) -> list[EeroDevice | EeroDeviceBeacon | None]:
         eeros = []
         for eero in self.data.get("eeros", {}).get("data", []):
             if eero["model"] == MODEL_BEACON:
-                eeros.append(EeroBeacon(self.api, self, eero))
+                eeros.append(EeroDeviceBeacon(self.api, self, eero))
             else:
-                eeros.append(Eero(self.api, self, eero))
+                eeros.append(EeroDevice(self.api, self, eero))
         return eeros
 
     @property
-    def profiles(self):
+    def profiles(self) -> list[EeroProfile | None]:
         profiles = []
         for profile in self.data.get("profiles", {}).get("data", []):
-            profiles.append(Profile(self.api, self, profile))
+            profiles.append(EeroProfile(self.api, self, profile))
         return profiles
 
     @property
-    def clients(self):
+    def clients(self) -> list[EeroClient | None]:
         clients = []
         for client in self.data.get("devices", {}).get("data", []):
-            clients.append(Client(self.api, self, client))
+            clients.append(EeroClient(self.api, self, client))
         return clients
 
     @property
-    def resources(self):
+    def resources(self) -> list[EeroClient | EeroDevice | EeroDeviceBeacon | EeroProfile | None]:
         return self.eeros + self.profiles + self.clients

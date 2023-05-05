@@ -90,5 +90,58 @@
                 "title": "Advanced options"
             }
         }
+    },
+    "entity": {
+        "camera": {
+            "all": {
+                "state": {
+                    "disabled": "Disabled",
+                    "enabled": "Enabled"
+                }
+            }
+        },
+        "select": {
+            "all": {
+                "state": {
+                    "12am_1am": "12 AM - 1 AM",
+                    "1am_2am": "1 AM - 2 AM",
+                    "2am_3am": "2 AM - 3 AM",
+                    "3am_4am": "3 AM - 4 AM",
+                    "4am_5am": "4 AM - 5 AM",
+                    "5am_6am": "5 AM - 6 AM",
+                    "6am_7am": "6 AM - 7 AM",
+                    "7am_8am": "7 AM - 8 AM",
+                    "8am_9am": "8 AM - 9 AM",
+                    "9am_10am": "9 AM - 10 AM",
+                    "10am_11am": "10 AM - 11 AM",
+                    "11am_12pm": "11 AM - 12 PM",
+                    "12pm_1pm": "12 PM - 1 PM",
+                    "1pm_2pm": "1 PM - 2 PM",
+                    "2pm_3pm": "2 PM - 3 PM",
+                    "3pm_4pm": "3 PM - 4 PM",
+                    "4pm_5pm": "4 PM - 5 PM",
+                    "5pm_6pm": "5 PM - 6 PM",
+                    "6pm_7pm": "6 PM - 7 PM",
+                    "7pm_8pm": "7 PM - 8 PM",
+                    "8pm_9pm": "8 PM - 9 PM",
+                    "9pm_10pm": "9 PM - 10 PM",
+                    "10pm_11pm": "10 PM - 11 PM",
+                    "11pm_12am": "11 PM - 12 AM"
+                }
+            }
+        },
+        "sensor": {
+            "all": {
+                "state": {
+                    "ambient": "Ambient",
+                    "connected": "Connected",
+                    "disabled": "Disabled",
+                    "green": "Green",
+                    "network": "Network",
+                    "profiles": "Profiles",
+                    "schedule": "Schedule"
+                }
+            }
+        }
     }
 }

@@ -1,16 +1,18 @@
 """Eero API"""
+from __future__ import annotations
+
 from .const import URL_ACCOUNT
 
 
-class Resource(object):
+class EeroResource(object):
 
-    def __init__(self, api, network, data):
+    def __init__(self, api, network, data) -> None:
         self.api = api
         self.network = network
         self.data = data
 
     @property
-    def id(self):
+    def id(self) -> str | None:
         if self.is_network:
             return self.url.replace("/2.2/networks/", "")
         elif self.is_eero:
@@ -22,31 +24,31 @@ class Resource(object):
         return None
 
     @property
-    def is_account(self):
-        return bool(self.__class__.__name__ == "Account")
+    def is_account(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroAccount")
 
     @property
-    def is_network(self):
-        return bool(self.__class__.__name__ == "Network")
+    def is_network(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroNetwork")
 
     @property
-    def is_eero(self):
-        return bool(self.__class__.__name__ in ["Eero", "EeroBeacon"])
+    def is_eero(self) -> bool:
+        return bool(self.__class__.__name__ in ["EeroDevice", "EeroDeviceBeacon"])
 
     @property
-    def is_eero_beacon(self):
-        return bool(self.__class__.__name__ == "EeroBeacon")
+    def is_eero_beacon(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroDeviceBeacon")
 
     @property
-    def is_profile(self):
-        return bool(self.__class__.__name__ == "Profile")
+    def is_profile(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroProfile")
 
     @property
-    def is_client(self):
-        return bool(self.__class__.__name__ == "Client")
+    def is_client(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroClient")
 
     @property
-    def url(self):
+    def url(self) -> str | None:
         if self.is_account:
             return URL_ACCOUNT
         return self.data.get("url")

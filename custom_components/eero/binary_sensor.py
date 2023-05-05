@@ -1,136 +1,117 @@
 """Support for Eero binary sensor entities."""
+from __future__ import annotations
+
 from collections.abc import Mapping
-import logging
+from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+    BinarySensorEntityDescription,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import EeroEntity
+from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_CLIENTS,
-    CONF_EEROS,
     CONF_NETWORKS,
     CONF_PROFILES,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
 
-_LOGGER = logging.getLogger(__name__)
+@dataclass
+class EeroBinarySensorEntityDescription(EeroEntityDescription, BinarySensorEntityDescription):
+    """Class to describe an Eero binary sensor entity."""
 
-BASIC_TYPES = {
-    "connected": [
-        "Connected",
-        None,
-    ],
-    "dns_caching": [
-        "Local DNS Caching Enabled",
-        None,
-    ],
-    "guest_connected": [
-        "Guest Connected",
-        None,
-    ],
-    "ipv6_upstream": [
-        "IPv6 Enabled",
-        None,
-    ],
-    "thread": [
-        "Thread Enabled",
-        None,
-    ],
-    "update_available": [
-        "Update Available",
-        None,
-    ],
-}
+    entity_category: str[EntityCategory] | None = EntityCategory.DIAGNOSTIC
 
-PREMIUM_TYPES = {
-    "block_apps_enabled": [
-        "Block Apps",
-        None,
-    ],
-}
-
-BINARY_SENSOR_TYPES = {**BASIC_TYPES, **PREMIUM_TYPES}
+BINARY_SENSOR_DESCRIPTIONS: list[EeroBinarySensorEntityDescription] = [
+    EeroBinarySensorEntityDescription(
+        key="block_apps_enabled",
+        name="Block Apps",
+        extra_attrs={
+            "blocked_apps": lambda resource: sorted(getattr(resource, "blocked_applications")),
+        },
+    ),
+    EeroBinarySensorEntityDescription(
+        key="connected",
+        name="Connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+    ),
+]
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up an Eero binary sensor entity based on a config entry."""
-    entry = hass.data[EERO_DOMAIN][entry.entry_id]
-    conf_networks = entry[CONF_NETWORKS]
-    conf_eeros = entry[CONF_EEROS]
-    conf_profiles = entry[CONF_PROFILES]
-    conf_clients = entry[CONF_CLIENTS]
+    entry = hass.data[EERO_DOMAIN][config_entry.entry_id]
     coordinator = entry[DATA_COORDINATOR]
+    entities: list[EeroBinarySensorEntity] = []
 
-    def get_entities():
-        """Get the Eero binary sensor entities."""
-        entities = []
+    SUPPORTED_KEYS = {
+        description.key: description for description in BINARY_SENSOR_DESCRIPTIONS
+    }
 
-        for network in coordinator.data.networks:
-            if network.id in conf_networks:
-                for variable in BINARY_SENSOR_TYPES:
-                    if hasattr(network, variable):
-                        entities.append(EeroBinarySensor(coordinator, network.id, None, variable))
+    for network in coordinator.data.networks:
+        if network.id in entry[CONF_NETWORKS]:
+            for profile in network.profiles:
+                if profile.id in entry[CONF_PROFILES]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if description.premium_type and not network.premium_status_active:
+                            continue
+                        elif hasattr(profile, key):
+                            entities.append(
+                                EeroBinarySensorEntity(
+                                    coordinator,
+                                    network.id,
+                                    profile.id,
+                                    description,
+                                )
+                            )
 
-                for eero in network.eeros:
-                    if eero.id in conf_eeros:
-                        for variable in BINARY_SENSOR_TYPES:
-                            if hasattr(eero, variable):
-                                entities.append(EeroBinarySensor(coordinator, network.id, eero.id, variable))
+            for client in network.clients:
+                if client.id in entry[CONF_CLIENTS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if description.premium_type and not network.premium_status_active:
+                            continue
+                        elif hasattr(client, key):
+                            entities.append(
+                                EeroBinarySensorEntity(
+                                    coordinator,
+                                    network.id,
+                                    client.id,
+                                    description,
+                                )
+                            )
 
-                for profile in network.profiles:
-                    if profile.id in conf_profiles:
-                        for variable in BINARY_SENSOR_TYPES:
-                            if hasattr(profile, variable):
-                                entities.append(EeroBinarySensor(coordinator, network.id, profile.id, variable))
-
-                for client in network.clients:
-                    if client.id in conf_clients:
-                        for variable in BINARY_SENSOR_TYPES:
-                            if hasattr(client, variable):
-                                entities.append(EeroBinarySensor(coordinator, network.id, client.id, variable))
-
-        return entities
-
-    async_add_entities(await hass.async_add_job(get_entities), True)
+    async_add_entities(entities, True)
 
 
-class EeroBinarySensor(BinarySensorEntity, EeroEntity):
+class EeroBinarySensorEntity(EeroEntity, BinarySensorEntity):
     """Representation of an Eero binary sensor entity."""
 
     @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        if self.resource.is_client:
-            return f"{self.network.name} {self.resource.name_connection_type} {BINARY_SENSOR_TYPES[self.variable][0]}"
-        elif self.resource.is_eero or self.resource.is_profile:
-            return f"{self.network.name} {self.resource.name} {BINARY_SENSOR_TYPES[self.variable][0]}"
-        return f"{self.resource.name} {BINARY_SENSOR_TYPES[self.variable][0]}"
-
-    @property
-    def device_class(self) -> BinarySensorDeviceClass:
-        """Return the class of this entity."""
-        return BINARY_SENSOR_TYPES[self.variable][1]
-
-    @property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        return getattr(self.resource, self.variable)
+        return getattr(self.resource, self.entity_description.key)
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, Any]:
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return entity specific state attributes.
 
         Implemented by platform classes. Convention for attribute names
         is lowercase snake_case.
         """
-        attrs = super().extra_state_attributes
-        if self.variable == "block_apps_enabled" and self.is_on:
-                attrs["blocked_apps"] = sorted(self.resource.blocked_applications)
-        elif self.variable == "update_available":
-            if self.resource.is_eero:
-                attrs["installed_version"] = self.resource.os_version
-            if self.is_on:
-                attrs["latest_version"] = self.network.target_firmware
+        attrs = {}
+        if self.entity_description.extra_attrs and self.is_on:
+            for key, func in self.entity_description.extra_attrs.items():
+                attrs[key] = func(self.resource)
         return attrs

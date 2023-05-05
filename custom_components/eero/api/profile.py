@@ -1,12 +1,14 @@
 """Eero API"""
-from .client import Client
-from .resource import Resource
+from __future__ import annotations
+
+from .client import EeroClient
+from .resource import EeroResource
 
 
-class Profile(Resource):
+class EeroProfile(EeroResource):
 
     @property
-    def ad_block(self):
+    def ad_block(self) -> bool:
         return all(
             [
                 self.network.ad_block_enabled,
@@ -15,280 +17,304 @@ class Profile(Resource):
         )
 
     @ad_block.setter
-    def ad_block(self, value):
-        enable = bool(value)
+    def ad_block(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
         profiles = self.network.ad_block_profiles
         if value:
             profiles.append(self.url)
         else:
             profiles.remove(self.url)
             if profiles:
-                enable = True
-
-        return self.api.call(
+                value = True
+        self.api.call(
             method="post",
             url=f"{self.network.url_dns_policies}/adblock",
-            json=dict(enable=enable, profiles=profiles),
+            json=dict(enable=value, profiles=profiles),
         )
 
     @property
-    def adblock_day(self):
+    def adblock_day(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("adblock_day", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def adblock_month(self):
+    def adblock_month(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("adblock_month", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def adblock_week(self):
+    def adblock_week(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("adblock_week", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def block_apps_enabled(self):
+    def block_apps_enabled(self) -> bool:
         return bool(self.blocked_applications)
 
     @property
-    def block_gaming_content(self):
+    def block_gaming_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_gaming_content")
 
     @block_gaming_content.setter
-    def block_gaming_content(self, value):
-        return self.api.call(
+    def block_gaming_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_gaming_content=bool(value)),
+            json=dict(block_gaming_content=value),
         )
 
     @property
-    def block_illegal_content(self):
+    def block_illegal_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_illegal_content")
 
     @block_illegal_content.setter
-    def block_illegal_content(self, value):
-        return self.api.call(
+    def block_illegal_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_illegal_content=bool(value)),
+            json=dict(block_illegal_content=value),
         )
 
     @property
-    def block_messaging_content(self):
+    def block_messaging_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_messaging_content")
 
     @block_messaging_content.setter
-    def block_messaging_content(self, value):
-        return self.api.call(
+    def block_messaging_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_messaging_content=bool(value)),
+            json=dict(block_messaging_content=value),
         )
 
     @property
-    def block_pornographic_content(self):
+    def block_pornographic_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_pornographic_content")
 
     @block_pornographic_content.setter
-    def block_pornographic_content(self, value):
-        return self.api.call(
+    def block_pornographic_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_pornographic_content=bool(value)),
+            json=dict(block_pornographic_content=value),
         )
 
     @property
-    def block_shopping_content(self):
+    def block_shopping_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_shopping_content")
 
     @block_shopping_content.setter
-    def block_shopping_content(self, value):
-        return self.api.call(
+    def block_shopping_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_shopping_content=bool(value)),
+            json=dict(block_shopping_content=value),
         )
 
     @property
-    def block_social_content(self):
+    def block_social_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_social_content")
 
     @block_social_content.setter
-    def block_social_content(self, value):
-        return self.api.call(
+    def block_social_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_social_content=bool(value)),
+            json=dict(block_social_content=value),
         )
 
     @property
-    def block_streaming_content(self):
+    def block_streaming_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_streaming_content")
 
     @block_streaming_content.setter
-    def block_streaming_content(self, value):
-        return self.api.call(
+    def block_streaming_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_streaming_content=bool(value)),
+            json=dict(block_streaming_content=value),
         )
 
     @property
-    def block_violent_content(self):
+    def block_violent_content(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("block_violent_content")
 
     @block_violent_content.setter
-    def block_violent_content(self, value):
-        return self.api.call(
+    def block_violent_content(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(block_violent_content=bool(value)),
+            json=dict(block_violent_content=value),
         )
 
     @property
-    def blocked_applications(self):
+    def blocked_applications(self) -> list[str | None] | None:
         return self.data.get("premium_dns", {}).get("blocked_applications")
 
-    def set_blocked_applications(self, blocked_applications):
-        return self.api.call(
+    def set_blocked_applications(self, blocked_applications: list) -> None:
+        if not isinstance(blocked_applications, list):
+            return
+        self.api.call(
             method="put",
             url=f"{self.url_dns_policies}/applications/blocked",
             json=dict(applications=blocked_applications),
         )
 
     @property
-    def blocked_day(self):
+    def blocked_day(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("blocked_day", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def blocked_month(self):
+    def blocked_month(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("blocked_month", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def blocked_week(self):
+    def blocked_week(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("blocked_week", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def connected(self):
+    def connected(self) -> bool:
         return bool(self.connected_clients_count != 0)
 
     @property
-    def connected_clients_count(self):
+    def connected_clients_count(self)  -> int | None:
         return len([client for client in self.clients if client.connected])
 
     @property
-    def data_usage_day(self):
+    def data_usage_day(self) -> tuple[int | None, int | None]:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_day", []):
             if str(profile["profile_id"]) == self.id:
                 return (profile["download"], profile["upload"])
         return (None, None)
 
     @property
-    def data_usage_month(self):
+    def data_usage_month(self) -> tuple[int | None, int | None]:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_month", []):
             if str(profile["profile_id"]) == self.id:
                 return (profile["download"], profile["upload"])
         return (None, None)
 
     @property
-    def data_usage_week(self):
+    def data_usage_week(self) -> tuple[int | None, int | None]:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_week", []):
             if str(profile["profile_id"]) == self.id:
                 return (profile["download"], profile["upload"])
         return (None, None)
 
     @property
-    def inspected_day(self):
+    def inspected_day(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("inspected_day", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def inspected_month(self):
+    def inspected_month(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("inspected_month", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def inspected_week(self):
+    def inspected_week(self) -> int | None:
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("inspected_week", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
         return None
 
     @property
-    def name(self):
+    def name(self) -> str | None:
         return self.data.get("name")
 
     @property
-    def name_long(self):
+    def name_long(self) -> str:
         return f"{self.name} Profile"
 
     @property
-    def paused(self):
+    def paused(self) -> bool | None:
         return self.data.get("paused")
 
     @paused.setter
-    def paused(self, value):
+    def paused(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
         self.api.call(
             method="put",
             url=self.url,
-            json=dict(paused=bool(value)),
+            json=dict(paused=value),
         )
 
     @property
-    def safe_search_enabled(self):
+    def safe_search_enabled(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("safe_search_enabled")
 
     @safe_search_enabled.setter
-    def safe_search_enabled(self, value):
-        return self.api.call(
+    def safe_search_enabled(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(safe_search_enabled=bool(value)),
+            json=dict(safe_search_enabled=value),
         )
 
     @property
-    def url_dns_policies(self):
+    def url_dns_policies(self) -> str | None:
         return f"{self.network.url}/dns_policies/profiles/{self.id}"
 
     @property
-    def url_insights(self):
+    def url_insights(self) -> str | None:
         return f"{self.network.url_insights}/profiles/{self.id}"
 
     @property
-    def youtube_restricted(self):
+    def youtube_restricted(self) -> bool | None:
         return self.data.get("unified_content_filters", {}).get("dns_policies", {}).get("youtube_restricted")
 
     @youtube_restricted.setter
-    def youtube_restricted(self, value):
-        return self.api.call(
+    def youtube_restricted(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
             method="post",
             url=self.url_dns_policies,
-            json=dict(youtube_restricted=bool(value)),
+            json=dict(youtube_restricted=value),
         )
 
     @property
-    def clients(self):
+    def clients(self) -> list[EeroClient | None]:
         clients = []
         for client in self.data.get("devices", []):
-            clients.append(Client(self.api, self, client))
+            clients.append(EeroClient(self.api, self, client))
         return clients
