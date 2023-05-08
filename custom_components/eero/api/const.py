@@ -125,6 +125,7 @@ PERIOD_WEEK = "week"
 
 RESOURCE_MAP = dict(clients="devices")
 
+STATE_ACTIVE = "active"
 STATE_AMBIENT = "ambient"
 STATE_DISABLED = "disabled"
 STATE_ENABLED = "enabled"

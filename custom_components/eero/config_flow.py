@@ -3,7 +3,7 @@
 import logging
 import voluptuous as vol
 
-from homeassistant import config_entries, exceptions
+from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
@@ -68,7 +68,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.api.login, user_input[CONF_LOGIN],
                 )
             except EeroException as exception:
-                _LOGGER.error(f"Status: {exception.status}, Error Message: {exception.error_message}")
+                _LOGGER.error(f"Status: {exception.status_code}, Error Message: {exception.error_message}")
                 errors["base"] = "invalid_login"
 
             self.user_input[CONF_USER_TOKEN] = self.response["user_token"]
@@ -91,7 +91,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.api.login_verify, user_input[CONF_CODE],
                 )
             except EeroException as exception:
-                _LOGGER.error(f"Status: {exception.status}, Error Message: {exception.error_message}")
+                _LOGGER.error(f"Status: {exception.status_code}, Error Message: {exception.error_message}")
                 errors["base"] = "invalid_code"
 
             await self.async_set_unique_id(self.response["log_id"].lower())
@@ -141,8 +141,9 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             for conf in [CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
                 self.user_input[conf] = []
 
+        target_network = self.user_input[CONF_NETWORKS][self.index]
         for network in self.response.networks:
-            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+            if network.id == target_network:
                 eero_names = sorted(eero.name for eero in network.eeros)
                 profile_names = sorted(profile.name for profile in network.profiles)
                 wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
@@ -163,8 +164,9 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_activity(self, user_input=None):
         if user_input is not None:
+            target_network = self.user_input[CONF_NETWORKS][self.index]
             for network in self.response.networks:
-                if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                if network.id == target_network:
                     self.user_input[CONF_ACTIVITY][network.id] = {
                             CONF_ACTIVITY_NETWORK: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input[CONF_ACTIVITY_NETWORK]],
                             CONF_ACTIVITY_EEROS: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_EEROS, [])],
@@ -179,8 +181,9 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         elif self.index == 0:
             self.user_input[CONF_ACTIVITY] = {}
 
+        target_network = self.user_input[CONF_NETWORKS][self.index]
         for network in self.response.networks:
-            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+            if network.id == target_network:
                 activity_options = ACTIVITIES_DEFAULT
                 data_usage_options = ACTIVITIES_DATA_USAGE_DEFAULT
                 if network.premium_status_active:
@@ -267,8 +270,9 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
             for conf in [CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
                 self.user_input[conf] = []
 
+        target_network = self.user_input[CONF_NETWORKS][self.index]
         for network in self.coordinator.data.networks:
-            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+            if network.id == target_network:
                 conf_eeros = [eero.name for eero in network.eeros if eero.id in self.options.get(CONF_EEROS, self.data.get(CONF_EEROS, []))]
                 conf_profiles = [profile.name for profile in network.profiles if profile.id in self.options.get(CONF_PROFILES, self.data.get(CONF_PROFILES, []))]
                 conf_wired_clients = [client.name_mac for client in network.clients if client.id in self.options.get(CONF_WIRED_CLIENTS, self.data.get(CONF_WIRED_CLIENTS, []))]
@@ -294,8 +298,9 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_activity(self, user_input=None):
         if user_input is not None:
+            target_network = self.user_input[CONF_NETWORKS][self.index]
             for network in self.coordinator.data.networks:
-                if network.id == self.user_input[CONF_NETWORKS][self.index]:
+                if network.id == target_network:
                     self.user_input[CONF_ACTIVITY][network.id] = {
                             CONF_ACTIVITY_NETWORK: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input[CONF_ACTIVITY_NETWORK]],
                             CONF_ACTIVITY_EEROS: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input.get(CONF_ACTIVITY_EEROS, [])],
@@ -305,14 +310,16 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                     self.index += 1
 
         if self.index == len(self.user_input[CONF_NETWORKS]):
+            self.index = 0
             if self.show_advanced_options:
                 return await self.async_step_advanced()
             return self.async_create_entry(title="", data=self.user_input)
         elif self.index == 0:
             self.user_input[CONF_ACTIVITY] = {}
 
+        target_network = self.user_input[CONF_NETWORKS][self.index]
         for network in self.coordinator.data.networks:
-            if network.id == self.user_input[CONF_NETWORKS][self.index]:
+            if network.id == target_network:
                 activity_options = ACTIVITIES_DEFAULT
                 data_usage_options = ACTIVITIES_DATA_USAGE_DEFAULT
                 if network.premium_status_active:

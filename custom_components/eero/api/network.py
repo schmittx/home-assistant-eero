@@ -9,6 +9,7 @@ from .const import (
     DEVICE_CATEGORY_OTHER,
     MODEL_BEACON,
     PREFERRED_UPDATE_HOUR_MAP,
+    STATE_ACTIVE,
     STATE_DISABLED,
     STATE_NETWORK,
     STATE_PROFILE,
@@ -405,7 +406,7 @@ class EeroNetwork(EeroResource):
 
     @property
     def premium_status_active(self) -> bool:
-        return bool(self.premium_status == "active")
+        return bool(self.premium_status == STATE_ACTIVE)
 
     def reboot(self) -> None:
         self.api.call(method="post", url=self.url_reboot)

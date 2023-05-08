@@ -19,6 +19,7 @@ from .const import (
     PERIOD_MONTH,
     PERIOD_WEEK,
     RESOURCE_MAP,
+    STATE_ACTIVE,
     URL_ACCOUNT,
 )
 
@@ -87,7 +88,6 @@ class EeroAPI(object):
             end = start + relativedelta.relativedelta(days=1) - datetime.timedelta(minutes=1)
             cadence = CADENCE_HOURLY
         elif period == PERIOD_WEEK:
-#            start = now.replace(day=now.day-(now.weekday()+1), hour=0, minute=0, second=0, microsecond=0)
             start = now - relativedelta.relativedelta(days=now.weekday()+1)
             start = start.replace(hour=0, minute=0, second=0, microsecond=0)
             end = start + relativedelta.relativedelta(weeks=1) - datetime.timedelta(minutes=1)
@@ -171,12 +171,14 @@ class EeroAPI(object):
             networks = list()
             for network in account["networks"]["data"]:
                 network_data = self.call(method="get", url=network["url"])
-                backup_access_points = self.call(method="get", url=f"{network['url']}/backup_access_points")
-                network_data["backup_access_points"] = dict(count=len(backup_access_points), data=backup_access_points)
+# Leaving this out for now as the data has no current usage.
+#                if network_data["premium_status"] == STATE_ACTIVE:
+#                    backup_access_points = self.call(method="get", url=f"{network['url']}/backup_access_points")
+#                    network_data["backup_access_points"] = dict(count=len(backup_access_points), data=backup_access_points)
                 for resource in ["profiles", "devices"]:
                     resource_data = self.call(method="get", url=network_data["resources"][resource])
                     network_data[resource] = dict(count=len(resource_data), data=resource_data)
-                update_data = network_data.get("updates")
+                update_data = network_data["updates"]
                 update_data["release_notes"] = self.get_release_notes(url=update_data["manifest_resource"])
                 network_data["updates"] = update_data
 
