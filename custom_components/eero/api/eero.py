@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .const import STATE_AMBIENT, STATE_DISABLED, STATE_SCHEDULE
+from .firmware import EeroFirmware
 from .resource import EeroResource
 
 
@@ -111,6 +112,14 @@ class EeroDevice(EeroResource):
         return self.data.get("status")
 
     @property
+    def support_expiration_string(self) -> str | None:
+        return self.data.get("update_status", {}).get("support_expiration_string")
+
+    @property
+    def support_expired(self) -> bool | None:
+        return self.data.get("update_status", {}).get("support_expired")
+
+    @property
     def update_available(self) -> bool | None:
         return self.data.get("update_available")
 
@@ -121,6 +130,17 @@ class EeroDevice(EeroResource):
     @property
     def url_reboot(self) -> str | None:
         return self.data.get("resources", {}).get("reboot")
+
+    @property
+    def current_firmware(self) -> EeroFirmware:
+        history = {firmware.os_version: firmware for firmware in self.network.firmware_history}
+        return history.get(self.os_version.split("-")[0], EeroFirmware())
+
+    @property
+    def target_firmware(self) -> EeroFirmware:
+        if self.support_expired:
+            return self.current_firmware
+        return self.network.target_firmware
 
 
 class EeroDeviceBeacon(EeroDevice):

@@ -13,7 +13,11 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfDataRate, UnitOfInformation
+from homeassistant.const import (
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    UnitOfDataRate,
+    UnitOfInformation,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -26,6 +30,7 @@ from .api.const import (
     DEVICE_CATEGORY_HOME,
     DEVICE_CATEGORY_OTHER,
     STATE_DISABLED,
+    STATE_FAILURE,
     STATE_NETWORK,
     STATE_PROFILE,
 )
@@ -35,6 +40,7 @@ from .const import (
     CONF_ACTIVITY_EEROS,
     CONF_ACTIVITY_NETWORK,
     CONF_ACTIVITY_PROFILES,
+    CONF_BACKUP_NETWORKS,
     CONF_CLIENTS,
     CONF_EEROS,
     CONF_NETWORKS,
@@ -64,6 +70,7 @@ class EeroSensorEntityDescription(EeroEntityDescription, SensorEntityDescription
     native_value: Callable = lambda resource, key: getattr(resource, key)
     entity_category: str[EntityCategory] | None = EntityCategory.DIAGNOSTIC
     activity_type: bool = False
+    wireless_only: bool = False
 
 SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
     EeroSensorEntityDescription(
@@ -206,6 +213,34 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         state_class=SensorStateClass.TOTAL_INCREASING,
         activity_type=True,
     ),
+    EeroSensorEntityDescription(
+        key="last_active",
+        name="Last Active",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        native_value=lambda resource, key: datetime.fromisoformat(getattr(resource, key).replace("Z", "+00:00")),
+    ),
+    EeroSensorEntityDescription(
+        key="signal",
+        name="Signal Strength",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        wireless_only=True,
+    ),
+    EeroSensorEntityDescription(
+        key="usage_down",
+        name="Download Rate",
+        device_class=SensorDeviceClass.DATA_RATE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+    ),
+    EeroSensorEntityDescription(
+        key="usage_up",
+        name="Upload Rate",
+        device_class=SensorDeviceClass.DATA_RATE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+    ),
 ]
 
 
@@ -244,6 +279,19 @@ async def async_setup_entry(
                             description,
                         )
                     )
+
+            for backup_network in network.backup_networks:
+                if backup_network.id in entry[CONF_BACKUP_NETWORKS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if hasattr(backup_network, key):
+                            entities.append(
+                                EeroSensorEntity(
+                                    coordinator,
+                                    network.id,
+                                    backup_network.id,
+                                    description,
+                                )
+                            )
 
             for eero in network.eeros:
                 if eero.id in entry[CONF_EEROS]:
@@ -295,6 +343,7 @@ async def async_setup_entry(
                                 description.premium_type and not network.premium_status_active,
                                 description.activity_type and not network.premium_status_active,
                                 description.activity_type and key not in activity.get(CONF_ACTIVITY_CLIENTS, []),
+                                description.wireless_only and not client.wireless,
                             ]
                         ):
                             continue
@@ -353,4 +402,13 @@ class EeroSensorEntity(EeroEntity, SensorEntity):
                 attr = f"{self.entity_description.key}_{category}"
                 if hasattr(self.resource, attr):
                     attrs[category] = getattr(self.resource, attr)
+        if self.entity_description.key == "status" and self.resource.is_backup_network:
+            attrs["checked"] = getattr(self.resource, "checked")
+            if all(
+                [
+                    self.state == STATE_FAILURE,
+                    failure_reason := getattr(self.resource, "failure_reason"),
+                ]
+            ):
+                attrs["failure_reason"] = failure_reason.lower()
         return attrs

@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from . import EeroEntity, EeroEntityDescription
 from .api.const import STATE_DISABLED, STATE_ENABLED
 from .const import (
+    CONF_BACKUP_NETWORKS,
     CONF_NETWORKS,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
@@ -48,6 +49,13 @@ CAMERA_DESCRIPTIONS: list[EeroCameraEntityDescription] = [
         password="password",
         state=lambda resource: STATE_ENABLED,
     ),
+    EeroCameraEntityDescription(
+        key="backup_network_qr_code",
+        name="QR Code",
+        ssid="name",
+        password="password",
+        state=lambda resource: STATE_ENABLED if resource.auto_join_enabled else STATE_DISABLED,
+    ),
 ]
 
 
@@ -68,16 +76,29 @@ async def async_setup_entry(
     for network in coordinator.data.networks:
         if network.id in entry[CONF_NETWORKS]:
             for key, description in SUPPORTED_KEYS.items():
-                if description.premium_type and not network.premium_status_active:
-                    continue
-                entities.append(
-                    EeroCameraEntity(
-                        coordinator,
-                        network.id,
-                        None,
-                        description,
+                if hasattr(network, key):
+                    entities.append(
+                        EeroCameraEntity(
+                            coordinator,
+                            network.id,
+                            None,
+                            description,
+                        )
                     )
-                )
+
+            for backup_network in network.backup_networks:
+                if backup_network.id in entry[CONF_BACKUP_NETWORKS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if hasattr(backup_network, key):
+                            entities.append(
+                                EeroCameraEntity(
+                                    coordinator,
+                                    network.id,
+                                    backup_network.id,
+                                    description,
+                                )
+                            )
+
 
     async_add_entities(entities, True)
 

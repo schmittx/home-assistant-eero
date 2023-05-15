@@ -43,6 +43,7 @@ from .const import (
     CONF_ACTIVITY_EEROS,
     CONF_ACTIVITY_NETWORK,
     CONF_ACTIVITY_PROFILES,
+    CONF_BACKUP_NETWORKS,
     CONF_CLIENTS,
     CONF_EEROS,
     CONF_NETWORKS,
@@ -59,6 +60,7 @@ from .const import (
     DEFAULT_TIMEOUT,
     DOMAIN,
     MANUFACTURER,
+    MODEL_BACKUP_NETWORK,
     MODEL_CLIENT,
     MODEL_NETWORK,
     MODEL_PROFILE,
@@ -133,6 +135,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     options = config_entry.options
 
     conf_networks = options.get(CONF_NETWORKS, data[CONF_NETWORKS])
+    conf_backup_networks = options.get(CONF_BACKUP_NETWORKS, data.get(CONF_BACKUP_NETWORKS, []))
     conf_eeros = options.get(CONF_EEROS, data.get(CONF_EEROS, []))
     conf_profiles = options.get(CONF_PROFILES, data.get(CONF_PROFILES, []))
     conf_wired_clients = options.get(CONF_WIRED_CLIENTS, data.get(CONF_WIRED_CLIENTS, []))
@@ -140,8 +143,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     conf_clients = conf_wired_clients + conf_wireless_clients
     conf_activity = options.get(CONF_ACTIVITY, data.get(CONF_ACTIVITY, {}))
     if not conf_networks:
-        conf_eeros, conf_profiles, conf_clients = [], [], []
-    conf_identifiers = [(DOMAIN, resource_id) for resource_id in conf_networks + conf_eeros + conf_profiles + conf_clients]
+        conf_backup_networks, conf_eeros, conf_profiles, conf_clients = [], [], [], []
+    conf_identifiers = [(DOMAIN, resource_id) for resource_id in conf_networks + conf_backup_networks + conf_eeros + conf_profiles + conf_clients]
 
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
@@ -195,6 +198,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config_entry.entry_id] = {
         CONF_NETWORKS: conf_networks,
+        CONF_BACKUP_NETWORKS: conf_backup_networks,
         CONF_EEROS: conf_eeros,
         CONF_PROFILES: conf_profiles,
         CONF_CLIENTS: conf_clients,
@@ -388,6 +392,8 @@ class EeroEntity(CoordinatorEntity):
         name = self.resource.name
         if self.resource.is_network:
             model = MODEL_NETWORK
+        elif self.resource.is_backup_network:
+            model = MODEL_BACKUP_NETWORK
         elif self.resource.is_eero:
             model = self.resource.model
         elif self.resource.is_profile:
@@ -403,6 +409,7 @@ class EeroEntity(CoordinatorEntity):
             hw_version = self.resource.model_number
         if any(
             [
+                self.resource.is_backup_network,
                 self.resource.is_eero,
                 self.resource.is_profile,
                 self.resource.is_client,
@@ -426,7 +433,7 @@ class EeroEntity(CoordinatorEntity):
         """Return the name of the entity."""
         if self.resource.is_client:
             return f"{self.network.name} {self.resource.name_connection_type} {self.entity_description.name}"
-        elif self.resource.is_eero or self.resource.is_profile:
+        elif self.resource.is_backup_network or self.resource.is_eero or self.resource.is_profile:
             return f"{self.network.name} {self.resource.name} {self.entity_description.name}"
         return f"{self.resource.name} {self.entity_description.name}"
 

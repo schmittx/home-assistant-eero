@@ -34,7 +34,8 @@
                     "eeros": "Eero devices",
                     "profiles": "Profiles",
                     "wired_clients": "Wired clients",
-                    "wireless_clients": "Wireless clients"
+                    "wireless_clients": "Wireless clients",
+                    "backup_networks": "Backup Networks"
                 },
                 "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.",
                 "title": "Select network resources"
@@ -65,7 +66,8 @@
                     "eeros": "Eero devices",
                     "profiles": "Profiles",
                     "wired_clients": "Wired clients",
-                    "wireless_clients": "Wireless clients"
+                    "wireless_clients": "Wireless clients",
+                    "backup_networks": "Backup Networks"
                 },
                 "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.\n\nDeselecting a resource will delete that device entry and all associated entities.",
                 "title": "Select network resources"
@@ -136,11 +138,18 @@
         "sensor": {
             "all": {
                 "state": {
+                    "blue": "Blue",
                     "connected": "Connected",
                     "disabled": "Disabled",
+                    "disconnected": "Disconnected",
+                    "failure": "Failure",
                     "green": "Green",
                     "network": "Network",
-                    "profiles": "Profiles"
+                    "profiles": "Profiles",
+                    "red": "Red",
+                    "success": "Success",
+                    "white": "White",
+                    "yellow": "Yellow"
                 }
             }
         }

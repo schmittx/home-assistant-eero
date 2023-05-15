@@ -17,6 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import EeroEntity, EeroEntityDescription
 from .const import (
+    CONF_BACKUP_NETWORKS,
     CONF_CLIENTS,
     CONF_NETWORKS,
     CONF_PROFILES,
@@ -35,6 +36,11 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
     EeroSwitchEntityDescription(
         key="backup_internet_enabled",
         name="Backup Internet Enabled",
+        premium_type=True,
+    ),
+    EeroSwitchEntityDescription(
+        key="auto_join_enabled",
+        name="Auto-Join Enabled",
         premium_type=True,
     ),
     EeroSwitchEntityDescription(
@@ -184,6 +190,19 @@ async def async_setup_entry(
                             description,
                         )
                     )
+
+            for backup_network in network.backup_networks:
+                if backup_network.id in entry[CONF_BACKUP_NETWORKS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if hasattr(backup_network, key):
+                            entities.append(
+                                EeroSwitchEntity(
+                                    coordinator,
+                                    network.id,
+                                    backup_network.id,
+                                    description,
+                                )
+                            )
 
             for profile in network.profiles:
                 if profile.id in entry[CONF_PROFILES]:

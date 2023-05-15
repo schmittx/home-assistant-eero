@@ -17,7 +17,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import EeroEntity, EeroEntityDescription
 from .const import (
+    CONF_BACKUP_NETWORKS,
     CONF_CLIENTS,
+    CONF_EEROS,
     CONF_NETWORKS,
     CONF_PROFILES,
     DATA_COORDINATOR,
@@ -62,6 +64,47 @@ async def async_setup_entry(
 
     for network in coordinator.data.networks:
         if network.id in entry[CONF_NETWORKS]:
+            for key, description in SUPPORTED_KEYS.items():
+                if description.premium_type and not network.premium_status_active:
+                    continue
+                elif hasattr(network, key):
+                    entities.append(
+                        EeroBinarySensorEntity(
+                            coordinator,
+                            network.id,
+                            None,
+                            description,
+                        )
+                    )
+
+            for backup_network in network.backup_networks:
+                if backup_network.id in entry[CONF_BACKUP_NETWORKS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if hasattr(backup_network, key):
+                            entities.append(
+                                EeroBinarySensorEntity(
+                                    coordinator,
+                                    network.id,
+                                    backup_network.id,
+                                    description,
+                                )
+                            )
+
+            for eero in network.eeros:
+                if eero.id in entry[CONF_EEROS]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if description.premium_type and not network.premium_status_active:
+                            continue
+                        elif hasattr(eero, key):
+                            entities.append(
+                                EeroBinarySensorEntity(
+                                    coordinator,
+                                    network.id,
+                                    eero.id,
+                                    description,
+                                )
+                            )
+
             for profile in network.profiles:
                 if profile.id in entry[CONF_PROFILES]:
                     for key, description in SUPPORTED_KEYS.items():

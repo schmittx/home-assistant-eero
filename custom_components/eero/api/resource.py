@@ -32,6 +32,10 @@ class EeroResource(object):
         return bool(self.__class__.__name__ == "EeroNetwork")
 
     @property
+    def is_backup_network(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroBackupNetwork")
+
+    @property
     def is_eero(self) -> bool:
         return bool(self.__class__.__name__ in ["EeroDevice", "EeroDeviceBeacon"])
 
@@ -51,4 +55,7 @@ class EeroResource(object):
     def url(self) -> str | None:
         if self.is_account:
             return URL_ACCOUNT
+        elif self.is_backup_network:
+            uuid = self.data.get("uuid")
+            return f"{self.network.url}/backup_access_points/{uuid}"
         return self.data.get("url")

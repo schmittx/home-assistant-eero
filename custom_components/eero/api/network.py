@@ -15,6 +15,7 @@ from .const import (
     STATE_PROFILE,
 )
 from .eero import EeroDevice, EeroDeviceBeacon
+from .firmware import EeroFirmware
 from .profile import EeroProfile
 from .resource import EeroResource
 
@@ -460,24 +461,6 @@ class EeroNetwork(EeroResource):
         return self.data.get("status")
 
     @property
-    def target_firmware(self) -> str | None:
-        return self.data.get("updates", {}).get("target_firmware")
-
-    @property
-    def target_firmware_features(self) -> list[str | None] | None:
-        try:
-            return self.data.get("updates", {}).get("release_notes", {}).get("target", {}).get("features")
-        except AttributeError:
-            return None
-
-    @property
-    def target_firmware_title(self) -> str | None:
-        try:
-            return self.data.get("updates", {}).get("release_notes", {}).get("target", {}).get("title")
-        except AttributeError:
-            return None
-
-    @property
     def thread(self) -> bool | None:
         return self.data.get("thread")
 
@@ -543,6 +526,13 @@ class EeroNetwork(EeroResource):
         )
 
     @property
+    def backup_networks(self) -> list[EeroBackupNetwork | None]:
+        backup_networks = []
+        for backup_network in self.data.get("backup_access_points", {}).get("data", []):
+            backup_networks.append(EeroBackupNetwork(self.api, self, backup_network))
+        return backup_networks
+
+    @property
     def eeros(self) -> list[EeroDevice | EeroDeviceBeacon | None]:
         eeros = []
         for eero in self.data.get("eeros", {}).get("data", []):
@@ -567,5 +557,90 @@ class EeroNetwork(EeroResource):
         return clients
 
     @property
-    def resources(self) -> list[EeroClient | EeroDevice | EeroDeviceBeacon | EeroProfile | None]:
-        return self.eeros + self.profiles + self.clients
+    def resources(self) -> list[EeroBackupNetwork | EeroClient | EeroDevice | EeroDeviceBeacon | EeroProfile | None]:
+        return self.backup_networks + self.eeros + self.profiles + self.clients
+
+    @property
+    def guest_network_qr_code(self) -> bool:
+        return True
+
+    @property
+    def main_network_qr_code(self) -> bool:
+        return True
+
+    @property
+    def firmware_history(self) -> list[EeroFirmware | None]:
+        return [EeroFirmware(firmware) for firmware in self.data.get("updates", {}).get("release_notes", {}).get("history", [])]
+
+    @property
+    def target_firmware(self) -> EeroFirmware:
+        return EeroFirmware(self.data.get("updates", {}).get("release_notes", {}).get("target", {}))
+
+
+class EeroBackupNetwork(EeroResource):
+
+    @property
+    def backup_access_point_id(self) -> str | None:
+        return self.data.get("connectivity", {}).get("backup_access_point_id")
+
+    @property
+    def checked(self) -> str | None:
+        return self.data.get("connectivity", {}).get("checked")
+
+    @property
+    def failure_reason(self) -> str | None:
+        return self.data.get("connectivity", {}).get("failure_reason")
+
+    @property
+    def status(self) -> str | None:
+        return self.data.get("connectivity", {}).get("status")
+
+    @property
+    def created(self) -> str | None:
+        return self.data.get("created")
+
+    @property
+    def auto_join_enabled(self) -> bool | None:
+        return self.data.get("enabled")
+
+    @auto_join_enabled.setter
+    def auto_join_enabled(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
+            method="put",
+            url=self.url,
+            json=dict(
+                enabled=value,
+                ssid=self.ssid,
+                password=self.password,
+            ),
+        )
+
+    @property
+    def last_updated_at(self) -> str | None:
+        return self.data.get("last_updated_at")
+
+    @property
+    def password(self) -> str | None:
+        return self.data.get("password")
+
+    @property
+    def ssid(self) -> str | None:
+        return self.data.get("ssid")
+
+    @property
+    def uuid(self) -> str | None:
+        return self.data.get("uuid")
+
+    @property
+    def id(self) -> str | None:
+        return self.uuid
+
+    @property
+    def name(self) -> str | None:
+        return self.ssid
+
+    @property
+    def backup_network_qr_code(self) -> bool:
+        return True

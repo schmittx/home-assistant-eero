@@ -1,8 +1,12 @@
 """Eero API"""
 from __future__ import annotations
 
+import logging
+
 from .const import DEVICE_CATEGORY_TYPE_MAP
 from .resource import EeroResource
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class EeroClient(EeroResource):
@@ -166,6 +170,10 @@ class EeroClient(EeroResource):
         return self.data.get("is_private")
 
     @property
+    def last_active(self) -> str | None:
+        return self.data.get("last_active")
+
+    @property
     def mac(self) -> str | None:
         return self.data.get("mac")
 
@@ -222,12 +230,30 @@ class EeroClient(EeroResource):
         )
 
     @property
+    def signal(self) -> int | None:
+        if signal := self.data.get("connectivity", {}).get("signal"):
+            return int(signal.replace(" dBm", ""))
+        return signal
+
+    @property
     def source_location(self) -> str | None:
         return self.data.get("source", {}).get("location")
 
     @property
     def url_insights(self) -> str | None:
         return f"{self.network.url_insights}/devices/{self.id}"
+
+    @property
+    def usage_down(self) -> float:
+        if usage := self.data.get("usage"):
+            return usage.get("down_mbps", 0)
+        return 0
+
+    @property
+    def usage_up(self) -> float:
+        if usage := self.data.get("usage"):
+            return usage.get("up_mbps", 0)
+        return 0
 
     @property
     def wireless(self) -> bool | None:

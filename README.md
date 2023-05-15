@@ -21,16 +21,18 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 
 ## Currently Working
 - Multiple networks supported
-- Control network properties (i.e. guest network, Eero Secure features, Eero Labs features)
+- Control network properties (i.e. guest network, Eero Plus features, Eero Labs features)
 - Pause access for profiles and/or clients
 - Control content filters for profiles
 - Create device trackers for clients
 - Sensors for various metrics
-- Custom services to control features that require network restarts
-- Custom service to control nightlight features for Eero Beacon devices
+- Button entities to control features that require network restarts
+- Select entities to control nightlight features for Eero Beacon devices
 - Camera entities to display QR code for joining main network and guest network (if enabled)
-- Sensors for activity data (requires Eero Secure subscription)
-- Set blocked apps for profiles (requires Eero Secure subscription)
+- Sensors for activity data (requires Eero Plus subscription)
+- Set blocked apps for profiles (requires Eero Plus subscription)
+- Update entities for Eero device firmware management
+- Control backup networks (requires Eero Plus subscription)
 
 ## Coming Soon
 - TBD, feature requests are welcome.

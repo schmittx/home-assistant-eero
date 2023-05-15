@@ -21,6 +21,7 @@ from .const import (
     CONF_ACTIVITY_CLIENTS,
     CONF_ACTIVITY_NETWORK,
     CONF_ACTIVITY_PROFILES,
+    CONF_BACKUP_NETWORKS,
     CONF_CODE,
     CONF_EEROS,
     CONF_LOGIN,
@@ -132,13 +133,15 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.user_input[CONF_PROFILES].extend([profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]])
                     self.user_input[CONF_WIRED_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]])
                     self.user_input[CONF_WIRELESS_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]])
+                    if network.premium_status_active:
+                        self.user_input[CONF_BACKUP_NETWORKS].extend([backup_network.id for backup_network in network.backup_networks if backup_network.name in user_input[CONF_BACKUP_NETWORKS]])
                     self.index += 1
 
         if self.index == len(self.user_input[CONF_NETWORKS]):
             self.index = 0
             return await self.async_step_activity()
         elif self.index == 0:
-            for conf in [CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
+            for conf in [CONF_BACKUP_NETWORKS, CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
                 self.user_input[conf] = []
 
         target_network = self.user_input[CONF_NETWORKS][self.index]
@@ -148,17 +151,19 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 profile_names = sorted(profile.name for profile in network.profiles)
                 wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
                 wireless_client_names = sorted(client.name_mac for client in network.clients if client.wireless)
+                schema = {
+                    vol.Required(CONF_EEROS, default=eero_names): cv.multi_select(eero_names),
+                    vol.Required(CONF_PROFILES, default=profile_names): cv.multi_select(profile_names),
+                    vol.Required(CONF_WIRED_CLIENTS, default=[]): cv.multi_select(wired_client_names),
+                    vol.Required(CONF_WIRELESS_CLIENTS, default=[]): cv.multi_select(wireless_client_names),
+                }
+                if network.premium_status_active:
+                    backup_network_names = sorted(backup_network.name for backup_network in network.backup_networks)
+                    schema[vol.Required(CONF_BACKUP_NETWORKS, default=backup_network_names)] = cv.multi_select(backup_network_names)
 
                 return self.async_show_form(
                     step_id="resources",
-                    data_schema=vol.Schema(
-                        {
-                            vol.Required(CONF_EEROS, default=eero_names): cv.multi_select(eero_names),
-                            vol.Required(CONF_PROFILES, default=profile_names): cv.multi_select(profile_names),
-                            vol.Required(CONF_WIRED_CLIENTS, default=[]): cv.multi_select(wired_client_names),
-                            vol.Required(CONF_WIRELESS_CLIENTS, default=[]): cv.multi_select(wireless_client_names),
-                        }
-                    ),
+                    data_schema=vol.Schema(schema),
                     description_placeholders={"network": network.name_long},
                 )
 
@@ -261,13 +266,15 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                     self.user_input[CONF_PROFILES].extend([profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]])
                     self.user_input[CONF_WIRED_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]])
                     self.user_input[CONF_WIRELESS_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]])
+                    if network.premium_status_active:
+                        self.user_input[CONF_BACKUP_NETWORKS].extend([backup_network.id for backup_network in network.backup_networks if backup_network.name in user_input[CONF_BACKUP_NETWORKS]])
                     self.index += 1
 
         if self.index == len(self.user_input[CONF_NETWORKS]):
             self.index = 0
             return await self.async_step_activity()
         elif self.index == 0:
-            for conf in [CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
+            for conf in [CONF_BACKUP_NETWORKS, CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
                 self.user_input[conf] = []
 
         target_network = self.user_input[CONF_NETWORKS][self.index]
@@ -282,17 +289,20 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                 profile_names = sorted(profile.name for profile in network.profiles)
                 wired_client_names = sorted(client.name_mac for client in network.clients if not client.wireless)
                 wireless_client_names = sorted(client.name_mac for client in network.clients if client.wireless)
+                schema = {
+                    vol.Required(CONF_EEROS, default=conf_eeros): cv.multi_select(eero_names),
+                    vol.Required(CONF_PROFILES, default=conf_profiles): cv.multi_select(profile_names),
+                    vol.Required(CONF_WIRED_CLIENTS, default=conf_wired_clients): cv.multi_select(wired_client_names),
+                    vol.Required(CONF_WIRELESS_CLIENTS, default=conf_wireless_clients): cv.multi_select(wireless_client_names),
+                }
+                if network.premium_status_active:
+                    conf_backup_networks = [backup_network.name for backup_network in network.backup_networks if backup_network.id in self.options.get(CONF_BACKUP_NETWORKS, self.data.get(CONF_BACKUP_NETWORKS, []))]
+                    backup_network_names = sorted(backup_network.name for backup_network in network.backup_networks)
+                    schema[vol.Required(CONF_BACKUP_NETWORKS, default=conf_backup_networks)] = cv.multi_select(backup_network_names)
 
                 return self.async_show_form(
                     step_id="resources",
-                    data_schema=vol.Schema(
-                        {
-                            vol.Required(CONF_EEROS, default=conf_eeros): cv.multi_select(eero_names),
-                            vol.Required(CONF_PROFILES, default=conf_profiles): cv.multi_select(profile_names),
-                            vol.Required(CONF_WIRED_CLIENTS, default=conf_wired_clients): cv.multi_select(wired_client_names),
-                            vol.Required(CONF_WIRELESS_CLIENTS, default=conf_wireless_clients): cv.multi_select(wireless_client_names),
-                        }
-                    ),
+                    data_schema=vol.Schema(schema),
                     description_placeholders={"network": network.name_long},
                 )
 

@@ -84,12 +84,12 @@ class EeroUpdateEntity(UpdateEntity, EeroEntity):
     @property
     def installed_version(self) -> str | None:
         """Version installed and in use."""
-        return self.resource.os_version
+        return self.resource.current_firmware.os_version
 
     @property
     def latest_version(self) -> str | None:
         """Latest version available for install."""
-        return self.network.target_firmware
+        return self.resource.target_firmware.os_version
 
     @property
     def release_summary(self) -> str | None:
@@ -98,7 +98,7 @@ class EeroUpdateEntity(UpdateEntity, EeroEntity):
         This is not suitable for long changelogs, but merely suitable
         for a short excerpt update description of max 255 characters.
         """
-        features = self.network.target_firmware_features
+        features = self.resource.target_firmware.features
         if features:
             return str("- " + "\n- ".join(features))
         return None
@@ -119,7 +119,7 @@ class EeroUpdateEntity(UpdateEntity, EeroEntity):
     @property
     def supported_features(self) -> int:
         """Flag supported features."""
-        if self.network.target_firmware_features:
+        if self.resource.target_firmware.features:
             return (
                 UpdateEntityFeature.INSTALL | UpdateEntityFeature.RELEASE_NOTES
             )
@@ -132,7 +132,7 @@ class EeroUpdateEntity(UpdateEntity, EeroEntity):
         This helps to differentiate between the device or entity name
         versus the title of the software installed.
         """
-        return self.network.target_firmware_title
+        return self.resource.target_firmware.title
 
     def install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
         """Install an update.
