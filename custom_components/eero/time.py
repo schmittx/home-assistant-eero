@@ -1,14 +1,15 @@
-"""Support for Eero number entities."""
+"""Support for Eero time entities."""
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import time
 
-from homeassistant.components.number import (
-    NumberEntity,
-    NumberEntityDescription,
+from homeassistant.components.time import (
+    TimeEntity,
+    TimeEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfTime
+from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -22,16 +23,19 @@ from .const import (
 )
 
 @dataclass
-class EeroNumberEntityDescription(EeroEntityDescription, NumberEntityDescription):
-    """Class to describe an Eero number entity."""
+class EeroTimeEntityDescription(EeroEntityDescription, TimeEntityDescription):
+    """Class to describe an Eero time entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
 
-NUMBER_DESCRIPTIONS: list[EeroNumberEntityDescription] = [
-    EeroNumberEntityDescription(
-        key="nightlight_brightness_percentage",
-        name="Nightlight Brightness",
-        native_unit_of_measurement=PERCENTAGE,
+TIME_DESCRIPTIONS: list[EeroTimeEntityDescription] = [
+    EeroTimeEntityDescription(
+        key="nightlight_schedule_on",
+        name="Nightlight On",
+    ),
+    EeroTimeEntityDescription(
+        key="nightlight_schedule_off",
+        name="Nightlight Off",
     ),
 ]
 
@@ -41,13 +45,13 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up an Eero number entity based on a config entry."""
+    """Set up an Eero time entity based on a config entry."""
     entry = hass.data[EERO_DOMAIN][config_entry.entry_id]
     coordinator = entry[DATA_COORDINATOR]
-    entities: list[EeroNumberEntity] = []
+    entities: list[EeroTimeEntity] = []
 
     SUPPORTED_KEYS = {
-        description.key: description for description in NUMBER_DESCRIPTIONS
+        description.key: description for description in TIME_DESCRIPTIONS
     }
 
     for network in coordinator.data.networks:
@@ -59,7 +63,7 @@ async def async_setup_entry(
                             continue
                         elif hasattr(eero, key):
                             entities.append(
-                                EeroNumberEntity(
+                                EeroTimeEntity(
                                     coordinator,
                                     network.id,
                                     eero.id,
@@ -70,22 +74,22 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class EeroNumberEntity(NumberEntity, EeroEntity):
-    """Representation of an Eero number entity."""
+class EeroTimeEntity(TimeEntity, EeroEntity):
+    """Representation of an Eero time entity."""
 
-    entity_description: EeroNumberEntityDescription
+    entity_description: EeroTimeEntityDescription
 
     @property
-    def native_value(self) -> float | None:
-        """Return the value reported by the number."""
+    def native_value(self) -> time | None:
+        """Return the value reported by the time."""
         return getattr(self.resource, self.entity_description.key)
 
-    def set_native_value(self, value: float) -> None:
-        """Set new value."""
+    def set_value(self, value: time) -> None:
+        """Change the time."""
         setattr(self.resource, self.entity_description.key, value)
 
-    async def async_set_native_value(self, value: float) -> None:
-        """Set new value."""
-        await super().async_set_native_value(value)
+    async def async_set_value(self, value: time) -> None:
+        """Change the time."""
+        await super().async_set_value(value)
         if self.entity_description.request_refresh:
             await self.coordinator.async_request_refresh()

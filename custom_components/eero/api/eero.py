@@ -1,6 +1,8 @@
 """Eero API"""
 from __future__ import annotations
 
+from datetime import time
+
 from .const import STATE_AMBIENT, STATE_DISABLED, STATE_SCHEDULE
 from .firmware import EeroFirmware
 from .resource import EeroResource
@@ -150,10 +152,10 @@ class EeroDeviceBeacon(EeroDevice):
         return self.data.get("nightlight", {}).get("brightness_percentage")
 
     @nightlight_brightness_percentage.setter
-    def nightlight_brightness_percentage(self, value: int) -> None:
-        if not isinstance(value, int):
+    def nightlight_brightness_percentage(self, value: float | int) -> None:
+        if not isinstance(value, (float, int)):
             return
-        self.set_nightlight_brightness(value=value)
+        self.set_nightlight_brightness(value=int(value))
 
     @property
     def nightlight_enabled(self) -> bool | None:
@@ -222,63 +224,59 @@ class EeroDeviceBeacon(EeroDevice):
         json = dict(enabled=False)
         self._set_nightlight(json=json)
 
-    def set_nightlight_schedule(self, time_on: str=None, time_off: str=None) -> None:
+    def set_nightlight_schedule(self, time_on: str, time_off: str) -> None:
         if not isinstance(time_on, str) or not isinstance(time_off, str):
             return
-        if time_on is None:
-            time_on = self.nightlight_schedule[0]
-        if time_off is None:
-            time_off = self.nightlight_schedule[1]
         json = dict(enabled=True, schedule=dict(enabled=True, on=time_on, off=time_off))
         self._set_nightlight(json=json)
+
+    @property
+    def nightlight_schedule_on(self) -> time:
+        return time(
+            hour=int(self.nightlight_schedule_on_hour),
+            minute=int(self.nightlight_schedule_on_minute),
+        )
+
+    @nightlight_schedule_on.setter
+    def nightlight_schedule_on(self, value: time) -> None:
+        if not isinstance(value, time):
+            return
+        self.set_nightlight_schedule(
+            time_on=f"{self._format_time(value.hour)}:{self._format_time(value.minute)}",
+            time_off=self.nightlight_schedule[1],
+        )
 
     @property
     def nightlight_schedule_on_hour(self) -> str:
         return self.nightlight_schedule[0].split(":")[0]
 
-    @nightlight_schedule_on_hour.setter
-    def nightlight_schedule_on_hour(self, value: int) -> None:
-        if not isinstance(value, int):
-            return
-        self.set_nightlight_schedule(
-            time_on=f"{self._format_time(value)}:{self.nightlight_schedule_on_minute}",
-        )
-
     @property
     def nightlight_schedule_on_minute(self) -> str:
         return self.nightlight_schedule[0].split(":")[1]
 
-    @nightlight_schedule_on_minute.setter
-    def nightlight_schedule_on_minute(self, value: int) -> None:
-        if not isinstance(value, int):
+    @property
+    def nightlight_schedule_off(self) -> time:
+        return time(
+            hour=int(self.nightlight_schedule_off_hour),
+            minute=int(self.nightlight_schedule_off_minute),
+        )
+
+    @nightlight_schedule_off.setter
+    def nightlight_schedule_off(self, value: time) -> None:
+        if not isinstance(value, time):
             return
         self.set_nightlight_schedule(
-            time_on=f"{self.nightlight_schedule_on_hour}:{self._format_time(value)}",
+            time_on=self.nightlight_schedule[0],
+            time_off=f"{self._format_time(value.hour)}:{self._format_time(value.minute)}",
         )
 
     @property
     def nightlight_schedule_off_hour(self) -> str:
         return self.nightlight_schedule[1].split(":")[0]
 
-    @nightlight_schedule_off_hour.setter
-    def nightlight_schedule_off_hour(self, value: int) -> None:
-        if not isinstance(value, int):
-            return
-        self.set_nightlight_schedule(
-            time_off=f"{self._format_time(value)}:{self.nightlight_schedule_off_minute}",
-        )
-
     @property
     def nightlight_schedule_off_minute(self) -> str:
         return self.nightlight_schedule[1].split(":")[1]
-
-    @nightlight_schedule_off_minute.setter
-    def nightlight_schedule_off_minute(self, value: int) -> None:
-        if not isinstance(value, int):
-            return
-        self.set_nightlight_schedule(
-            time_off=f"{self.nightlight_schedule_off_hour}:{self._format_time(value)}",
-        )
 
     def _format_time(self, value: int) -> str | None:
         if not isinstance(value, int):
