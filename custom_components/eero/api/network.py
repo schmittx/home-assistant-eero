@@ -461,18 +461,46 @@ class EeroNetwork(EeroResource):
         return self.data.get("status")
 
     @property
-    def thread(self) -> bool | None:
-        return self.data.get("thread")
+    def thread_enabled(self) -> bool | None:
+        return self.data.get("thread", {}).get("enabled")
 
-    @thread.setter
-    def thread(self, value: bool) -> None:
+    @thread_enabled.setter
+    def thread_enabled(self, value: bool) -> None:
         if not isinstance(value, bool):
             return
         self.api.call(
             method="put",
-            url=self.url_settings,
-            json=dict(thread=value),
+            url=f"{self.url_thread}/enable",
+            json=dict(enabled=value),
         )
+
+    @property
+    def thread_channel(self) -> int | None:
+        return self.data.get("thread", {}).get("channel")
+
+    @property
+    def thread_master_key(self) -> str | None:
+        return self.data.get("thread", {}).get("master_key")
+
+    @property
+    def thread_name(self) -> str | None:
+        return self.data.get("thread", {}).get("name")
+
+    @property
+    def thread_pan_id(self) -> str | None:
+        return self.data.get("thread", {}).get("pan_id")
+
+    @property
+    def thread_xpan_id(self) -> str | None:
+        return self.data.get("thread", {}).get("xpan_id")
+
+    @property
+    def thread_commissioning_credential(self) -> str | None:
+        return self.data.get("thread", {}).get("commissioning_credential")
+
+    @property
+    def thread_active_operational_dataset(self) -> str | None:
+        return self.data.get("thread", {}).get("active_operational_dataset")
 
     def update(self) -> None:
         self.api.call(method="post", url=self.url_updates)
@@ -506,6 +534,10 @@ class EeroNetwork(EeroResource):
     @property
     def url_settings(self) -> str | None:
         return self.data.get("resources", {}).get("settings")
+
+    @property
+    def url_thread(self) -> str | None:
+        return self.data.get("resources", {}).get("thread")
 
     @property
     def url_updates(self) -> str | None:

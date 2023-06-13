@@ -171,6 +171,7 @@ class EeroAPI(object):
             networks = list()
             for network in account["networks"]["data"]:
                 network_data = self.call(method="get", url=network["url"])
+                network_data["thread"] = self.call(method="get", url=network_data["resources"]["thread"])
                 if network_data["premium_status"] == STATE_ACTIVE:
                     backup_access_points = self.call(method="get", url=f"{network['url']}/backup_access_points")
                     network_data["backup_access_points"] = dict(count=len(backup_access_points), data=backup_access_points)

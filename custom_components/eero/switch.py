@@ -79,9 +79,17 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         name="Smart Queue Management",
     ),
     EeroSwitchEntityDescription(
-        key="thread",
+        key="thread_enabled",
         name="Thread Enabled",
-        request_refresh=False,
+        extra_attrs={
+            "thread_network_key": lambda resource: getattr(resource, "thread_master_key"),
+            "thread_network_name": lambda resource: getattr(resource, "thread_name"),
+            "channel": lambda resource: getattr(resource, "thread_channel"),
+            "pan_id": lambda resource: getattr(resource, "thread_pan_id"),
+            "extended_pan_id": lambda resource: getattr(resource, "thread_xpan_id"),
+            "commissioning_credential": lambda resource: getattr(resource, "thread_commissioning_credential"),
+            "active_operational_dataset": lambda resource: getattr(resource, "thread_active_operational_dataset"),
+        },
     ),
     EeroSwitchEntityDescription(
         key="upnp",

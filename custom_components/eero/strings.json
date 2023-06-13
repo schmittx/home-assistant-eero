@@ -99,6 +99,11 @@
                 "state": {
                     "disabled": "Disabled",
                     "enabled": "Enabled"
+                },
+                "state_attributes": {
+                    "ssid": {
+                        "name": "SSID"
+                    }
                 }
             }
         },
@@ -150,6 +155,38 @@
                     "success": "Success",
                     "white": "White",
                     "yellow": "Yellow"
+                },
+                "state_attributes": {
+                    "computers_personal": {
+                        "name": "Computers and personal"
+                    }
+                }
+            }
+        },
+        "switch": {
+            "all": {
+                "state_attributes": {
+                    "thread_network_key": {
+                        "name": "Thread network key"
+                    },
+                    "thread_network_name": {
+                        "name": "Thread network name"
+                    },
+                    "channel": {
+                        "name": "Channel"
+                    },
+                    "pan_id": {
+                        "name": "PAN ID"
+                    },
+                    "extended_pan_id": {
+                        "name": "Extended PAN ID"
+                    },
+                    "commissioning_credential": {
+                        "name": "Commissioning credential"
+                    },
+                    "active_operational_dataset": {
+                        "name": "Active operational dataset"
+                    }
                 }
             }
         }
