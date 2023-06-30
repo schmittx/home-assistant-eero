@@ -214,6 +214,10 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         activity_type=True,
     ),
     EeroSensorEntityDescription(
+        key="ip",
+        name="IP Address",
+    ),
+    EeroSensorEntityDescription(
         key="last_active",
         name="Last Active",
         device_class=SensorDeviceClass.TIMESTAMP,
