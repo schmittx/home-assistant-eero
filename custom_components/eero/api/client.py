@@ -191,7 +191,9 @@ class EeroClient(EeroResource):
 
     @property
     def name_connection_type(self) -> str | None:
-        return f"{self.name} ({self.connection_type.title()})"
+        if self.connection_type:
+            return f"{self.name} ({self.connection_type.title()})"
+        return f"{self.name} (Unknown)"
 
     @property
     def name_mac(self) -> str | None:

@@ -26,6 +26,7 @@ from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_CLIENTS,
     CONF_NETWORKS,
+    CONF_PROFILES,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
@@ -60,6 +61,20 @@ async def async_setup_entry(
 
     for network in coordinator.data.networks:
         if network.id in entry[CONF_NETWORKS]:
+            for profile in network.profiles:
+                if profile.id in entry[CONF_PROFILES]:
+                    for key, description in SUPPORTED_KEYS.items():
+                        if description.premium_type and not network.premium_status_active:
+                            continue
+                        entities.append(
+                            EeroDeviceTrackerEntity(
+                                coordinator,
+                                network.id,
+                                profile.id,
+                                description,
+                            )
+                        )
+
             for client in network.clients:
                 if client.id in entry[CONF_CLIENTS]:
                     for key, description in SUPPORTED_KEYS.items():
@@ -85,7 +100,9 @@ class EeroDeviceTrackerEntity(EeroEntity):
     @property
     def name(self) -> str | None:
         """Return the name of the entity."""
-        return f"{self.network.name} {self.resource.name_connection_type}"
+        if self.resource.is_client:
+            return f"{self.network.name} {self.resource.name_connection_type}"
+        return f"{self.network.name} {self.resource.name}"
 
     @property
     def is_connected(self) -> bool | None:
@@ -100,17 +117,23 @@ class EeroDeviceTrackerEntity(EeroEntity):
     @property
     def ip_address(self) -> str | None:
         """Return the primary ip address of the device."""
-        return self.resource.ip
+        if self.resource.is_client:
+            return self.resource.ip
+        return None
 
     @property
     def mac_address(self) -> str | None:
         """Return the mac address of the device."""
-        return self.resource.mac
+        if self.resource.is_client:
+            return self.resource.mac
+        return None
 
     @property
     def hostname(self) -> str | None:
         """Return hostname of the device."""
-        return self.resource.hostname
+        if self.resource.is_client:
+            return self.resource.hostname
+        return None
 
     @property
     def state(self) -> str:
@@ -140,7 +163,7 @@ class EeroDeviceTrackerEntity(EeroEntity):
         is lowercase snake_case.
         """
         attrs = {}
-        if self.is_connected:
+        if self.is_connected and self.resource.is_client:
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type
             attrs["network_name"] = self.network.name_long

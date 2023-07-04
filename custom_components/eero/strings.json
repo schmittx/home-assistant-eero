@@ -107,6 +107,18 @@
                 }
             }
         },
+        "device_tracker": {
+            "all": {
+                "state_attributes": {
+                    "connection_type": {
+                        "state": {
+                            "wired": "Wired",
+                            "wireless": "Wireless"
+                        }
+                    }
+                }
+            }
+        },
         "select": {
             "all": {
                 "state": {
@@ -159,6 +171,11 @@
                 "state_attributes": {
                     "computers_personal": {
                         "name": "Computers and personal"
+                    },
+                    "failure_reason": {
+                        "state": {
+                            "network_not_found": "Network not found"
+                        }
                     }
                 }
             }
