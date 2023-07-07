@@ -28,12 +28,12 @@ class EeroResource(object):
         return bool(self.__class__.__name__ == "EeroAccount")
 
     @property
-    def is_network(self) -> bool:
-        return bool(self.__class__.__name__ == "EeroNetwork")
-
-    @property
     def is_backup_network(self) -> bool:
         return bool(self.__class__.__name__ == "EeroBackupNetwork")
+
+    @property
+    def is_client(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroClient")
 
     @property
     def is_eero(self) -> bool:
@@ -44,12 +44,12 @@ class EeroResource(object):
         return bool(self.__class__.__name__ == "EeroDeviceBeacon")
 
     @property
-    def is_profile(self) -> bool:
-        return bool(self.__class__.__name__ == "EeroProfile")
+    def is_network(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroNetwork")
 
     @property
-    def is_client(self) -> bool:
-        return bool(self.__class__.__name__ == "EeroClient")
+    def is_profile(self) -> bool:
+        return bool(self.__class__.__name__ == "EeroProfile")
 
     @property
     def url(self) -> str | None:

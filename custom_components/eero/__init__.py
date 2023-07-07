@@ -116,8 +116,8 @@ SET_NIGHTLIGHT_MODE_SCHEMA = vol.Schema(
 PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
-    Platform.CAMERA,
     Platform.DEVICE_TRACKER,
+    Platform.IMAGE,
     Platform.LIGHT,
     Platform.NUMBER,
     Platform.SELECT,

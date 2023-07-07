@@ -181,5 +181,3 @@ DEFAULT_SAVE_LOCATION = f"/config/custom_components/{DOMAIN}/api/responses"
 DEFAULT_SAVE_RESPONSES = False
 DEFAULT_SCAN_INTERVAL = VALUES_SCAN_INTERVAL[2]
 DEFAULT_TIMEOUT = VALUES_TIMEOUT[0]
-
-EERO_LOGO_ICON = "/config/custom_components/eero/logo_icon_white_background.png"

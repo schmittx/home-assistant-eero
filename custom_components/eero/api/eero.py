@@ -15,6 +15,11 @@ class EeroDevice(EeroResource):
         return self.data.get("connected_clients_count")
 
     @property
+    def current_firmware(self) -> EeroFirmware:
+        history = {firmware.os_version: firmware for firmware in self.network.firmware_history}
+        return history.get(self.os_version.split("-")[0], EeroFirmware())
+
+    @property
     def data_usage_day(self) -> tuple[int | None, int | None]:
         for eero in self.network.data.get("activity", {}).get("eeros", {}).get("data_usage_day", []):
             if eero["url"] == self.url:
@@ -38,41 +43,6 @@ class EeroDevice(EeroResource):
     @property
     def is_gateway(self) -> bool | None:
         return self.data.get("gateway")
-
-    @property
-    def status_light_brightness(self) -> int | None:
-        return self.data.get("led_brightness")
-
-    @property
-    def status_light_enabled(self) -> bool | None:
-        return self.data.get("led_on")
-
-    def set_status_light_brightness(self, value: int) -> None:
-        if not isinstance(value, int):
-            return
-        elif not value:
-            self.set_status_light_off
-            return
-        self.api.call(
-            method="put",
-            url=self.url_led,
-            json=dict(led_brightness=value),
-        )
-
-    def set_status_light(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            return
-        self.api.call(
-            method="put",
-            url=self.url_led,
-            json=dict(led_on=value),
-        )
-
-    def set_status_light_off(self) -> None:
-        self.set_status_light(value=False)
-
-    def set_status_light_on(self) -> None:
-        self.set_status_light(value=True)
 
     @property
     def location(self) -> str | None:
@@ -109,9 +79,44 @@ class EeroDevice(EeroResource):
     def serial(self) -> str | None:
         return self.data.get("serial")
 
+    def set_status_light(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        self.api.call(
+            method="put",
+            url=self.url_led,
+            json=dict(led_on=value),
+        )
+
+    def set_status_light_brightness(self, value: int) -> None:
+        if not isinstance(value, int):
+            return
+        elif not value:
+            self.set_status_light_off
+            return
+        self.api.call(
+            method="put",
+            url=self.url_led,
+            json=dict(led_brightness=value),
+        )
+
+    def set_status_light_off(self) -> None:
+        self.set_status_light(value=False)
+
+    def set_status_light_on(self) -> None:
+        self.set_status_light(value=True)
+
     @property
     def status(self) -> str | None:
         return self.data.get("status")
+
+    @property
+    def status_light_brightness(self) -> int | None:
+        return self.data.get("led_brightness")
+
+    @property
+    def status_light_enabled(self) -> bool | None:
+        return self.data.get("led_on")
 
     @property
     def support_expiration_string(self) -> str | None:
@@ -120,6 +125,12 @@ class EeroDevice(EeroResource):
     @property
     def support_expired(self) -> bool | None:
         return self.data.get("update_status", {}).get("support_expired")
+
+    @property
+    def target_firmware(self) -> EeroFirmware:
+        if self.support_expired:
+            return self.current_firmware
+        return self.network.target_firmware
 
     @property
     def update_available(self) -> bool | None:
@@ -133,19 +144,15 @@ class EeroDevice(EeroResource):
     def url_reboot(self) -> str | None:
         return self.data.get("resources", {}).get("reboot")
 
-    @property
-    def current_firmware(self) -> EeroFirmware:
-        history = {firmware.os_version: firmware for firmware in self.network.firmware_history}
-        return history.get(self.os_version.split("-")[0], EeroFirmware())
-
-    @property
-    def target_firmware(self) -> EeroFirmware:
-        if self.support_expired:
-            return self.current_firmware
-        return self.network.target_firmware
-
 
 class EeroDeviceBeacon(EeroDevice):
+
+    def _format_time(self, value: int) -> str | None:
+        if not isinstance(value, int):
+            return
+        if value < 10:
+            return f"0{value}"
+        return str(value)
 
     @property
     def nightlight_brightness_percentage(self) -> int | None:
@@ -193,6 +200,54 @@ class EeroDeviceBeacon(EeroDevice):
     def nightlight_schedule_enabled(self) -> bool | None:
         return self.data.get("nightlight", {}).get("schedule", {}).get("enabled")
 
+    @property
+    def nightlight_schedule_off(self) -> time:
+        return time(
+            hour=int(self.nightlight_schedule_off_hour),
+            minute=int(self.nightlight_schedule_off_minute),
+        )
+
+    @nightlight_schedule_off.setter
+    def nightlight_schedule_off(self, value: time) -> None:
+        if not isinstance(value, time):
+            return
+        self.set_nightlight_schedule(
+            time_on=self.nightlight_schedule[0],
+            time_off=f"{self._format_time(value.hour)}:{self._format_time(value.minute)}",
+        )
+
+    @property
+    def nightlight_schedule_off_hour(self) -> str:
+        return self.nightlight_schedule[1].split(":")[0]
+
+    @property
+    def nightlight_schedule_off_minute(self) -> str:
+        return self.nightlight_schedule[1].split(":")[1]
+
+    @property
+    def nightlight_schedule_on(self) -> time:
+        return time(
+            hour=int(self.nightlight_schedule_on_hour),
+            minute=int(self.nightlight_schedule_on_minute),
+        )
+
+    @nightlight_schedule_on.setter
+    def nightlight_schedule_on(self, value: time) -> None:
+        if not isinstance(value, time):
+            return
+        self.set_nightlight_schedule(
+            time_on=f"{self._format_time(value.hour)}:{self._format_time(value.minute)}",
+            time_off=self.nightlight_schedule[1],
+        )
+
+    @property
+    def nightlight_schedule_on_hour(self) -> str:
+        return self.nightlight_schedule[0].split(":")[0]
+
+    @property
+    def nightlight_schedule_on_minute(self) -> str:
+        return self.nightlight_schedule[0].split(":")[1]
+
     def _set_nightlight(self, json: dict) -> None:
         if not isinstance(json, dict):
             return
@@ -229,58 +284,3 @@ class EeroDeviceBeacon(EeroDevice):
             return
         json = dict(enabled=True, schedule=dict(enabled=True, on=time_on, off=time_off))
         self._set_nightlight(json=json)
-
-    @property
-    def nightlight_schedule_on(self) -> time:
-        return time(
-            hour=int(self.nightlight_schedule_on_hour),
-            minute=int(self.nightlight_schedule_on_minute),
-        )
-
-    @nightlight_schedule_on.setter
-    def nightlight_schedule_on(self, value: time) -> None:
-        if not isinstance(value, time):
-            return
-        self.set_nightlight_schedule(
-            time_on=f"{self._format_time(value.hour)}:{self._format_time(value.minute)}",
-            time_off=self.nightlight_schedule[1],
-        )
-
-    @property
-    def nightlight_schedule_on_hour(self) -> str:
-        return self.nightlight_schedule[0].split(":")[0]
-
-    @property
-    def nightlight_schedule_on_minute(self) -> str:
-        return self.nightlight_schedule[0].split(":")[1]
-
-    @property
-    def nightlight_schedule_off(self) -> time:
-        return time(
-            hour=int(self.nightlight_schedule_off_hour),
-            minute=int(self.nightlight_schedule_off_minute),
-        )
-
-    @nightlight_schedule_off.setter
-    def nightlight_schedule_off(self, value: time) -> None:
-        if not isinstance(value, time):
-            return
-        self.set_nightlight_schedule(
-            time_on=self.nightlight_schedule[0],
-            time_off=f"{self._format_time(value.hour)}:{self._format_time(value.minute)}",
-        )
-
-    @property
-    def nightlight_schedule_off_hour(self) -> str:
-        return self.nightlight_schedule[1].split(":")[0]
-
-    @property
-    def nightlight_schedule_off_minute(self) -> str:
-        return self.nightlight_schedule[1].split(":")[1]
-
-    def _format_time(self, value: int) -> str | None:
-        if not isinstance(value, int):
-            return
-        if value < 10:
-            return f"0{value}"
-        return str(value)

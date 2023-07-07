@@ -1,14 +1,16 @@
 {
   "domain": "eero",
   "name": "eero",
-  "documentation": "https://github.com/schmittx/home-assistant-eero",
-  "issue_tracker": "https://github.com/schmittx/home-assistant-eero/issues",
-  "dependencies": [],
   "after_dependencies": [],
   "codeowners": ["@schmittx"],
-  "requirements": ["pypng==0.0.20", "PyQRCode==1.2.1"],
   "config_flow": true,
-  "quality_scale": "gold",
+  "dependencies": [],
+  "documentation": "https://github.com/schmittx/home-assistant-eero",
+  "integration_type": "hub",
   "iot_class": "cloud_polling",
-  "version": "1.3.3"
+  "issue_tracker": "https://github.com/schmittx/home-assistant-eero/issues",
+  "loggers": [],
+  "quality_scale": "gold",
+  "requirements": ["pypng==0.0.20", "PyQRCode==1.2.1"],
+  "version": "1.4.0"
 }

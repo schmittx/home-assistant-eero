@@ -28,7 +28,7 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 - Sensors for various metrics
 - Button entities to control features that require network restarts
 - Select and time entities to control nightlight features for Eero Beacon devices
-- Camera entities to display QR code for joining main network and guest network (if enabled)
+- Image entities to display QR code for joining main network and guest network
 - Sensors for activity data (requires Eero Plus subscription)
 - Set blocked apps for profiles (requires Eero Plus subscription)
 - Update entities for Eero device firmware management
