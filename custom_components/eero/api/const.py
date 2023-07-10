@@ -113,6 +113,8 @@ DEVICE_CATEGORY_TYPE_MAP = {
     DEVICE_TYPE_GENERIC: DEVICE_CATEGORY_OTHER,
 }
 
+EERO_LOGO_ICON = "/config/custom_components/eero/api/images/logo_icon_white_background.png"
+
 INSIGHT_TYPE_ADBLOCK = "adblock"
 INSIGHT_TYPE_BLOCKED = "blocked"
 INSIGHT_TYPE_INSPECTED = "inspected"

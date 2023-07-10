@@ -15,6 +15,7 @@ from .const import (
     API_ENDPOINT,
     CADENCE_DAILY,
     CADENCE_HOURLY,
+    EERO_LOGO_ICON,
     PERIOD_DAY,
     PERIOD_MONTH,
     PERIOD_WEEK,
@@ -31,16 +32,23 @@ class EeroException(Exception):
         super(EeroException, self).__init__()
         self.status_code = response.status_code
         data = json.loads(response.text)
-        _LOGGER.debug(f"Exception raised, status code: {self.status_code}, text: {data}")
+        _LOGGER.error(f"Exception raised, status code: {self.status_code}, text: {data}")
         error = data.get("error", data.get("meta", {}))
         self.error_message = error.get("message", error.get("error"))
 
 
 class EeroAPI(object):
 
-    def __init__(self, activity: dict={}, save_location: str=None, user_token: str=None) -> None:
+    def __init__(
+        self,
+        activity: dict = {},
+        save_location: str = None,
+        show_eero_logo: bool = False,
+        user_token: str = None,
+    ) -> None:
         self.activity = activity
         self.data = EeroAccount(self, {})
+        self.default_qr_code = open(EERO_LOGO_ICON, "rb").read() if show_eero_logo else None
         self.save_location = save_location
         self.session = requests.Session()
         self.user_token = user_token
@@ -66,7 +74,9 @@ class EeroAPI(object):
             response = self.refresh(lambda:
                 self.session.put(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
+        _LOGGER.debug(f"Called `{url}` via `{method}` and got response `{response.status_code}`")
         response = self.parse_response(response)
+        _LOGGER.debug(f"Called `{url}` via `{method}` and returning:\n\n{response}\n\n")
         self.save_response(response=response, name=url)
         return response
 
@@ -129,6 +139,7 @@ class EeroAPI(object):
 
     def parse_response(self, response):
         data = json.loads(response.text)
+        _LOGGER.debug(f"Parsed text from response:\n\n{data}\n\n")
         if response.status_code in [200, 201]:
             return data.get("data", {})
         elif response.status_code == 202:
@@ -168,7 +179,7 @@ class EeroAPI(object):
         try:
             account = self.call(method="get", url=URL_ACCOUNT)
 
-            networks = list()
+            networks = []
             for network in account["networks"]["data"]:
                 network_data = self.call(method="get", url=network["url"])
                 network_data["thread"] = self.call(method="get", url=network_data["resources"]["thread"])

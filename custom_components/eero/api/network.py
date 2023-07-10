@@ -310,6 +310,13 @@ class EeroNetwork(EeroResource):
 
     @property
     def guest_network_qr_code(self) -> bytes | None:
+        if all(
+            [
+                not self.guest_network_enabled,
+                self.api.default_qr_code,
+            ]
+        ):
+            return self.api.default_qr_code
         return generate_qr_code(
             ssid=self.guest_network_name,
             password=self.guest_network_password,

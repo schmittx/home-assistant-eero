@@ -28,6 +28,7 @@ from .const import (
     CONF_NETWORKS,
     CONF_PROFILES,
     CONF_SAVE_RESPONSES,
+    CONF_SHOW_EERO_LOGO,
     CONF_TIMEOUT,
     CONF_USER_TOKEN,
     CONF_WIRED_CLIENTS,
@@ -35,6 +36,7 @@ from .const import (
     DATA_COORDINATOR,
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SHOW_EERO_LOGO,
     DEFAULT_TIMEOUT,
     DOMAIN,
     VALUES_SCAN_INTERVAL,
@@ -182,6 +184,8 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if self.index == len(self.user_input[CONF_NETWORKS]):
             self.index = 0
+            if self.show_advanced_options:
+                return await self.async_step_advanced()
             return self.async_create_entry(title=self.user_input[CONF_NAME], data=self.user_input)
         elif self.index == 0:
             self.user_input[CONF_ACTIVITY] = {}
@@ -213,6 +217,27 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data_schema=vol.Schema(data_schema),
                     description_placeholders={"network": network.name_long},
                 )
+
+    async def async_step_advanced(self, user_input=None):
+        """Handle a flow initialized by the user."""
+        if user_input is not None:
+            self.user_input[CONF_SAVE_RESPONSES] = user_input[CONF_SAVE_RESPONSES]
+            self.user_input[CONF_SHOW_EERO_LOGO] = user_input[CONF_SHOW_EERO_LOGO]
+            self.user_input[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
+            self.user_input[CONF_TIMEOUT] = user_input[CONF_TIMEOUT]
+            return self.async_create_entry(title=self.user_input[CONF_NAME], data=self.user_input)
+
+        return self.async_show_form(
+            step_id="advanced",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_SAVE_RESPONSES, default=DEFAULT_SAVE_RESPONSES): cv.boolean,
+                    vol.Required(CONF_SHOW_EERO_LOGO, default=DEFAULT_SHOW_EERO_LOGO): cv.boolean,
+                    vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.In(VALUES_SCAN_INTERVAL),
+                    vol.Required(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): vol.In(VALUES_TIMEOUT),
+                }
+            ),
+        )
 
     @staticmethod
     @callback
@@ -365,11 +390,13 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
         """Handle a flow initialized by the user."""
         if user_input is not None:
             self.user_input[CONF_SAVE_RESPONSES] = user_input[CONF_SAVE_RESPONSES]
+            self.user_input[CONF_SHOW_EERO_LOGO] = user_input[CONF_SHOW_EERO_LOGO]
             self.user_input[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
             self.user_input[CONF_TIMEOUT] = user_input[CONF_TIMEOUT]
             return self.async_create_entry(title="", data=self.user_input)
 
         default_save_responses = self.options.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES)
+        default_show_eero_logo = self.options.get(CONF_SHOW_EERO_LOGO, DEFAULT_SHOW_EERO_LOGO)
         default_scan_interval = self.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         default_timeout = self.options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
 
@@ -378,6 +405,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_SAVE_RESPONSES, default=default_save_responses): cv.boolean,
+                    vol.Required(CONF_SHOW_EERO_LOGO, default=default_show_eero_logo): cv.boolean,
                     vol.Required(CONF_SCAN_INTERVAL, default=default_scan_interval): vol.In(VALUES_SCAN_INTERVAL),
                     vol.Required(CONF_TIMEOUT, default=default_timeout): vol.In(VALUES_TIMEOUT),
                 }

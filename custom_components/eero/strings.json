@@ -49,6 +49,16 @@
                 },
                 "description": "Network: {network}\n\nEach metric requires an exclusive call to the eero API and you may encounter timeout errors if selecting multiple metrics.",
                 "title": "Select activity metrics"
+            },
+            "advanced": {
+                "data": {
+                    "save_responses": "Save server responses to custom_components/eero/api/responses",
+                    "scan_interval": "Polling interval (seconds)",
+                    "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
+                    "timeout": "Polling timeout (seconds)"
+                },
+                "description": "Server responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
+                "title": "Advanced options"
             }
         }
     },
@@ -86,9 +96,10 @@
                 "data": {
                     "save_responses": "Save server responses to custom_components/eero/api/responses",
                     "scan_interval": "Polling interval (seconds)",
+                    "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
                     "timeout": "Polling timeout (seconds)"
                 },
-                "description": "Server responses can be saved to a file for debugging and development support.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
+                "description": "Server responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
                 "title": "Advanced options"
             }
         }

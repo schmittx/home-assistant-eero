@@ -59,6 +59,13 @@ class EeroBackupNetwork(EeroResource):
 
     @property
     def qr_code(self) -> bytes | None:
+        if all(
+            [
+                not self.auto_join_enabled,
+                self.api.default_qr_code,
+            ]
+        ):
+            return self.api.default_qr_code
         return generate_qr_code(
             ssid=self.ssid,
             password=self.password,

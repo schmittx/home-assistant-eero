@@ -49,6 +49,7 @@ from .const import (
     CONF_NETWORKS,
     CONF_PROFILES,
     CONF_SAVE_RESPONSES,
+    CONF_SHOW_EERO_LOGO,
     CONF_TIMEOUT,
     CONF_USER_TOKEN,
     CONF_WIRED_CLIENTS,
@@ -57,6 +58,7 @@ from .const import (
     DEFAULT_SAVE_LOCATION,
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SHOW_EERO_LOGO,
     DEFAULT_TIMEOUT,
     DOMAIN,
     MANUFACTURER,
@@ -135,7 +137,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     data = config_entry.data
     options = config_entry.options
 
-    conf_networks = options.get(CONF_NETWORKS, data[CONF_NETWORKS])
+    conf_networks = options.get(CONF_NETWORKS, data.get(CONF_NETWORKS, []))
     conf_backup_networks = options.get(CONF_BACKUP_NETWORKS, data.get(CONF_BACKUP_NETWORKS, []))
     conf_eeros = options.get(CONF_EEROS, data.get(CONF_EEROS, []))
     conf_profiles = options.get(CONF_PROFILES, data.get(CONF_PROFILES, []))
@@ -167,13 +169,19 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                     ):
                         entity_registry.async_remove(entity_entry.entity_id)
 
-    conf_save_responses = options.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES)
-    conf_scan_interval = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    conf_timeout = options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+    conf_save_responses = options.get(CONF_SAVE_RESPONSES, data.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES))
+    conf_scan_interval = options.get(CONF_SCAN_INTERVAL, data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+    conf_show_eero_logo = options.get(CONF_SHOW_EERO_LOGO, data.get(CONF_SHOW_EERO_LOGO, DEFAULT_SHOW_EERO_LOGO))
+    conf_timeout = options.get(CONF_TIMEOUT, data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT))
 
     conf_save_location = DEFAULT_SAVE_LOCATION if conf_save_responses else None
 
-    api = EeroAPI(activity=conf_activity, save_location=conf_save_location, user_token=data[CONF_USER_TOKEN])
+    api = EeroAPI(
+        activity=conf_activity,
+        save_location=conf_save_location,
+        show_eero_logo=conf_show_eero_logo,
+        user_token=data[CONF_USER_TOKEN],
+    )
 
     async def async_update_data():
         """Fetch data from API endpoint.
