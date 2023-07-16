@@ -54,7 +54,9 @@ from .const import (
     CONF_USER_TOKEN,
     CONF_WIRED_CLIENTS,
     CONF_WIRELESS_CLIENTS,
+    DATA_API,
     DATA_COORDINATOR,
+    DATA_UPDATE_LISTENER,
     DEFAULT_SAVE_LOCATION,
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
@@ -72,7 +74,6 @@ from .const import (
     SERVICE_SET_BLOCKED_APPS,
     SERVICE_SET_NIGHTLIGHT_MODE,
     SUPPORTED_APPS,
-    UNDO_UPDATE_LISTENER,
 )
 from .util import validate_time_format
 
@@ -191,7 +192,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         """
         try:
             async with async_timeout.timeout(conf_timeout):
-                return await hass.async_add_executor_job(api.update)
+                return await hass.async_add_executor_job(api.update, conf_networks)
         except EeroException as exception:
             raise UpdateFailed(f"Error communicating with API: {exception.error_message}")
 
@@ -212,8 +213,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         CONF_PROFILES: conf_profiles,
         CONF_CLIENTS: conf_clients,
         CONF_ACTIVITY: conf_activity,
+        DATA_API: api,
         DATA_COORDINATOR: coordinator,
-        UNDO_UPDATE_LISTENER: config_entry.add_update_listener(async_update_listener),
+        DATA_UPDATE_LISTENER: config_entry.add_update_listener(async_update_listener),
     }
 
     def enable_dns_caching(service):
@@ -342,7 +344,7 @@ async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
         config_entry, PLATFORMS
     )
     if unload_ok:
-        hass.data[DOMAIN][config_entry.entry_id][UNDO_UPDATE_LISTENER]()
+        hass.data[DOMAIN][config_entry.entry_id][DATA_UPDATE_LISTENER]()
         hass.data[DOMAIN].pop(config_entry.entry_id)
 
     return unload_ok

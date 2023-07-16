@@ -89,7 +89,7 @@ class EeroButtonEntity(EeroEntity, ButtonEntity):
 
     def press(self) -> None:
         """Press the button."""
-        getattr(self.resource, self.key)()
+        getattr(self.resource, self.entity_description.key)()
 
     async def async_press(self) -> None:
         """Press the button."""

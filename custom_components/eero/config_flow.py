@@ -33,7 +33,7 @@ from .const import (
     CONF_USER_TOKEN,
     CONF_WIRED_CLIENTS,
     CONF_WIRELESS_CLIENTS,
-    DATA_COORDINATOR,
+    DATA_API,
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHOW_EERO_LOGO,
@@ -251,26 +251,28 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize Eero options flow."""
-        self.coordinator = None
+        self.api = None
         self.config_entry = config_entry
         self.data = config_entry.data
         self.index = 0
         self.options = config_entry.options
+        self.response = None
         self.user_input = {}
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
-        self.coordinator = self.hass.data[DOMAIN][self.config_entry.entry_id][DATA_COORDINATOR]
+        self.api = self.hass.data[DOMAIN][self.config_entry.entry_id][DATA_API]
+        self.response = await self.hass.async_add_executor_job(self.api.update)
         return await self.async_step_networks()
 
     async def async_step_networks(self, user_input=None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            self.user_input[CONF_NETWORKS] = [network.id for network in self.coordinator.data.networks if network.name_long in user_input[CONF_NETWORKS]]
+            self.user_input[CONF_NETWORKS] = [network.id for network in self.response.networks if network.name_long in user_input[CONF_NETWORKS]]
             return await self.async_step_resources()
 
-        conf_networks = [network.name_long for network in self.coordinator.data.networks if network.id in self.options.get(CONF_NETWORKS, self.data[CONF_NETWORKS])]
-        network_names = sorted([network.name_long for network in self.coordinator.data.networks])
+        conf_networks = [network.name_long for network in self.response.networks if network.id in self.options.get(CONF_NETWORKS, self.data[CONF_NETWORKS])]
+        network_names = sorted([network.name_long for network in self.response.networks])
 
         return self.async_show_form(
             step_id="networks",
@@ -285,7 +287,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
         """Handle a flow initialized by the user."""
         if user_input is not None:
             target_network = self.user_input[CONF_NETWORKS][self.index]
-            for network in self.coordinator.data.networks:
+            for network in self.response.networks:
                 if network.id == target_network:
                     self.user_input[CONF_EEROS].extend([eero.id for eero in network.eeros if eero.name in user_input[CONF_EEROS]])
                     self.user_input[CONF_PROFILES].extend([profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]])
@@ -303,7 +305,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                 self.user_input[conf] = []
 
         target_network = self.user_input[CONF_NETWORKS][self.index]
-        for network in self.coordinator.data.networks:
+        for network in self.response.networks:
             if network.id == target_network:
                 conf_eeros = [eero.name for eero in network.eeros if eero.id in self.options.get(CONF_EEROS, self.data.get(CONF_EEROS, []))]
                 conf_profiles = [profile.name for profile in network.profiles if profile.id in self.options.get(CONF_PROFILES, self.data.get(CONF_PROFILES, []))]
@@ -334,7 +336,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_activity(self, user_input=None):
         if user_input is not None:
             target_network = self.user_input[CONF_NETWORKS][self.index]
-            for network in self.coordinator.data.networks:
+            for network in self.response.networks:
                 if network.id == target_network:
                     self.user_input[CONF_ACTIVITY][network.id] = {
                             CONF_ACTIVITY_NETWORK: [ACTIVITY_MAP_TO_EERO[activity] for activity in user_input[CONF_ACTIVITY_NETWORK]],
@@ -353,7 +355,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
             self.user_input[CONF_ACTIVITY] = {}
 
         target_network = self.user_input[CONF_NETWORKS][self.index]
-        for network in self.coordinator.data.networks:
+        for network in self.response.networks:
             if network.id == target_network:
                 activity_options = ACTIVITIES_DEFAULT
                 data_usage_options = ACTIVITIES_DATA_USAGE_DEFAULT

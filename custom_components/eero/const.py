@@ -72,7 +72,9 @@ CONF_USER_TOKEN = "user_token"
 CONF_WIRED_CLIENTS = "wired_clients"
 CONF_WIRELESS_CLIENTS = "wireless_clients"
 
+DATA_API = "api"
 DATA_COORDINATOR = "coordinator"
+DATA_UPDATE_LISTENER = "update_listener"
 
 DOMAIN = "eero"
 
@@ -168,8 +170,6 @@ SUPPORTED_APPS = [
     "youtube",
     "zoom_video",
 ]
-
-UNDO_UPDATE_LISTENER = "undo_update_listener"
 
 CONF_SAVE_RESPONSES = "save_responses"
 CONF_SHOW_EERO_LOGO = "show_eero_logo"

@@ -74,9 +74,7 @@ class EeroAPI(object):
             response = self.refresh(lambda:
                 self.session.put(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
-        _LOGGER.debug(f"Called `{url}` via `{method}` and got response `{response.status_code}`")
         response = self.parse_response(response)
-        _LOGGER.debug(f"Called `{url}` via `{method}` and returning:\n\n{response}\n\n")
         self.save_response(response=response, name=url)
         return response
 
@@ -139,7 +137,6 @@ class EeroAPI(object):
 
     def parse_response(self, response):
         data = json.loads(response.text)
-        _LOGGER.debug(f"Parsed text from response:\n\n{data}\n\n")
         if response.status_code in [200, 201]:
             return data.get("data", {})
         elif response.status_code == 202:
@@ -175,39 +172,46 @@ class EeroAPI(object):
                 json.dump(response, file, default=lambda o: "not-serializable", indent=4, sort_keys=True)
             file.close()
 
-    def update(self):
+    def update(self, conf_networks: list | None = None) -> dict:
         try:
             account = self.call(method="get", url=URL_ACCOUNT)
 
             networks = []
             for network in account["networks"]["data"]:
-                network_data = self.call(method="get", url=network["url"])
-                network_data["thread"] = self.call(method="get", url=network_data["resources"]["thread"])
-                if network_data["premium_status"] == STATE_ACTIVE:
-                    backup_access_points = self.call(method="get", url=f"{network['url']}/backup_access_points")
-                    network_data["backup_access_points"] = dict(count=len(backup_access_points), data=backup_access_points)
-                for resource in ["profiles", "devices"]:
-                    resource_data = self.call(method="get", url=network_data["resources"][resource])
-                    network_data[resource] = dict(count=len(resource_data), data=resource_data)
-                update_data = network_data["updates"]
-                update_data["release_notes"] = self.get_release_notes(url=update_data["manifest_resource"])
-                network_data["updates"] = update_data
+                network_url = network["url"]
+                if any(
+                    [
+                        conf_networks is None,
+                        conf_networks and network_url.replace("/2.2/networks/", "") in conf_networks,
+                    ]
+                ):
+                    network_data = self.call(method="get", url=network_url)
+                    network_data["thread"] = self.call(method="get", url=network_data["resources"]["thread"])
+                    if network_data["premium_status"] == STATE_ACTIVE:
+                        backup_access_points = self.call(method="get", url=f"{network['url']}/backup_access_points")
+                        network_data["backup_access_points"] = dict(count=len(backup_access_points), data=backup_access_points)
+                    for resource in ["profiles", "devices"]:
+                        resource_data = self.call(method="get", url=network_data["resources"][resource])
+                        network_data[resource] = dict(count=len(resource_data), data=resource_data)
+                    update_data = network_data["updates"]
+                    update_data["release_notes"] = self.get_release_notes(url=update_data["manifest_resource"])
+                    network_data["updates"] = update_data
 
-                network_id = network_data["url"].replace("/2.2/networks/", "")
-                activity_data = {}
-                for resource, activities in self.activity.get(network_id, {}).items():
-                    resource = RESOURCE_MAP.get(resource, resource)
-                    activity_data[resource] = {}
-                    for activity in activities:
-                        activity_data[resource][activity] = self.update_activity(
-                            activity=activity,
-                            network_url=network["url"],
-                            resource=resource,
-                            timezone=network_data["timezone"]["value"],
-                        )
-                network_data["activity"] = activity_data
+                    network_id = network_data["url"].replace("/2.2/networks/", "")
+                    activity_data = {}
+                    for resource, activities in self.activity.get(network_id, {}).items():
+                        resource = RESOURCE_MAP.get(resource, resource)
+                        activity_data[resource] = {}
+                        for activity in activities:
+                            activity_data[resource][activity] = self.update_activity(
+                                activity=activity,
+                                network_url=network["url"],
+                                resource=resource,
+                                timezone=network_data["timezone"]["value"],
+                            )
+                    network_data["activity"] = activity_data
 
-                networks.append(network_data)
+                    networks.append(network_data)
             account["networks"]["data"] = networks
             self.save_response(response=account, name="update_data")
             self.data = EeroAccount(self, account)
