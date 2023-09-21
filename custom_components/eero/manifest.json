@@ -12,5 +12,5 @@
   "loggers": [],
   "quality_scale": "gold",
   "requirements": ["pypng==0.0.20", "PyQRCode==1.2.1"],
-  "version": "1.4.2"
+  "version": "1.4.3"
 }
