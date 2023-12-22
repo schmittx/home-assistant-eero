@@ -400,23 +400,28 @@ class EeroEntity(CoordinatorEntity):
 
         Implemented by platform classes.
         """
-        entry_type = dr.DeviceEntryType.SERVICE,
         name = self.resource.name
         if self.resource.is_network:
             model = MODEL_NETWORK
         elif self.resource.is_backup_network:
             model = MODEL_BACKUP_NETWORK
         elif self.resource.is_eero:
-            entry_type = None
             model = self.resource.model
         elif self.resource.is_profile:
             model = MODEL_PROFILE
         elif self.resource.is_client:
-            entry_type = None
             model = MODEL_CLIENT
             name = self.resource.name_connection_type
 
-        suggested_area, sw_version, hw_version, via_device = None, None, None, None
+        entry_type, suggested_area, sw_version, hw_version, via_device = None, None, None, None, None
+        if any(
+            [
+                self.resource.is_backup_network,
+                self.resource.is_network,
+                self.resource.is_profile,
+            ]
+        ):
+            entry_type = dr.DeviceEntryType.SERVICE
         if self.resource.is_eero:
             suggested_area = self.resource.location
             sw_version = self.resource.os_version
@@ -433,13 +438,13 @@ class EeroEntity(CoordinatorEntity):
 
         return dr.DeviceInfo(
             entry_type=entry_type,
+            hw_version=hw_version,
             identifiers={(DOMAIN, self.resource.id)},
             manufacturer=MANUFACTURER,
             model=model,
             name=name,
             suggested_area=suggested_area,
             sw_version=sw_version,
-            hw_version=hw_version,
             via_device=via_device,
         )
 
