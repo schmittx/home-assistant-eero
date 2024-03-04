@@ -17,7 +17,7 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 - If `Advanced Mode` is enabled for the current profile, additional options are available (QR code behavior, interval, timeout, and response logging).
 
 ## Notes
-- This integration does not support login via Amazon account. A workaround is to create a new account without Amazon login and add that account as another network admin.
+- This integration does not support login via Amazon account. A workaround is to create a new account without Amazon login and add that account as another network admin. Refer to this [post](https://github.com/schmittx/home-assistant-eero/issues/77#issuecomment-1960875926) for step-by-step instructions.
 
 ## Currently Working
 - Multiple networks supported
