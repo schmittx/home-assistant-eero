@@ -214,7 +214,7 @@ class EeroClient(EeroResource):
         self.api.call(
             method="put",
             url=f"/2.3/networks/{self.network.id}/devices/{self.mac}",
-            json=dict(paused=value),
+            json={"paused": value},
         )
 
     @property
@@ -228,7 +228,7 @@ class EeroClient(EeroResource):
         self.api.call(
             method="put",
             url=f"/2.3/networks/{self.network.id}/devices/{self.mac}",
-            json=dict(secondary_wan_deny_access=bool(not value)),
+            json={"secondary_wan_deny_access": bool(not value)},
         )
 
     @property

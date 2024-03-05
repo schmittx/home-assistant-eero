@@ -59,7 +59,7 @@ async def async_setup_entry(
             for eero in network.eeros:
                 if eero.id in entry[CONF_EEROS]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
                             EeroUpdateEntity(
@@ -84,7 +84,9 @@ class EeroUpdateEntity(UpdateEntity, EeroEntity):
     @property
     def installed_version(self) -> str | None:
         """Version installed and in use."""
-        return self.resource.current_firmware.os_version
+        if os_version := self.resource.current_firmware.os_version:
+            return os_version
+        return self.resource.os_version
 
     @property
     def latest_version(self) -> str | None:

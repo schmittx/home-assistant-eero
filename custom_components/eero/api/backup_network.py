@@ -18,11 +18,11 @@ class EeroBackupNetwork(EeroResource):
         self.api.call(
             method="put",
             url=self.url,
-            json=dict(
-                enabled=value,
-                ssid=self.ssid,
-                password=self.password,
-            ),
+            json={
+                "enabled": value,
+                "ssid": self.ssid,
+                "password": self.password,
+            },
         )
 
     @property

@@ -9,7 +9,6 @@ from .const import (
     DEVICE_CATEGORY_OTHER,
     MODEL_BEACON,
     PREFERRED_UPDATE_HOUR_MAP,
-    STATE_ACTIVE,
     STATE_DISABLED,
     STATE_NETWORK,
     STATE_PROFILE,
@@ -19,7 +18,7 @@ from .eero import EeroDevice, EeroDeviceBeacon
 from .firmware import EeroFirmware
 from .profile import EeroProfile
 from .resource import EeroResource
-from .util import generate_qr_code
+from .util import generate_qr_code, premium_ok
 
 
 class EeroNetwork(EeroResource):
@@ -382,11 +381,14 @@ class EeroNetwork(EeroResource):
         return self.data.get("name")
 
     @property
-    def name_long(self) -> str | None:
-        network_names = [network.name for network in self.account.networks]
-        if network_names.count(self.name) > 1:
-            return f"{self.name} ({self.city, self.region_name})"
-        return self.name
+    def nickname(self) -> str | None:
+        return self.data.get("nickname_label")
+
+    @property
+    def name_unique(self) -> str | None:
+        if self.nickname:
+            return f'{self.name} "{self.nickname}" ({self.city}, {self.region_name})'
+        return f"{self.name} ({self.city}, {self.region_name})"
 
     @property
     def password(self) -> str | None:
@@ -422,12 +424,19 @@ class EeroNetwork(EeroResource):
         return list(PREFERRED_UPDATE_HOUR_MAP.keys())
 
     @property
+    def premium_capable(self) -> bool | None:
+        return self.data.get("capabilities", {}).get("premium", {}).get("capable")
+
+    @property
     def premium_status(self) -> str | None:
         return self.data.get("premium_status")
 
     @property
-    def premium_status_active(self) -> bool:
-        return bool(self.premium_status == STATE_ACTIVE)
+    def premium_enabled(self) -> bool:
+        return premium_ok(
+            capable=self.premium_capable,
+            status=self.premium_status,
+        )
 
     @property
     def qr_code(self) -> bytes | None:

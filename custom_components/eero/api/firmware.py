@@ -4,7 +4,7 @@ from __future__ import annotations
 
 class EeroFirmware(object):
 
-    def __init__(self, data: dict={}) -> None:
+    def __init__(self, data: dict =  {}) -> None:
         self.data = data
 
     @property

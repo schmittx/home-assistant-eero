@@ -85,7 +85,7 @@ class EeroDevice(EeroResource):
         self.api.call(
             method="put",
             url=self.url_led,
-            json=dict(led_on=value),
+            json={"led_on": value},
         )
 
     def set_status_light_brightness(self, value: int) -> None:
@@ -97,7 +97,7 @@ class EeroDevice(EeroResource):
         self.api.call(
             method="put",
             url=self.url_led,
-            json=dict(led_brightness=value),
+            json={"led_brightness": value},
         )
 
     def set_status_light_off(self) -> None:
@@ -258,29 +258,47 @@ class EeroDeviceBeacon(EeroDevice):
         )
 
     def set_nightlight_ambient(self) -> None:
-        json = dict(enabled=True, schedule=dict(enabled=False))
-        self._set_nightlight(json=json)
+        self._set_nightlight(
+            json={
+                "enabled": True,
+                "schedule": {
+                    "enabled": False,
+                },
+            },
+        )
 
     def set_nightlight_brightness(self, value: int) -> None:
         if not isinstance(value, int):
             return
-        json = dict(
-            enabled=True,
-            brightness_percentage=value,
-            schedule=dict(
-                enabled=True,
-                on=self.nightlight_schedule[0],
-                off=self.nightlight_schedule[1],
-            ),
+        self._set_nightlight(
+            json={
+                "enabled": True,
+                "brightness_percentage": value,
+                "schedule": {
+                    "enabled": True,
+                    "on": self.nightlight_schedule[0],
+                    "off": self.nightlight_schedule[1],
+                },
+            },
         )
-        self._set_nightlight(json=json)
 
     def set_nightlight_disabled(self) -> None:
-        json = dict(enabled=False)
-        self._set_nightlight(json=json)
+        self._set_nightlight(
+            json={
+                "enabled": False,
+            },
+        )
 
     def set_nightlight_schedule(self, time_on: str, time_off: str) -> None:
         if not isinstance(time_on, str) or not isinstance(time_off, str):
             return
-        json = dict(enabled=True, schedule=dict(enabled=True, on=time_on, off=time_off))
-        self._set_nightlight(json=json)
+        self._set_nightlight(
+            json={
+                "enabled": True,
+                "schedule": {
+                    "enabled": True,
+                    "on": time_on,
+                    "off": time_off,
+                },
+            },
+        )

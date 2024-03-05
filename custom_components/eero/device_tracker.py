@@ -64,7 +64,7 @@ async def async_setup_entry(
             for profile in network.profiles:
                 if profile.id in entry[CONF_PROFILES]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
                             EeroDeviceTrackerEntity(
@@ -78,7 +78,7 @@ async def async_setup_entry(
             for client in network.clients:
                 if client.id in entry[CONF_CLIENTS]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
                             EeroDeviceTrackerEntity(
@@ -166,5 +166,5 @@ class EeroDeviceTrackerEntity(EeroEntity):
         if self.is_connected and self.resource.is_client:
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type
-            attrs["network_name"] = self.network.name_long
+            attrs["network_name"] = self.network.name
         return attrs
