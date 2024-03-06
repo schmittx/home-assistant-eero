@@ -4,6 +4,8 @@ from __future__ import annotations
 import io
 import pyqrcode
 
+from .const import STATE_ACTIVE, STATE_TRIALING
+
 
 def generate_qr_code(ssid: str, password: str | None) -> bytes | None:
     if ssid is None:
@@ -25,3 +27,12 @@ def generate_qr_code(ssid: str, password: str | None) -> bytes | None:
     qr_code = pyqrcode.create(wifi_code)
     qr_code.png(qr_stream, scale=5, module_color="#000", background="#FFF")
     return qr_stream.getvalue()
+
+
+def premium_ok(capable: bool | None, status: str | None) -> bool:
+    return all(
+        [
+            capable,
+            status in [STATE_ACTIVE, STATE_TRIALING],
+        ]
+    )

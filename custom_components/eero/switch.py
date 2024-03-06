@@ -187,7 +187,7 @@ async def async_setup_entry(
     for network in coordinator.data.networks:
         if network.id in entry[CONF_NETWORKS]:
             for key, description in SUPPORTED_KEYS.items():
-                if description.premium_type and not network.premium_status_active:
+                if description.premium_type and not network.premium_enabled:
                     continue
                 elif hasattr(network, key):
                     entities.append(
@@ -215,7 +215,7 @@ async def async_setup_entry(
             for profile in network.profiles:
                 if profile.id in entry[CONF_PROFILES]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         elif hasattr(profile, key):
                             entities.append(
@@ -230,7 +230,7 @@ async def async_setup_entry(
             for client in network.clients:
                 if client.id in entry[CONF_CLIENTS]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         elif hasattr(client, key):
                             entities.append(

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .client import EeroClient
+from .const import METHOD_POST, METHOD_PUT
 from .resource import EeroResource
 
 
@@ -28,9 +29,12 @@ class EeroProfile(EeroResource):
             if profiles:
                 value = True
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=f"{self.network.url_dns_policies}/adblock",
-            json=dict(enable=value, profiles=profiles),
+            json={
+                "enable": value,
+                "profiles": profiles,
+            },
         )
 
     @property
@@ -67,9 +71,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_gaming_content=value),
+            json={
+                "block_gaming_content": value,
+            },
         )
 
     @property
@@ -81,9 +87,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_illegal_content=value),
+            json={
+                "block_illegal_content": value,
+            },
         )
 
     @property
@@ -95,9 +103,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_messaging_content=value),
+            json={
+                "block_messaging_content": value,
+            },
         )
 
     @property
@@ -109,9 +119,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_pornographic_content=value),
+            json={
+                "block_pornographic_content": value,
+            },
         )
 
     @property
@@ -123,9 +135,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_shopping_content=value),
+            json={
+                "block_shopping_content": value,
+            },
         )
 
     @property
@@ -137,9 +151,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_social_content=value),
+            json={
+                "block_social_content": value,
+            },
         )
 
     @property
@@ -151,9 +167,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_streaming_content=value),
+            json={
+                "block_streaming_content": value,
+            },
         )
 
     @property
@@ -165,9 +183,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(block_violent_content=value),
+            json={
+                "block_violent_content": value,
+            },
         )
 
     @property
@@ -178,9 +198,11 @@ class EeroProfile(EeroResource):
         if not isinstance(blocked_applications, list):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"{self.url_dns_policies}/applications/blocked",
-            json=dict(applications=blocked_applications),
+            json={
+                "applications": blocked_applications,
+            },
         )
 
     @property
@@ -271,9 +293,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=self.url,
-            json=dict(paused=value),
+            json={
+                "paused": value,
+            },
         )
 
     @property
@@ -285,9 +309,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(safe_search_enabled=value),
+            json={
+                "safe_search_enabled": value,
+            },
         )
 
     @property
@@ -307,9 +333,11 @@ class EeroProfile(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=self.url_dns_policies,
-            json=dict(youtube_restricted=value),
+            json={
+                "youtube_restricted": value,
+            },
         )
 
     @property

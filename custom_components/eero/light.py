@@ -58,7 +58,7 @@ async def async_setup_entry(
             for eero in network.eeros:
                 if eero.id in entry[CONF_EEROS]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         elif hasattr(eero, key):
                             entities.append(

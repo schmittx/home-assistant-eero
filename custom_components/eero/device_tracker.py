@@ -14,6 +14,7 @@ from homeassistant.components.device_tracker import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    ATTR_MANUFACTURER,
     STATE_HOME,
     STATE_NOT_HOME,
 )
@@ -64,7 +65,7 @@ async def async_setup_entry(
             for profile in network.profiles:
                 if profile.id in entry[CONF_PROFILES]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
                             EeroDeviceTrackerEntity(
@@ -78,7 +79,7 @@ async def async_setup_entry(
             for client in network.clients:
                 if client.id in entry[CONF_CLIENTS]:
                     for key, description in SUPPORTED_KEYS.items():
-                        if description.premium_type and not network.premium_status_active:
+                        if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
                             EeroDeviceTrackerEntity(
@@ -147,12 +148,12 @@ class EeroDeviceTrackerEntity(EeroEntity):
     def state_attributes(self) -> dict[str, StateType]:
         """Return the device state attributes."""
         attr: dict[str, StateType] = {ATTR_SOURCE_TYPE: self.source_type}
-        if self.ip_address is not None:
-            attr[ATTR_IP] = self.ip_address
-        if self.mac_address is not None:
-            attr[ATTR_MAC] = self.mac_address
-        if self.hostname is not None:
-            attr[ATTR_HOST_NAME] = self.hostname
+        if ip_address := self.ip_address:
+            attr[ATTR_IP] = ip_address
+        if mac_address := self.mac_address:
+            attr[ATTR_MAC] = mac_address
+        if hostname := self.hostname:
+            attr[ATTR_HOST_NAME] = hostname
         return attr
 
     @property
@@ -166,5 +167,7 @@ class EeroDeviceTrackerEntity(EeroEntity):
         if self.is_connected and self.resource.is_client:
             attrs["connected_to"] = self.resource.source_location
             attrs["connection_type"] = self.resource.connection_type
-            attrs["network_name"] = self.network.name_long
+            if manufacturer := self.resource.manufacturer:
+                attrs[ATTR_MANUFACTURER] = manufacturer
+            attrs["network_name"] = self.network.name
         return attrs

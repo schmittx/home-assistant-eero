@@ -16,6 +16,9 @@ ACTIVITY_INSPECTED_WEEK = "inspected_week"
 ACTIVITY_INSPECTED_MONTH = "inspected_month"
 
 API_ENDPOINT = "https://api-user.e2ro.com"
+METHOD_GET = "GET"
+METHOD_POST = "POST"
+METHOD_PUT = "PUT"
 
 CADENCE_DAILY = "daily"
 CADENCE_HOURLY = "hourly"
@@ -125,7 +128,7 @@ PERIOD_DAY = "day"
 PERIOD_MONTH = "month"
 PERIOD_WEEK = "week"
 
-RESOURCE_MAP = dict(clients="devices")
+RESOURCE_MAP = {"clients": "devices"}
 
 STATE_ACTIVE = "active"
 STATE_AMBIENT = "ambient"
@@ -135,6 +138,7 @@ STATE_FAILURE = "failure"
 STATE_NETWORK = "network"
 STATE_PROFILE = "profile"
 STATE_SCHEDULE = "schedule"
+STATE_TRIALING = "trialing"
 
 URL_ACCOUNT = "/2.2/account"
 

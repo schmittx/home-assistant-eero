@@ -112,10 +112,10 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_networks(self, user_input=None):
         if user_input is not None:
-            self.user_input[CONF_NETWORKS] = [network.id for network in self.response.networks if network.name_long in user_input[CONF_NETWORKS]]
+            self.user_input[CONF_NETWORKS] = [network.id for network in self.response.networks if network.name_unique in user_input[CONF_NETWORKS]]
             return await self.async_step_resources()
 
-        network_names = sorted([network.name_long for network in self.response.networks])
+        network_names = sorted([network.name_unique for network in self.response.networks])
 
         return self.async_show_form(
             step_id="networks",
@@ -135,7 +135,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.user_input[CONF_PROFILES].extend([profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]])
                     self.user_input[CONF_WIRED_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]])
                     self.user_input[CONF_WIRELESS_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]])
-                    if network.premium_status_active:
+                    if network.premium_enabled:
                         self.user_input[CONF_BACKUP_NETWORKS].extend([backup_network.id for backup_network in network.backup_networks if backup_network.name in user_input[CONF_BACKUP_NETWORKS]])
                     self.index += 1
 
@@ -159,14 +159,14 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_WIRED_CLIENTS, default=[]): cv.multi_select(wired_client_names),
                     vol.Required(CONF_WIRELESS_CLIENTS, default=[]): cv.multi_select(wireless_client_names),
                 }
-                if network.premium_status_active:
+                if network.premium_enabled:
                     backup_network_names = sorted(backup_network.name for backup_network in network.backup_networks)
                     schema[vol.Required(CONF_BACKUP_NETWORKS, default=backup_network_names)] = cv.multi_select(backup_network_names)
 
                 return self.async_show_form(
                     step_id="resources",
                     data_schema=vol.Schema(schema),
-                    description_placeholders={"network": network.name_long},
+                    description_placeholders={"network": network.name_unique},
                 )
 
     async def async_step_activity(self, user_input=None):
@@ -195,7 +195,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if network.id == target_network:
                 activity_options = ACTIVITIES_DEFAULT
                 data_usage_options = ACTIVITIES_DATA_USAGE_DEFAULT
-                if network.premium_status_active:
+                if network.premium_enabled:
                     activity_options = ACTIVITIES_PREMIUM
                     data_usage_options = ACTIVITIES_DATA_USAGE_PREMIUM
 
@@ -215,7 +215,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_show_form(
                     step_id="activity",
                     data_schema=vol.Schema(data_schema),
-                    description_placeholders={"network": network.name_long},
+                    description_placeholders={"network": network.name_unique},
                 )
 
     async def async_step_advanced(self, user_input=None):
@@ -268,11 +268,11 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_networks(self, user_input=None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            self.user_input[CONF_NETWORKS] = [network.id for network in self.response.networks if network.name_long in user_input[CONF_NETWORKS]]
+            self.user_input[CONF_NETWORKS] = [network.id for network in self.response.networks if network.name_unique in user_input[CONF_NETWORKS]]
             return await self.async_step_resources()
 
-        conf_networks = [network.name_long for network in self.response.networks if network.id in self.options.get(CONF_NETWORKS, self.data[CONF_NETWORKS])]
-        network_names = sorted([network.name_long for network in self.response.networks])
+        conf_networks = [network.name_unique for network in self.response.networks if network.id in self.options.get(CONF_NETWORKS, self.data[CONF_NETWORKS])]
+        network_names = sorted([network.name_unique for network in self.response.networks])
 
         return self.async_show_form(
             step_id="networks",
@@ -293,7 +293,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                     self.user_input[CONF_PROFILES].extend([profile.id for profile in network.profiles if profile.name in user_input[CONF_PROFILES]])
                     self.user_input[CONF_WIRED_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRED_CLIENTS]])
                     self.user_input[CONF_WIRELESS_CLIENTS].extend([client.id for client in network.clients if client.name_mac in user_input[CONF_WIRELESS_CLIENTS]])
-                    if network.premium_status_active:
+                    if network.premium_enabled:
                         self.user_input[CONF_BACKUP_NETWORKS].extend([backup_network.id for backup_network in network.backup_networks if backup_network.name in user_input[CONF_BACKUP_NETWORKS]])
                     self.index += 1
 
@@ -322,7 +322,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Required(CONF_WIRED_CLIENTS, default=conf_wired_clients): cv.multi_select(wired_client_names),
                     vol.Required(CONF_WIRELESS_CLIENTS, default=conf_wireless_clients): cv.multi_select(wireless_client_names),
                 }
-                if network.premium_status_active:
+                if network.premium_enabled:
                     conf_backup_networks = [backup_network.name for backup_network in network.backup_networks if backup_network.id in self.options.get(CONF_BACKUP_NETWORKS, self.data.get(CONF_BACKUP_NETWORKS, []))]
                     backup_network_names = sorted(backup_network.name for backup_network in network.backup_networks)
                     schema[vol.Required(CONF_BACKUP_NETWORKS, default=conf_backup_networks)] = cv.multi_select(backup_network_names)
@@ -330,7 +330,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                 return self.async_show_form(
                     step_id="resources",
                     data_schema=vol.Schema(schema),
-                    description_placeholders={"network": network.name_long},
+                    description_placeholders={"network": network.name_unique},
                 )
 
     async def async_step_activity(self, user_input=None):
@@ -359,7 +359,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
             if network.id == target_network:
                 activity_options = ACTIVITIES_DEFAULT
                 data_usage_options = ACTIVITIES_DATA_USAGE_DEFAULT
-                if network.premium_status_active:
+                if network.premium_enabled:
                     activity_options = ACTIVITIES_PREMIUM
                     data_usage_options = ACTIVITIES_DATA_USAGE_PREMIUM
 
@@ -385,7 +385,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                 return self.async_show_form(
                     step_id="activity",
                     data_schema=vol.Schema(data_schema),
-                    description_placeholders={"network": network.name_long},
+                    description_placeholders={"network": network.name_unique},
                 )
 
     async def async_step_advanced(self, user_input=None):

@@ -48,7 +48,6 @@ from .const import (
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
-from .util import format_data_usage
 
 DEVICE_CATEGORIES = [
     DEVICE_CATEGORY_COMPUTERS_PERSONAL,
@@ -58,9 +57,9 @@ DEVICE_CATEGORIES = [
 ]
 
 SPEED_UNIT_MAP = {
-    "Kbps": UnitOfDataRate.KILOBYTES_PER_SECOND,
-    "Mbps": UnitOfDataRate.MEGABYTES_PER_SECOND,
-    "Gbps": UnitOfDataRate.GIGABYTES_PER_SECOND,
+    "Kbps": UnitOfDataRate.KILOBITS_PER_SECOND,
+    "Mbps": UnitOfDataRate.MEGABITS_PER_SECOND,
+    "Gbps": UnitOfDataRate.GIGABITS_PER_SECOND,
 }
 
 @dataclass
@@ -94,7 +93,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         name="Download Speed",
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
-        native_value=lambda resource, key: round(getattr(resource, key)[0]),
+        native_value=lambda resource, key: getattr(resource, key)[0],
         extra_attrs={
             "last_updated": lambda resource: getattr(resource, "speed_date"),
         },
@@ -104,7 +103,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         name="Upload Speed",
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
-        native_value=lambda resource, key: round(getattr(resource, key)[0]),
+        native_value=lambda resource, key: getattr(resource, key)[0],
         extra_attrs={
             "last_updated": lambda resource: getattr(resource, "speed_date"),
         },
@@ -171,7 +170,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_value=lambda resource, key: (getattr(resource, key)[0] + getattr(resource, key)[1]),
-        native_unit_of_measurement=UnitOfInformation.KILOBYTES,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
         activity_type=True,
     ),
     EeroSensorEntityDescription(
@@ -180,7 +179,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_value=lambda resource, key: (getattr(resource, key)[0] + getattr(resource, key)[1]),
-        native_unit_of_measurement=UnitOfInformation.KILOBYTES,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
         activity_type=True,
     ),
     EeroSensorEntityDescription(
@@ -189,7 +188,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_value=lambda resource, key: (getattr(resource, key)[0] + getattr(resource, key)[1]),
-        native_unit_of_measurement=UnitOfInformation.KILOBYTES,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
         activity_type=True,
     ),
     EeroSensorEntityDescription(
@@ -268,8 +267,8 @@ async def async_setup_entry(
             for key, description in SUPPORTED_KEYS.items():
                 if any(
                     [
-                        description.premium_type and not network.premium_status_active,
-                        description.activity_type and not network.premium_status_active,
+                        description.premium_type and not network.premium_enabled,
+                        description.activity_type and not network.premium_enabled,
                         description.activity_type and key not in activity.get(CONF_ACTIVITY_NETWORK, []),
                     ]
                 ):
@@ -302,8 +301,8 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if any(
                             [
-                                description.premium_type and not network.premium_status_active,
-                                description.activity_type and not network.premium_status_active,
+                                description.premium_type and not network.premium_enabled,
+                                description.activity_type and not network.premium_enabled,
                                 description.activity_type and key not in activity.get(CONF_ACTIVITY_EEROS, []),
                             ]
                         ):
@@ -323,8 +322,8 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if any(
                             [
-                                description.premium_type and not network.premium_status_active,
-                                description.activity_type and not network.premium_status_active,
+                                description.premium_type and not network.premium_enabled,
+                                description.activity_type and not network.premium_enabled,
                                 description.activity_type and key not in activity.get(CONF_ACTIVITY_PROFILES, []),
                             ]
                         ):
@@ -344,8 +343,8 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if any(
                             [
-                                description.premium_type and not network.premium_status_active,
-                                description.activity_type and not network.premium_status_active,
+                                description.premium_type and not network.premium_enabled,
+                                description.activity_type and not network.premium_enabled,
                                 description.activity_type and key not in activity.get(CONF_ACTIVITY_CLIENTS, []),
                                 description.wireless_only and not client.wireless,
                             ]
@@ -397,10 +396,7 @@ class EeroSensorEntity(EeroEntity, SensorEntity):
                 if key != "blocked":
                     attrs[key] = value
         if self.entity_description.key.startswith("data_usage"):
-            down, up = getattr(self.resource, self.entity_description.key)
-            attrs["total"], attrs["total_units"] = format_data_usage(down + up)
-            attrs["download"], attrs["download_units"] = format_data_usage(down)
-            attrs["upload"], attrs["upload_units"] = format_data_usage(up)
+            attrs["download"], attrs["upload"] = getattr(self.resource, self.entity_description.key)
         if self.entity_description.key.endswith("clients_count"):
             for category in DEVICE_CATEGORIES:
                 attr = f"{self.entity_description.key}_{category}"

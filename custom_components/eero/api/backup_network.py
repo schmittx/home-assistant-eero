@@ -1,6 +1,7 @@
 """Eero API"""
 from __future__ import annotations
 
+from .const import METHOD_PUT
 from .resource import EeroResource
 from .util import generate_qr_code
 
@@ -16,13 +17,13 @@ class EeroBackupNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=self.url,
-            json=dict(
-                enabled=value,
-                ssid=self.ssid,
-                password=self.password,
-            ),
+            json={
+                "enabled": value,
+                "ssid": self.ssid,
+                "password": self.password,
+            },
         )
 
     @property

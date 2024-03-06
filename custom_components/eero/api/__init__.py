@@ -1,6 +1,9 @@
 """Eero API"""
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 import datetime
 from dateutil import relativedelta
 import json
@@ -16,25 +19,39 @@ from .const import (
     CADENCE_DAILY,
     CADENCE_HOURLY,
     EERO_LOGO_ICON,
+    METHOD_GET,
+    METHOD_POST,
+    METHOD_PUT,
     PERIOD_DAY,
     PERIOD_MONTH,
     PERIOD_WEEK,
     RESOURCE_MAP,
-    STATE_ACTIVE,
     URL_ACCOUNT,
 )
+from .util import premium_ok
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class EeroException(Exception):
-    def __init__(self, response):
+    def __init__(
+            self,
+            code: int = None,
+            error: str = None,
+            server_time: str = None,
+        ):
         super(EeroException, self).__init__()
-        self.status_code = response.status_code
-        data = json.loads(response.text)
-        _LOGGER.error(f"Exception raised, status code: {self.status_code}, text: {data}")
-        error = data.get("error", data.get("meta", {}))
-        self.error_message = error.get("message", error.get("error"))
+        self.code = code
+        self.error = error
+        self.server_time = server_time
+        message = "\n- EeroException"
+        if self.code:
+            message = f"{message}\n- Code: {self.code}"
+        if self.error:
+            message = f"{message}\n- Error: {self.error}"
+        if self.server_time:
+            message = f"{message}\n- Server time: {self.server_time}"
+        _LOGGER.debug(message)
 
 
 class EeroAPI(object):
@@ -54,41 +71,32 @@ class EeroAPI(object):
         self.user_token = user_token
 
     @property
-    def cookie(self) -> dict[str | None, str | None]:
+    def cookie(self) -> dict:
         if self.user_token:
-            return dict(s=self.user_token)
-        return dict()
+            return {"s": self.user_token}
+        return {}
 
-    def call(self, method, url, **kwargs):
-        if method not in ["get", "post", "put"]:
+    def call(self, method: str, url: str, **kwargs) -> dict[str, Any]:
+        if method not in [METHOD_GET, METHOD_POST, METHOD_PUT]:
             return
-        if method == "get":
+        _LOGGER.debug(f"Calling API with method: {method} and URL: {url}")
+        if method == METHOD_GET:
             response = self.refresh(lambda:
                 self.session.get(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
-        elif method == "post":
+        elif method == METHOD_POST:
             response = self.refresh(lambda:
                 self.session.post(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
-        elif method == "put":
+        elif method == METHOD_PUT:
             response = self.refresh(lambda:
                 self.session.put(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
-        response = self.parse_response(response)
+        response = self.parse_response(response=response)
         self.save_response(response=response, name=url)
         return response
 
-    def get_release_notes(self, url):
-        if url:
-            response = self.session.get(url=url)
-            if response.status_code not in [200, 201]:
-                raise EeroException(response)
-            data = json.loads(response.text)
-            self.save_response(response=data, name="release_notes")
-            return data
-        return None
-
-    def define_period(self, period, timezone):
+    def define_period(self, period: str, timezone: str) -> tuple:
         start, end, cadence = None, None, None
         now = datetime.datetime.now(tz=pytz.timezone(timezone))
         if period == PERIOD_DAY:
@@ -110,72 +118,98 @@ class EeroAPI(object):
         end = f"{end.astimezone(pytz.utc).replace(tzinfo=None).isoformat()}Z"
         return (start, end, cadence)
 
-    def login(self, login):
+    def get_release_notes(self, url: str) -> dict[str, Any] | None:
+        if url:
+            response = self.session.get(url=url)
+            if response.status_code not in [200]:
+                _LOGGER.warning(f"Unable to get release notes\n- Code: {response.status_code}\n- URL: {url}")
+                return None
+            text = json.loads(response.text)
+            self.save_response(response=text, name="release_notes")
+            return text
+        return None
+
+    def login(self, login: str | int) -> dict[str, Any]:
+        _LOGGER.debug(f"Using login: {login}")
         response = self.call(
-            method="post",
+            method=METHOD_POST,
             url="/2.2/login",
-            json=dict(login=login),
+            json={"login": login},
         )
         self.user_token = response["user_token"]
         return response
 
-    def login_refresh(self):
+    def login_refresh(self) -> dict[str, Any]:
+        _LOGGER.debug(f"Refreshing session")
         response = self.call(
-            method="post",
+            method=METHOD_POST,
             url="/2.2/login/refresh",
         )
         self.user_token = response["user_token"]
         return response
 
-    def login_verify(self, code):
+    def login_verify(self, code: str) -> dict[str, Any]:
+        _LOGGER.debug(f"Verifying login with code: {code}")
         response = self.call(
-            method="post",
+            method=METHOD_POST,
             url="/2.2/login/verify",
-            json=dict(code=code),
+            json={"code": code},
         )
         return response
 
-    def parse_response(self, response):
-        data = json.loads(response.text)
-        if response.status_code in [200, 201]:
-            return data.get("data", {})
-        elif response.status_code == 202:
-            return data
-        raise EeroException(response)
+    def parse_response(self, response: requests.Response) -> dict[str, Any]:
+        text = json.loads(response.text)
+        if response.status_code not in [200]:
+            _LOGGER.error(f"Parsing response was unsuccessful with status code: {response.status_code}")
+            meta = text.get("meta")
+            raise EeroException(
+                code=meta.get("code"),
+                error=meta.get("error"),
+                server_time=meta.get("server_time"),
+            )
+        return text["data"]
 
-    def refresh(self, function):
-        try:
-            return function()
-        except EeroException as exception:
+    def refresh(self, function: Callable) -> requests.Response:
+        response = function()
+        if response.status_code not in [200]:
+            text = json.loads(response.text)
+            error = text.get("meta", {}).get("error")
             if all(
                 [
-                    exception.status_code == 401,
+                    response.status_code == 401,
                     any(
                         [
-                            exception.error_message == "error.session.refresh",
-                            exception.error_message == "error.session.invalid",
+                            error == "error.session.invalid",
+                            error == "error.session.refresh",
                         ]
                     )
                 ]
             ):
+                _LOGGER.warning(f"Session has expired and is invalid\n- Code: {response.status_code}\n- Error: {error}")
                 self.login_refresh()
-                return function()
-            else:
-                raise
+                response = function()
+        return response
 
-    def save_response(self, response, name="response"):
+    def save_response(self, response: dict[str, Any] | None, name="response") -> None:
         if self.save_location and response:
             if not os.path.isdir(self.save_location):
                 os.mkdir(self.save_location)
             name = name.replace("/", "_").replace(".", "_")
-            with open(f"{self.save_location}/{name}.json", "w") as file:
-                json.dump(response, file, default=lambda o: "not-serializable", indent=4, sort_keys=True)
+            file_path_name = f"{self.save_location}/{name}.json"
+            _LOGGER.debug(f"Saving response: {file_path_name}")
+            with open(file_path_name, "w") as file:
+                json.dump(
+                    obj=response,
+                    fp=file,
+                    indent=4,
+                    default=lambda o: "not-serializable",
+                    sort_keys=True,
+                )
             file.close()
 
-    def update(self, conf_networks: list | None = None) -> dict:
+    def update(self, conf_networks: list[int] | None = None) -> EeroAccount:
         try:
-            account = self.call(method="get", url=URL_ACCOUNT)
-
+            account = self.call(method=METHOD_GET, url=URL_ACCOUNT)
             networks = []
             for network in account["networks"]["data"]:
                 network_url = network["url"]
@@ -185,16 +219,36 @@ class EeroAPI(object):
                         conf_networks and network_url.replace("/2.2/networks/", "") in conf_networks,
                     ]
                 ):
-                    network_data = self.call(method="get", url=network_url)
-                    network_data["thread"] = self.call(method="get", url=network_data["resources"]["thread"])
-                    if network_data["premium_status"] == STATE_ACTIVE:
-                        backup_access_points = self.call(method="get", url=f"{network['url']}/backup_access_points")
-                        network_data["backup_access_points"] = dict(count=len(backup_access_points), data=backup_access_points)
+                    network_data = self.call(method=METHOD_GET, url=network_url)
+                    network_data["thread"] = self.call(
+                        method=METHOD_GET,
+                        url=network_data["resources"]["thread"],
+                    )
+                    if premium_ok(
+                        capable=network_data["capabilities"]["premium"]["capable"],
+                        status=network_data["premium_status"],
+                    ):
+                        backup_access_points = self.call(
+                            method=METHOD_GET,
+                            url=f"{network['url']}/backup_access_points",
+                        )
+                        network_data["backup_access_points"] = {
+                            "count": len(backup_access_points),
+                            "data": backup_access_points,
+                        }
                     for resource in ["profiles", "devices"]:
-                        resource_data = self.call(method="get", url=network_data["resources"][resource])
-                        network_data[resource] = dict(count=len(resource_data), data=resource_data)
+                        resource_data = self.call(
+                            method=METHOD_GET,
+                            url=network_data["resources"][resource],
+                        )
+                        network_data[resource] = {
+                            "count": len(resource_data),
+                            "data": resource_data,
+                        }
                     update_data = network_data["updates"]
-                    update_data["release_notes"] = self.get_release_notes(url=update_data["manifest_resource"])
+                    update_data["release_notes"] = self.get_release_notes(
+                        url=update_data["manifest_resource"],
+                    )
                     network_data["updates"] = update_data
 
                     network_id = network_data["url"].replace("/2.2/networks/", "")
@@ -210,7 +264,6 @@ class EeroAPI(object):
                                 timezone=network_data["timezone"]["value"],
                             )
                     network_data["activity"] = activity_data
-
                     networks.append(network_data)
             account["networks"]["data"] = networks
             self.save_response(response=account, name="update_data")
@@ -219,16 +272,30 @@ class EeroAPI(object):
             return self.data
         return self.data
 
-    def update_activity(self, activity, network_url, resource, timezone):
+    def update_activity(
+            self,
+            activity: str,
+            network_url: str,
+            resource: str,
+            timezone: str,
+        ) -> list[dict]:
         activity_url = ACTIVITY_MAP[activity][0].format(network_url)
         if resource != "network":
             activity_url = f"{activity_url}/{resource}"
-        start, end, cadence = self.define_period(period=ACTIVITY_MAP[activity][2], timezone=timezone)
-        json = dict(start=start, end=end, cadence=cadence, timezone=timezone)
+        start, end, cadence = self.define_period(
+            period=ACTIVITY_MAP[activity][2],
+            timezone=timezone,
+        )
+        json = {
+            "start": start,
+            "end": end,
+            "cadence": cadence,
+            "timezone": timezone,
+        }
         if ACTIVITY_MAP[activity][1]:
             json["insight_type"] = ACTIVITY_MAP[activity][1]
         data = self.call(
-            method="get",
+            method=METHOD_GET,
             url=activity_url,
             json=json,
         )

@@ -7,9 +7,10 @@ from .const import (
     DEVICE_CATEGORY_ENTERTAINMENT,
     DEVICE_CATEGORY_HOME,
     DEVICE_CATEGORY_OTHER,
+    METHOD_POST,
+    METHOD_PUT,
     MODEL_BEACON,
     PREFERRED_UPDATE_HOUR_MAP,
-    STATE_ACTIVE,
     STATE_DISABLED,
     STATE_NETWORK,
     STATE_PROFILE,
@@ -19,7 +20,7 @@ from .eero import EeroDevice, EeroDeviceBeacon
 from .firmware import EeroFirmware
 from .profile import EeroProfile
 from .resource import EeroResource
-from .util import generate_qr_code
+from .util import generate_qr_code, premium_ok
 
 
 class EeroNetwork(EeroResource):
@@ -42,9 +43,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=f"{self.url_dns_policies}/adblock",
-            json=dict(enable=value),
+            json={
+                "enable": value,
+            },
         )
 
     @property
@@ -93,9 +96,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"{self.url}/backupinternet",
-            json=dict(backup_internet_enabled=value),
+            json={
+                "backup_internet_enabled": value,
+            },
         )
 
     @property
@@ -107,9 +112,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=self.url_settings,
-            json=dict(band_steering=value),
+            json={
+                "band_steering": value,
+            },
         )
 
     @property
@@ -121,14 +128,24 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=f"{self.url_dns_policies}/network",
-            json=dict(block_malware=value),
+            json={
+                "block_malware": value,
+            },
         )
 
     @property
     def blocked_day(self) -> dict[str, int | None]:
-        data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
+        data={
+            "blocked": None,
+            "botnet": None,
+            "domains": None,
+            "malware": None,
+            "parked": None,
+            "phishing": None,
+            "spyware": None,
+        }
         for series in self.data.get("activity", {}).get("network", {}).get("blocked_day", []):
             if series["insight_type"] in list(data.keys()):
                 data[series["insight_type"]] = series["sum"]
@@ -136,7 +153,15 @@ class EeroNetwork(EeroResource):
 
     @property
     def blocked_month(self) -> dict[str, int | None]:
-        data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
+        data={
+            "blocked": None,
+            "botnet": None,
+            "domains": None,
+            "malware": None,
+            "parked": None,
+            "phishing": None,
+            "spyware": None,
+        }
         for series in self.data.get("activity", {}).get("network", {}).get("blocked_month", []):
             if series["insight_type"] in list(data.keys()):
                 data[series["insight_type"]] = series["sum"]
@@ -144,7 +169,15 @@ class EeroNetwork(EeroResource):
 
     @property
     def blocked_week(self) -> dict[str, int | None]:
-        data=dict(blocked=None, botnet=None, domains=None, malware=None, parked=None, phishing=None, spyware=None)
+        data={
+            "blocked": None,
+            "botnet": None,
+            "domains": None,
+            "malware": None,
+            "parked": None,
+            "phishing": None,
+            "spyware": None,
+        }
         for series in self.data.get("activity", {}).get("network", {}).get("blocked_week", []):
             if series["insight_type"] in list(data.keys()):
                 data[series["insight_type"]] = series["sum"]
@@ -246,7 +279,7 @@ class EeroNetwork(EeroResource):
             return
         target = "enable" if value else "disable"
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"/2.2/networks/{self.id}/ddns/{target}",
         )
 
@@ -263,9 +296,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"/2.2/networks/{self.id}/dns",
-            json=dict(caching=value),
+            json={
+                "caching": value,
+            },
         )
 
     @property
@@ -295,9 +330,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"/2.2/networks/{self.id}/guestnetwork",
-            json=dict(enabled=value),
+            json={
+                "enabled": value,
+            },
         )
 
     @property
@@ -364,9 +401,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=self.url_settings,
-            json=dict(ipv6_upstream=value),
+            json={
+                "ipv6_upstream": value,
+            },
         )
 
     @property
@@ -382,11 +421,14 @@ class EeroNetwork(EeroResource):
         return self.data.get("name")
 
     @property
-    def name_long(self) -> str | None:
-        network_names = [network.name for network in self.account.networks]
-        if network_names.count(self.name) > 1:
-            return f"{self.name} ({self.city, self.region_name})"
-        return self.name
+    def nickname(self) -> str | None:
+        return self.data.get("nickname_label")
+
+    @property
+    def name_unique(self) -> str | None:
+        if self.nickname:
+            return f'{self.name} "{self.nickname}" ({self.city}, {self.region_name})'
+        return f"{self.name} ({self.city}, {self.region_name})"
 
     @property
     def password(self) -> str | None:
@@ -405,16 +447,18 @@ class EeroNetwork(EeroResource):
         hour = self.data.get("updates", {}).get("preferred_update_hour")
         if hour is None:
             return hour
-        return list(PREFERRED_UPDATE_HOUR_MAP.keys())[list(PREFERRED_UPDATE_HOUR_MAP.values()).index(hour)]
+        return self.preferred_update_hour_options[list(PREFERRED_UPDATE_HOUR_MAP.values()).index(hour)]
 
     @preferred_update_hour.setter
     def preferred_update_hour(self, value: str) -> None:
-        if value not in PREFERRED_UPDATE_HOUR_MAP.keys():
+        if value not in self.preferred_update_hour_options:
             return
         self.api.call(
-            method="post",
+            method=METHOD_POST,
             url=f"/2.2/networks/{self.id}/updates/preferred_update_hour",
-            json=dict(preferred_update_hour=PREFERRED_UPDATE_HOUR_MAP[value]),
+            json={
+                "preferred_update_hour": PREFERRED_UPDATE_HOUR_MAP[value],
+            },
         )
 
     @property
@@ -422,12 +466,19 @@ class EeroNetwork(EeroResource):
         return list(PREFERRED_UPDATE_HOUR_MAP.keys())
 
     @property
+    def premium_capable(self) -> bool | None:
+        return self.data.get("capabilities", {}).get("premium", {}).get("capable")
+
+    @property
     def premium_status(self) -> str | None:
         return self.data.get("premium_status")
 
     @property
-    def premium_status_active(self) -> bool:
-        return bool(self.premium_status == STATE_ACTIVE)
+    def premium_enabled(self) -> bool:
+        return premium_ok(
+            capable=self.premium_capable,
+            status=self.premium_status,
+        )
 
     @property
     def qr_code(self) -> bytes | None:
@@ -437,7 +488,7 @@ class EeroNetwork(EeroResource):
         )
 
     def reboot(self) -> None:
-        self.api.call(method="post", url=self.url_reboot)
+        self.api.call(method=METHOD_POST, url=self.url_reboot)
 
     @property
     def region(self) -> str | None:
@@ -474,9 +525,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=self.url_settings,
-            json=dict(sqm=value),
+            json={
+                "sqm": value,
+            },
         )
 
     @property
@@ -512,9 +565,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"{self.url_thread}/enable",
-            json=dict(enabled=value),
+            json={
+                "enabled": value,
+            },
         )
 
     @property
@@ -534,7 +589,7 @@ class EeroNetwork(EeroResource):
         return self.data.get("thread", {}).get("xpan_id")
 
     def update(self) -> None:
-        self.api.call(method="post", url=self.url_updates)
+        self.api.call(method=METHOD_POST, url=self.url_updates)
 
     @property
     def upnp(self) -> bool | None:
@@ -545,9 +600,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=self.url_settings,
-            json=dict(upnp=value),
+            json={
+                "upnp": value,
+            },
         )
 
     @property
@@ -583,9 +640,11 @@ class EeroNetwork(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=self.url_settings,
-            json=dict(wpa3=value),
+            json={
+                "wpa3": value,
+            },
         )
 
     @property

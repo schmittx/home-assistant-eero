@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from .const import DEVICE_CATEGORY_TYPE_MAP
+from .const import DEVICE_CATEGORY_TYPE_MAP, METHOD_PUT
 from .resource import EeroResource
 
 _LOGGER = logging.getLogger(__name__)
@@ -212,9 +212,9 @@ class EeroClient(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"/2.3/networks/{self.network.id}/devices/{self.mac}",
-            json=dict(paused=value),
+            json={"paused": value},
         )
 
     @property
@@ -226,9 +226,9 @@ class EeroClient(EeroResource):
         if not isinstance(value, bool):
             return
         self.api.call(
-            method="put",
+            method=METHOD_PUT,
             url=f"/2.3/networks/{self.network.id}/devices/{self.mac}",
-            json=dict(secondary_wan_deny_access=bool(not value)),
+            json={"secondary_wan_deny_access": bool(not value)},
         )
 
     @property
