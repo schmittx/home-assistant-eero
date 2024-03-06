@@ -118,10 +118,8 @@ class EeroAPI(object):
         if url:
             response = self.session.get(url=url)
             if response.status_code not in [200]:
-                raise EeroException(
-                    code=response.status_code,
-                    error="Unable to get release notes",
-                )
+                _LOGGER.debug(f"Unable to get release notes\n- Code: {response.status_code}\n- URL: {url}")
+                return None
             text = json.loads(response.text)
             self.save_response(response=text, name="release_notes")
             return text
@@ -155,7 +153,7 @@ class EeroAPI(object):
     def parse_response(self, response: requests.Response) -> dict[str, Any]:
         text = json.loads(response.text)
         if response.status_code not in [200]:
-            meta = text["meta"]
+            meta = text.get("meta")
             raise EeroException(
                 code=meta.get("code"),
                 error=meta.get("error"),
@@ -167,14 +165,14 @@ class EeroAPI(object):
         response = function()
         if response.status_code not in [200]:
             text = json.loads(response.text)
-            meta = text["meta"]
+            error = text.get("meta", {}).get("error")
             if all(
                 [
                     response.status_code == 401,
                     any(
                         [
-                            meta["error"] == "error.session.invalid",
-                            meta["error"] == "error.session.refresh",
+                            error == "error.session.invalid",
+                            error == "error.session.refresh",
                         ]
                     )
                 ]
