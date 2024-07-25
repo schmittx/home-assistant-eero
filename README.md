@@ -7,7 +7,7 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 - [@jrlucier's eero_tracker project](https://github.com/jrlucier/eero_tracker) - Initial Home Assistant idea
 
 ## Install
-1. Ensure Home Assistant is updated to version 2023.6.0 or newer.
+1. Ensure Home Assistant is updated to version 2023.9.0 or newer.
 2. Use HACS and add as a [custom repo](https://hacs.xyz/docs/faq/custom_repositories); or download and manually move to the `custom_components` folder.
 3. Once the integration is installed follow the standard process to setup via UI and search for `eero`.
 4. Follow the prompts.
@@ -21,7 +21,7 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 
 ## Currently Working
 - Multiple networks supported
-- Control network properties (i.e. guest network, Eero Plus features, Eero Labs features)
+- Control network properties (ex. guest network, Eero Plus features, Eero Labs features)
 - Pause access for profiles and/or clients
 - Control content filters for profiles
 - Device tracker entities for clients and profiles

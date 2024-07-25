@@ -19,6 +19,7 @@ from .const import (
     CADENCE_DAILY,
     CADENCE_HOURLY,
     EERO_LOGO_ICON,
+    METHOD_DELETE,
     METHOD_GET,
     METHOD_POST,
     METHOD_PUT,
@@ -28,7 +29,7 @@ from .const import (
     RESOURCE_MAP,
     URL_ACCOUNT,
 )
-from .util import premium_ok
+from .util import backup_access_point_ok
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,10 +78,14 @@ class EeroAPI(object):
         return {}
 
     def call(self, method: str, url: str, **kwargs) -> dict[str, Any]:
-        if method not in [METHOD_GET, METHOD_POST, METHOD_PUT]:
+        if method not in [METHOD_DELETE, METHOD_GET, METHOD_POST, METHOD_PUT]:
             return
         _LOGGER.debug(f"Calling API with method: {method} and URL: {url}")
-        if method == METHOD_GET:
+        if method == METHOD_DELETE:
+            response = self.refresh(lambda:
+                self.session.delete(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
+            )
+        elif method == METHOD_GET:
             response = self.refresh(lambda:
                 self.session.get(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
@@ -159,7 +164,7 @@ class EeroAPI(object):
 
     def parse_response(self, response: requests.Response) -> dict[str, Any]:
         text = json.loads(response.text)
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 202]:
             _LOGGER.error(f"Parsing response was unsuccessful with status code: {response.status_code}")
             meta = text.get("meta")
             raise EeroException(
@@ -167,7 +172,7 @@ class EeroAPI(object):
                 error=meta.get("error"),
                 server_time=meta.get("server_time"),
             )
-        return text["data"]
+        return text.get("data")
 
     def refresh(self, function: Callable) -> requests.Response:
         response = function()
@@ -224,9 +229,9 @@ class EeroAPI(object):
                         method=METHOD_GET,
                         url=network_data["resources"]["thread"],
                     )
-                    if premium_ok(
-                        capable=network_data["capabilities"]["premium"]["capable"],
-                        status=network_data["premium_status"],
+                    if backup_access_point_ok(
+                        capable=network_data["capabilities"]["backup_access_point"]["capable"],
+                        requirements=network_data["capabilities"]["backup_access_point"]["requirements"],
                     ):
                         backup_access_points = self.call(
                             method=METHOD_GET,

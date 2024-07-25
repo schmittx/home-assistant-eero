@@ -7,6 +7,7 @@ from .const import (
     DEVICE_CATEGORY_ENTERTAINMENT,
     DEVICE_CATEGORY_HOME,
     DEVICE_CATEGORY_OTHER,
+    METHOD_DELETE,
     METHOD_POST,
     METHOD_PUT,
     MODEL_BEACON,
@@ -28,6 +29,8 @@ class EeroNetwork(EeroResource):
     def __init__(self, api, account, data):
         super().__init__(api=api, network=None, data=data)
         self.account = account
+        if self.data is None:
+            self.data = {}
 
     @property
     def ad_block(self) -> bool:
@@ -435,6 +438,33 @@ class EeroNetwork(EeroResource):
         return self.data.get("password")
 
     @property
+    def pause_5g_enabled(self) -> bool | None:
+        return self.data.get("temporary_flags", {}).get("hide_5g", {}).get("value")
+
+    @property
+    def pause_5g_expiration(self) -> str | None:
+        return self.data.get("temporary_flags", {}).get("hide_5g", {}).get("expires_on")
+
+    @pause_5g_enabled.setter
+    def pause_5g_enabled(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            return
+        url = f"{self.url}/temporary_flags/hide_5g"
+        if value:
+            self.api.call(
+                method=METHOD_PUT,
+                url=url,
+                json={
+                    "value": True,
+                },
+            )
+        else:
+            self.api.call(
+                method=METHOD_DELETE,
+                url=url,
+            )
+
+    @property
     def public_ip(self) -> str | None:
         return self.data.get("ip_settings", {}).get("public_ip")
 
@@ -497,6 +527,9 @@ class EeroNetwork(EeroResource):
     @property
     def region_name(self) -> str | None:
         return self.data.get("geo_ip", {}).get("regionName")
+
+    def run_speed_test(self) -> None:
+        self.api.call(method=METHOD_POST, url=f"{self.url}/speedtest")
 
     @property
     def speed_date(self) -> str | None:

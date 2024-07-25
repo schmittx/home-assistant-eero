@@ -73,46 +73,6 @@ class EeroSensorEntityDescription(EeroEntityDescription, SensorEntityDescription
 
 SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
     EeroSensorEntityDescription(
-        key="connected_clients_count",
-        name="Connected Clients",
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement="clients",
-    ),
-    EeroSensorEntityDescription(
-        key="connected_guest_clients_count",
-        name="Connected Guest Clients",
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement="clients",
-    ),
-    EeroSensorEntityDescription(
-        key="public_ip",
-        name="Public IP",
-    ),
-    EeroSensorEntityDescription(
-        key="speed_down",
-        name="Download Speed",
-        device_class=SensorDeviceClass.DATA_RATE,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_value=lambda resource, key: getattr(resource, key)[0],
-        extra_attrs={
-            "last_updated": lambda resource: getattr(resource, "speed_date"),
-        },
-    ),
-    EeroSensorEntityDescription(
-        key="speed_up",
-        name="Upload Speed",
-        device_class=SensorDeviceClass.DATA_RATE,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_value=lambda resource, key: getattr(resource, key)[0],
-        extra_attrs={
-            "last_updated": lambda resource: getattr(resource, "speed_date"),
-        },
-    ),
-    EeroSensorEntityDescription(
-        key="status",
-        name="Status",
-    ),
-    EeroSensorEntityDescription(
         key="ad_block_status",
         name="Ad Blocking Status",
         device_class=SensorDeviceClass.ENUM,
@@ -163,6 +123,18 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_value=lambda resource, key: getattr(resource, key)["blocked"] if resource.is_network else getattr(resource, key),
         activity_type=True,
+    ),
+    EeroSensorEntityDescription(
+        key="connected_clients_count",
+        name="Connected Clients",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="clients",
+    ),
+    EeroSensorEntityDescription(
+        key="connected_guest_clients_count",
+        name="Connected Guest Clients",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="clients",
     ),
     EeroSensorEntityDescription(
         key="data_usage_day",
@@ -223,12 +195,40 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         native_value=lambda resource, key: datetime.fromisoformat(getattr(resource, key).replace("Z", "+00:00")),
     ),
     EeroSensorEntityDescription(
+        key="public_ip",
+        name="Public IP",
+    ),
+    EeroSensorEntityDescription(
         key="signal",
         name="Signal Strength",
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         wireless_only=True,
+    ),
+    EeroSensorEntityDescription(
+        key="speed_down",
+        name="Download Speed",
+        device_class=SensorDeviceClass.DATA_RATE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_value=lambda resource, key: getattr(resource, key)[0],
+        extra_attrs={
+            "last_updated": lambda resource: getattr(resource, "speed_date"),
+        },
+    ),
+    EeroSensorEntityDescription(
+        key="speed_up",
+        name="Upload Speed",
+        device_class=SensorDeviceClass.DATA_RATE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_value=lambda resource, key: getattr(resource, key)[0],
+        extra_attrs={
+            "last_updated": lambda resource: getattr(resource, "speed_date"),
+        },
+    ),
+    EeroSensorEntityDescription(
+        key="status",
+        name="Status",
     ),
     EeroSensorEntityDescription(
         key="usage_down",

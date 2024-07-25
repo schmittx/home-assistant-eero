@@ -25,14 +25,14 @@ class EeroSelectEntityDescription(EeroEntityDescription, SelectEntityDescription
 
 SELECT_DESCRIPTIONS: list[EeroSelectEntityDescription] = [
     EeroSelectEntityDescription(
-        key="preferred_update_hour",
-        name="Preferred Update Time",
-        options="preferred_update_hour_options",
-    ),
-    EeroSelectEntityDescription(
         key="nightlight_mode",
         name="Nightlight Mode",
         options="nightlight_mode_options",
+    ),
+    EeroSelectEntityDescription(
+        key="preferred_update_hour",
+        name="Preferred Update Time",
+        options="preferred_update_hour_options",
     ),
 ]
 

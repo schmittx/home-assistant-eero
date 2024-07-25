@@ -34,8 +34,8 @@ class EeroSwitchEntityDescription(EeroEntityDescription, SwitchEntityDescription
 
 SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
     EeroSwitchEntityDescription(
-        key="backup_internet_enabled",
-        name="Backup Internet Enabled",
+        key="ad_block",
+        name="Ad Blocking",
         premium_type=True,
     ),
     EeroSwitchEntityDescription(
@@ -44,65 +44,13 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         premium_type=True,
     ),
     EeroSwitchEntityDescription(
+        key="backup_internet_enabled",
+        name="Backup Internet Enabled",
+        premium_type=True,
+    ),
+    EeroSwitchEntityDescription(
         key="band_steering",
         name="Band Steering",
-    ),
-    EeroSwitchEntityDescription(
-        key="dns_caching",
-        name="Local DNS Caching",
-        request_refresh=False,
-    ),
-    EeroSwitchEntityDescription(
-        key="guest_network_enabled",
-        name="Guest Network",
-        extra_attrs={
-            "guest_network_name": lambda resource: getattr(resource, "guest_network_name"),
-            "connected_guest_clients": lambda resource: getattr(resource, "connected_guest_clients_count"),
-        },
-    ),
-    EeroSwitchEntityDescription(
-        key="ipv6_upstream",
-        name="IPv6 Enabled",
-        request_refresh=False,
-    ),
-    EeroSwitchEntityDescription(
-        key="paused",
-        name="Paused",
-    ),
-    EeroSwitchEntityDescription(
-        key="secondary_wan_deny_access",
-        name="Allow Internet Backup",
-        premium_type=True,
-    ),
-    EeroSwitchEntityDescription(
-        key="sqm",
-        name="Smart Queue Management",
-    ),
-    EeroSwitchEntityDescription(
-        key="thread_enabled",
-        name="Thread Enabled",
-        extra_attrs={
-            "thread_network_key": lambda resource: getattr(resource, "thread_master_key"),
-            "thread_network_name": lambda resource: getattr(resource, "thread_name"),
-            "channel": lambda resource: getattr(resource, "thread_channel"),
-            "pan_id": lambda resource: getattr(resource, "thread_pan_id"),
-            "extended_pan_id": lambda resource: getattr(resource, "thread_xpan_id"),
-            "commissioning_credential": lambda resource: getattr(resource, "thread_commissioning_credential"),
-            "active_operational_dataset": lambda resource: getattr(resource, "thread_active_operational_dataset"),
-        },
-    ),
-    EeroSwitchEntityDescription(
-        key="upnp",
-        name="UPnP",
-    ),
-    EeroSwitchEntityDescription(
-        key="wpa3",
-        name="WPA3",
-    ),
-    EeroSwitchEntityDescription(
-        key="ad_block",
-        name="Ad Blocking",
-        premium_type=True,
     ),
     EeroSwitchEntityDescription(
         key="block_gaming_content",
@@ -158,9 +106,68 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         },
     ),
     EeroSwitchEntityDescription(
+        key="dns_caching",
+        name="Local DNS Caching",
+        request_refresh=False,
+    ),
+    EeroSwitchEntityDescription(
+        key="guest_network_enabled",
+        name="Guest Network",
+        extra_attrs={
+            "guest_network_name": lambda resource: getattr(resource, "guest_network_name"),
+            "connected_guest_clients": lambda resource: getattr(resource, "connected_guest_clients_count"),
+        },
+    ),
+    EeroSwitchEntityDescription(
+        key="ipv6_upstream",
+        name="IPv6 Enabled",
+        request_refresh=False,
+    ),
+    EeroSwitchEntityDescription(
+        key="pause_5g_enabled",
+        name="5 GHz Band Paused",
+        extra_attrs={
+            "expiration": lambda resource: getattr(resource, "pause_5g_expiration"),
+        },
+    ),
+    EeroSwitchEntityDescription(
+        key="paused",
+        name="Paused",
+    ),
+    EeroSwitchEntityDescription(
         key="safe_search_enabled",
         name="SafeSearch Content Filter",
         premium_type=True,
+    ),
+    EeroSwitchEntityDescription(
+        key="secondary_wan_deny_access",
+        name="Allow Internet Backup",
+        premium_type=True,
+    ),
+    EeroSwitchEntityDescription(
+        key="sqm",
+        name="Smart Queue Management",
+    ),
+    EeroSwitchEntityDescription(
+        key="thread_enabled",
+        name="Thread Enabled",
+        extra_attrs={
+            "thread_network_key": lambda resource: getattr(resource, "thread_master_key"),
+            "thread_network_name": lambda resource: getattr(resource, "thread_name"),
+            "channel": lambda resource: getattr(resource, "thread_channel"),
+            "pan_id": lambda resource: getattr(resource, "thread_pan_id"),
+            "extended_pan_id": lambda resource: getattr(resource, "thread_xpan_id"),
+            "commissioning_credential": lambda resource: getattr(resource, "thread_commissioning_credential"),
+            "active_operational_dataset": lambda resource: getattr(resource, "thread_active_operational_dataset"),
+        },
+    ),
+    EeroSwitchEntityDescription(
+        key="upnp",
+        name="UPnP",
+    ),
+    EeroSwitchEntityDescription(
+        key="wpa3",
+        name="WPA3",
     ),
     EeroSwitchEntityDescription(
         key="youtube_restricted",

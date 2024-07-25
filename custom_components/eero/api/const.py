@@ -16,6 +16,7 @@ ACTIVITY_INSPECTED_WEEK = "inspected_week"
 ACTIVITY_INSPECTED_MONTH = "inspected_month"
 
 API_ENDPOINT = "https://api-user.e2ro.com"
+METHOD_DELETE = "DELETE"
 METHOD_GET = "GET"
 METHOD_POST = "POST"
 METHOD_PUT = "PUT"

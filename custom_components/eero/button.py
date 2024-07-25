@@ -34,6 +34,12 @@ BUTTON_DESCRIPTIONS: list[EeroButtonEntityDescription] = [
         device_class=ButtonDeviceClass.RESTART,
         request_refresh=False,
     ),
+    EeroButtonEntityDescription(
+        key="run_speed_test",
+        name="Run Speed Test",
+        icon="mdi:speedometer",
+        request_refresh=False,
+    ),
 ]
 
 
