@@ -115,6 +115,7 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         name="Guest Network",
         extra_attrs={
             "guest_network_name": lambda resource: getattr(resource, "guest_network_name"),
+            "guest_network_password": lambda resource: getattr(resource, "guest_network_password"),
             "connected_guest_clients": lambda resource: getattr(resource, "connected_guest_clients_count"),
         },
     ),
