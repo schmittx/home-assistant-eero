@@ -29,7 +29,7 @@ from .const import (
     RESOURCE_MAP,
     URL_ACCOUNT,
 )
-from .util import backup_access_point_ok
+from .util import backup_access_point_ok, premium_ok
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -229,9 +229,17 @@ class EeroAPI(object):
                         method=METHOD_GET,
                         url=network_data["resources"]["thread"],
                     )
-                    if backup_access_point_ok(
-                        capable=network_data["capabilities"]["backup_access_point"]["capable"],
-                        requirements=network_data["capabilities"]["backup_access_point"]["requirements"],
+                    if all(
+                        [
+                            backup_access_point_ok(
+                                capable=network_data["capabilities"]["backup_access_point"]["capable"],
+                                requirements=network_data["capabilities"]["backup_access_point"]["requirements"],
+                            ),
+                            premium_ok(
+                                capable=network_data["capabilities"]["premium"]["capable"],
+                                status=network_data["premium_status"],
+                            ),
+                        ]
                     ):
                         backup_access_points = self.call(
                             method=METHOD_GET,
