@@ -152,11 +152,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
-    for device_entry in hass.helpers.device_registry.async_entries_for_config_entry(device_registry, config_entry.entry_id):
+    for device_entry in dr.async_entries_for_config_entry(device_registry, config_entry.entry_id):
         if all([bool(resource_id not in conf_identifiers) for resource_id in device_entry.identifiers]):
             device_registry.async_remove_device(device_entry.id)
         else:
-            for entity_entry in hass.helpers.entity_registry.async_entries_for_device(entity_registry, device_entry.id):
+            for entity_entry in er.async_entries_for_device(entity_registry, device_entry.id):
                 unique_id = entity_entry.unique_id.split("-")
                 activity = conf_activity.get(unique_id[0], {})
                 if unique_id[-1] in list(ACTIVITY_MAP_TO_HASS.keys()):
