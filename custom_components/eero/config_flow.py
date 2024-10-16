@@ -225,7 +225,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.user_input[CONF_SHOW_EERO_LOGO] = user_input[CONF_SHOW_EERO_LOGO]
             self.user_input[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
             self.user_input[CONF_TIMEOUT] = user_input[CONF_TIMEOUT]
-            return self.async_create_entry(title=self.user_input[CONF_NAME], data=self.user_input)
+            return self.async_create_entry(title=f"{self.user_input[CONF_NAME]} ({self.user_input[CONF_LOGIN]})", data=self.user_input)
 
         return self.async_show_form(
             step_id="advanced",

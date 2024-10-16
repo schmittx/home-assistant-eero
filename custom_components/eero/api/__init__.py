@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+import aiofiles
 import datetime
 from dateutil import relativedelta
 import json
@@ -66,9 +67,10 @@ class EeroAPI(object):
     ) -> None:
         self.activity = activity
         self.data = EeroAccount(self, {})
-        self.default_qr_code = open(EERO_LOGO_ICON, "rb").read() if show_eero_logo else None
+        self.default_qr_code: bytes | None = None
         self.save_location = save_location
         self.session = requests.Session()
+        self.show_eero_logo = show_eero_logo
         self.user_token = user_token
 
     @property
@@ -122,6 +124,10 @@ class EeroAPI(object):
         start = f"{start.astimezone(pytz.utc).replace(tzinfo=None).isoformat()}Z"
         end = f"{end.astimezone(pytz.utc).replace(tzinfo=None).isoformat()}Z"
         return (start, end, cadence)
+
+    async def generate_default_qr_code(self) -> None:
+        async with aiofiles.open(EERO_LOGO_ICON, "rb") as file:
+            self.default_qr_code = await file.read()
 
     def get_release_notes(self, url: str) -> dict[str, Any] | None:
         if url:

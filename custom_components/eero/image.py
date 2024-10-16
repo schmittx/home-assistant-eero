@@ -118,6 +118,7 @@ class EeroImageEntity(EeroEntity, ImageEntity):
     async def async_added_to_hass(self) -> None:
         """Fetch and set initial data and state."""
         await super().async_added_to_hass()
+        await self.resource.api.generate_default_qr_code()
         self._current_image = getattr(self.resource, self.entity_description.key)
         self._attr_image_last_updated = dt_util.utcnow()
 
