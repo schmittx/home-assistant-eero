@@ -9,7 +9,7 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform, ATTR_MODE, CONF_NAME, CONF_SCAN_INTERVAL
+from homeassistant.const import Platform, CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
     config_validation as cv,
@@ -24,20 +24,13 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .api import EeroAPI, EeroException
-from .api.const import STATE_AMBIENT, STATE_DISABLED, STATE_SCHEDULE
 from .api.network import EeroNetwork
 from .api.resource import EeroResource
 from .const import (
     ACTIVITY_MAP_TO_HASS,
     ATTR_BLOCKED_APPS,
-    ATTR_DNS_CACHING_ENABLED,
-    ATTR_IPV6_ENABLED,
-    ATTR_TARGET_EERO,
     ATTR_TARGET_NETWORK,
     ATTR_TARGET_PROFILE,
-    ATTR_THREAD_ENABLED,
-    ATTR_TIME_OFF,
-    ATTR_TIME_ON,
     CONF_ACTIVITY,
     CONF_ACTIVITY_CLIENTS,
     CONF_ACTIVITY_EEROS,
@@ -47,6 +40,7 @@ from .const import (
     CONF_CLIENTS,
     CONF_EEROS,
     CONF_NETWORKS,
+    CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
     CONF_SAVE_RESPONSES,
     CONF_SHOW_EERO_LOGO,
@@ -57,6 +51,7 @@ from .const import (
     DATA_API,
     DATA_COORDINATOR,
     DATA_UPDATE_LISTENER,
+    DEFAULT_PREFIX_NETWORK_NAME,
     DEFAULT_SAVE_LOCATION,
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
@@ -68,50 +63,14 @@ from .const import (
     MODEL_CLIENT,
     MODEL_NETWORK,
     MODEL_PROFILE,
-    SERVICE_ENABLE_DNS_CACHING,
-    SERVICE_ENABLE_IPV6,
-    SERVICE_ENABLE_THREAD,
     SERVICE_SET_BLOCKED_APPS,
-    SERVICE_SET_NIGHTLIGHT_MODE,
     SUPPORTED_APPS,
-)
-from .util import validate_time_format
-
-ENABLE_DNS_CACHING_SCHEMA = vol.Schema(
-    {
-        vol.Required(ATTR_DNS_CACHING_ENABLED): cv.boolean,
-        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
-    }
-)
-
-ENABLE_IPV6_SCHEMA = vol.Schema(
-    {
-        vol.Required(ATTR_IPV6_ENABLED): cv.boolean,
-        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
-    }
-)
-
-ENABLE_THREAD_SCHEMA = vol.Schema(
-    {
-        vol.Required(ATTR_THREAD_ENABLED): cv.boolean,
-        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
-    }
 )
 
 SET_BLOCKED_APPS_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_BLOCKED_APPS): vol.All(cv.ensure_list, [vol.In(SUPPORTED_APPS)]),
         vol.Optional(ATTR_TARGET_PROFILE, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
-        vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
-    }
-)
-
-SET_NIGHTLIGHT_MODE_SCHEMA = vol.Schema(
-    {
-        vol.Required(ATTR_MODE): vol.In([STATE_AMBIENT, STATE_DISABLED, STATE_SCHEDULE]),
-        vol.Optional(ATTR_TIME_ON): validate_time_format,
-        vol.Optional(ATTR_TIME_OFF): validate_time_format,
-        vol.Optional(ATTR_TARGET_EERO, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
         vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
 )
@@ -170,6 +129,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                     ):
                         entity_registry.async_remove(entity_entry.entity_id)
 
+    conf_prefix_network_name = options.get(CONF_PREFIX_NETWORK_NAME, data.get(CONF_PREFIX_NETWORK_NAME, DEFAULT_PREFIX_NETWORK_NAME))
     conf_save_responses = options.get(CONF_SAVE_RESPONSES, data.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES))
     conf_scan_interval = options.get(CONF_SCAN_INTERVAL, data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     conf_show_eero_logo = options.get(CONF_SHOW_EERO_LOGO, data.get(CONF_SHOW_EERO_LOGO, DEFAULT_SHOW_EERO_LOGO))
@@ -194,7 +154,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             async with async_timeout.timeout(conf_timeout):
                 return await hass.async_add_executor_job(api.update, conf_networks)
         except EeroException as exception:
-            raise UpdateFailed(f"Error communicating with API: {exception.error_message}")
+            raise UpdateFailed(f"Error communicating with API: {exception.error}")
 
     coordinator = DataUpdateCoordinator(
         hass=hass,
@@ -207,37 +167,17 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config_entry.entry_id] = {
-        CONF_NETWORKS: conf_networks,
-        CONF_BACKUP_NETWORKS: conf_backup_networks,
-        CONF_EEROS: conf_eeros,
-        CONF_PROFILES: conf_profiles,
-        CONF_CLIENTS: conf_clients,
         CONF_ACTIVITY: conf_activity,
+        CONF_BACKUP_NETWORKS: conf_backup_networks,
+        CONF_CLIENTS: conf_clients,
+        CONF_EEROS: conf_eeros,
+        CONF_NETWORKS: conf_networks,
+        CONF_PREFIX_NETWORK_NAME: conf_prefix_network_name,
+        CONF_PROFILES: conf_profiles,
         DATA_API: api,
         DATA_COORDINATOR: coordinator,
         DATA_UPDATE_LISTENER: config_entry.add_update_listener(async_update_listener),
     }
-
-    def enable_dns_caching(service):
-        _enable_network_attribute(
-            target_network=service.data[ATTR_TARGET_NETWORK],
-            attribute="dns_caching",
-            enabled=service.data[ATTR_DNS_CACHING_ENABLED],
-        )
-
-    def enable_ipv6(service):
-        _enable_network_attribute(
-            target_network=service.data[ATTR_TARGET_NETWORK],
-            attribute="ipv6",
-            enabled=service.data[ATTR_IPV6_ENABLED],
-        )
-
-    def enable_thread(service):
-        _enable_network_attribute(
-            target_network=service.data[ATTR_TARGET_NETWORK],
-            attribute="thread",
-            enabled=service.data[ATTR_THREAD_ENABLED],
-        )
 
     async def async_set_blocked_apps(service):
         blocked_apps = service.data[ATTR_BLOCKED_APPS]
@@ -247,37 +187,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         ):
             await hass.async_add_executor_job(profile.set_blocked_applications, blocked_apps)
         await coordinator.async_request_refresh()
-
-    async def async_set_nightlight_mode(service):
-        mode = service.data[ATTR_MODE]
-        for eero in _validate_eero(
-            target_eero=service.data[ATTR_TARGET_EERO],
-            target_network=service.data[ATTR_TARGET_NETWORK],
-        ):
-            if eero.is_eero_beacon:
-                if mode == STATE_DISABLED:
-                    await hass.async_add_executor_job(eero.set_nightlight_disabled)
-                elif mode == STATE_AMBIENT:
-                    await hass.async_add_executor_job(eero.set_nightlight_ambient)
-                elif mode == STATE_SCHEDULE:
-                    on = service.data.get(ATTR_TIME_ON, eero.nightlight_schedule[0])
-                    off = service.data.get(ATTR_TIME_OFF, eero.nightlight_schedule[1])
-                    if on == off:
-                        return
-                    await hass.async_add_executor_job(eero.set_nightlight_schedule, on, off)
-        await coordinator.async_request_refresh()
-
-    def _enable_network_attribute(attribute: str, enabled: bool, target_network: str):
-        for network in _validate_network(target_network=target_network):
-            setattr(network, attribute, enabled)
-
-    def _validate_eero(target_eero: str, target_network: str):
-        validated_eero = []
-        for network in _validate_network(target_network=target_network):
-            for eero in network.eeros:
-                if any([not target_eero, eero.id in target_eero, eero.name in target_eero]):
-                    validated_eero.append(eero)
-        return validated_eero
 
     def _validate_network(target_network: str):
         validated_network = []
@@ -293,37 +202,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                 if any([not target_profile, profile.id in target_profile, profile.name in target_profile]):
                     validated_profile.append(profile)
         return validated_profile
-
-    if conf_networks:
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_ENABLE_DNS_CACHING,
-            enable_dns_caching,
-            schema=ENABLE_DNS_CACHING_SCHEMA,
-        )
-
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_ENABLE_IPV6,
-            enable_ipv6,
-            schema=ENABLE_IPV6_SCHEMA,
-        )
-
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_ENABLE_THREAD,
-            enable_thread,
-            schema=ENABLE_THREAD_SCHEMA,
-        )
-
-    if conf_eeros:
-        if any([eero.is_eero_beacon for network in coordinator.data.networks for eero in network.eeros]):
-            hass.services.async_register(
-                DOMAIN,
-                SERVICE_SET_NIGHTLIGHT_MODE,
-                async_set_nightlight_mode,
-                schema=SET_NIGHTLIGHT_MODE_SCHEMA,
-            )
 
     if conf_profiles:
         hass.services.async_register(
@@ -364,12 +242,14 @@ class EeroEntity(CoordinatorEntity):
         network_id: str,
         resource_id: str,
         description: EeroEntityDescription,
+        prefix_network_name: bool = DEFAULT_PREFIX_NETWORK_NAME,
     ) -> None:
         """Initialize device."""
         super().__init__(coordinator)
         self.network_id = network_id
         self.resource_id = resource_id
         self.entity_description = description
+        self.prefix_network_name = prefix_network_name
 
     @property
     def network(self) -> EeroNetwork | None:
@@ -452,9 +332,15 @@ class EeroEntity(CoordinatorEntity):
     def name(self) -> str:
         """Return the name of the entity."""
         if self.resource.is_client:
-            return f"{self.network.name} {self.resource.name_connection_type} {self.entity_description.name}"
+            name = f"{self.resource.name_connection_type} {self.entity_description.name}"
+            if self.prefix_network_name:
+                return f"{self.network.name} {name}"
+            return name
         elif self.resource.is_backup_network or self.resource.is_eero or self.resource.is_profile:
-            return f"{self.network.name} {self.resource.name} {self.entity_description.name}"
+            name = f"{self.resource.name} {self.entity_description.name}"
+            if self.prefix_network_name:
+                return f"{self.network.name} {name}"
+            return name
         return f"{self.resource.name} {self.entity_description.name}"
 
 

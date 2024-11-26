@@ -26,6 +26,7 @@ from .const import (
     CONF_EEROS,
     CONF_LOGIN,
     CONF_NETWORKS,
+    CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
     CONF_SAVE_RESPONSES,
     CONF_SHOW_EERO_LOGO,
@@ -34,6 +35,7 @@ from .const import (
     CONF_WIRED_CLIENTS,
     CONF_WIRELESS_CLIENTS,
     DATA_API,
+    DEFAULT_PREFIX_NETWORK_NAME,
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHOW_EERO_LOGO,
@@ -71,7 +73,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.api.login, user_input[CONF_LOGIN],
                 )
             except EeroException as exception:
-                _LOGGER.error(f"Status: {exception.status_code}, Error Message: {exception.error_message}")
+                _LOGGER.error(f"Status: {exception.code}, Error Message: {exception.error}")
                 errors["base"] = "invalid_login"
 
             self.user_input[CONF_USER_TOKEN] = self.response["user_token"]
@@ -94,7 +96,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.api.login_verify, user_input[CONF_CODE],
                 )
             except EeroException as exception:
-                _LOGGER.error(f"Status: {exception.status_code}, Error Message: {exception.error_message}")
+                _LOGGER.error(f"Status: {exception.code}, Error Message: {exception.error}")
                 errors["base"] = "invalid_code"
 
             await self.async_set_unique_id(self.response["log_id"].lower())
@@ -221,6 +223,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_advanced(self, user_input=None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
+            self.user_input[CONF_PREFIX_NETWORK_NAME] = user_input[CONF_PREFIX_NETWORK_NAME]
             self.user_input[CONF_SAVE_RESPONSES] = user_input[CONF_SAVE_RESPONSES]
             self.user_input[CONF_SHOW_EERO_LOGO] = user_input[CONF_SHOW_EERO_LOGO]
             self.user_input[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
@@ -231,6 +234,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="advanced",
             data_schema=vol.Schema(
                 {
+                    vol.Required(CONF_PREFIX_NETWORK_NAME, default=DEFAULT_PREFIX_NETWORK_NAME): cv.boolean,
                     vol.Required(CONF_SAVE_RESPONSES, default=DEFAULT_SAVE_RESPONSES): cv.boolean,
                     vol.Required(CONF_SHOW_EERO_LOGO, default=DEFAULT_SHOW_EERO_LOGO): cv.boolean,
                     vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.In(VALUES_SCAN_INTERVAL),
@@ -391,12 +395,14 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_advanced(self, user_input=None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
+            self.user_input[CONF_PREFIX_NETWORK_NAME] = user_input[CONF_PREFIX_NETWORK_NAME]
             self.user_input[CONF_SAVE_RESPONSES] = user_input[CONF_SAVE_RESPONSES]
             self.user_input[CONF_SHOW_EERO_LOGO] = user_input[CONF_SHOW_EERO_LOGO]
             self.user_input[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
             self.user_input[CONF_TIMEOUT] = user_input[CONF_TIMEOUT]
             return self.async_create_entry(title="", data=self.user_input)
 
+        default_prefix_network_name = self.options.get(CONF_PREFIX_NETWORK_NAME, DEFAULT_PREFIX_NETWORK_NAME)
         default_save_responses = self.options.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES)
         default_show_eero_logo = self.options.get(CONF_SHOW_EERO_LOGO, DEFAULT_SHOW_EERO_LOGO)
         default_scan_interval = self.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
@@ -406,6 +412,7 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="advanced",
             data_schema=vol.Schema(
                 {
+                    vol.Required(CONF_PREFIX_NETWORK_NAME, default=default_prefix_network_name): cv.boolean,
                     vol.Required(CONF_SAVE_RESPONSES, default=default_save_responses): cv.boolean,
                     vol.Required(CONF_SHOW_EERO_LOGO, default=default_show_eero_logo): cv.boolean,
                     vol.Required(CONF_SCAN_INTERVAL, default=default_scan_interval): vol.In(VALUES_SCAN_INTERVAL),

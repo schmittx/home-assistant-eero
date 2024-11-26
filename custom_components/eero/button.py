@@ -17,6 +17,7 @@ from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_EEROS,
     CONF_NETWORKS,
+    CONF_PREFIX_NETWORK_NAME,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
@@ -69,6 +70,7 @@ async def async_setup_entry(
                             network.id,
                             None,
                             description,
+                            entry[CONF_PREFIX_NETWORK_NAME],
                         )
                     )
 
@@ -84,6 +86,7 @@ async def async_setup_entry(
                                     network.id,
                                     eero.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 

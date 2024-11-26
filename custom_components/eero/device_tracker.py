@@ -27,6 +27,7 @@ from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_CLIENTS,
     CONF_NETWORKS,
+    CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
@@ -73,6 +74,7 @@ async def async_setup_entry(
                                 network.id,
                                 profile.id,
                                 description,
+                                entry[CONF_PREFIX_NETWORK_NAME],
                             )
                         )
 
@@ -87,6 +89,7 @@ async def async_setup_entry(
                                 network.id,
                                 client.id,
                                 description,
+                                entry[CONF_PREFIX_NETWORK_NAME],
                             )
                         )
 
@@ -102,8 +105,12 @@ class EeroDeviceTrackerEntity(EeroEntity):
     def name(self) -> str | None:
         """Return the name of the entity."""
         if self.resource.is_client:
-            return f"{self.network.name} {self.resource.name_connection_type}"
-        return f"{self.network.name} {self.resource.name}"
+            name = self.resource.name_connection_type
+        else:
+            name = self.resource.name
+        if self.prefix_network_name:
+            return f"{self.network.name} {name}"
+        return name
 
     @property
     def is_connected(self) -> bool | None:

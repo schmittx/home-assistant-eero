@@ -18,6 +18,7 @@ from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_BACKUP_NETWORKS,
     CONF_NETWORKS,
+    CONF_PREFIX_NETWORK_NAME,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
@@ -68,6 +69,7 @@ async def async_setup_entry(
                             network.id,
                             None,
                             description,
+                            entry[CONF_PREFIX_NETWORK_NAME],
                             hass,
                         )
                     )
@@ -82,6 +84,7 @@ async def async_setup_entry(
                                     network.id,
                                     backup_network.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                     hass,
                                 )
                             )
@@ -101,10 +104,11 @@ class EeroImageEntity(EeroEntity, ImageEntity):
         network_id: str,
         resource_id: str,
         description: EeroImageEntityDescription,
+        prefix_network_name: bool,
         hass: HomeAssistant,
     ) -> None:
         """Initialize device."""
-        super().__init__(coordinator, network_id, resource_id, description)
+        super().__init__(coordinator, network_id, resource_id, description, prefix_network_name)
         ImageEntity.__init__(self, hass)
         self._current_image: bytes | None = None
 

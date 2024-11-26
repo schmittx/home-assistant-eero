@@ -20,6 +20,7 @@ from .const import (
     CONF_BACKUP_NETWORKS,
     CONF_CLIENTS,
     CONF_NETWORKS,
+    CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
@@ -115,6 +116,7 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         name="Guest Network",
         extra_attrs={
             "guest_network_name": lambda resource: getattr(resource, "guest_network_name"),
+            "guest_network_password": lambda resource: getattr(resource, "guest_network_password"),
             "connected_guest_clients": lambda resource: getattr(resource, "connected_guest_clients_count"),
         },
     ),
@@ -203,6 +205,7 @@ async def async_setup_entry(
                             network.id,
                             None,
                             description,
+                            entry[CONF_PREFIX_NETWORK_NAME],
                         )
                     )
 
@@ -216,6 +219,7 @@ async def async_setup_entry(
                                     network.id,
                                     backup_network.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 
@@ -231,6 +235,7 @@ async def async_setup_entry(
                                     network.id,
                                     profile.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 
@@ -246,6 +251,7 @@ async def async_setup_entry(
                                     network.id,
                                     client.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 

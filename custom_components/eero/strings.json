@@ -54,6 +54,7 @@
                 "data": {
                     "save_responses": "Save server responses to custom_components/eero/api/responses",
                     "scan_interval": "Polling interval (seconds)",
+                    "prefix_network_name": "Add network name as a prefix for all non-network entities",
                     "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
                     "timeout": "Polling timeout (seconds)"
                 },
@@ -96,6 +97,7 @@
                 "data": {
                     "save_responses": "Save server responses to custom_components/eero/api/responses",
                     "scan_interval": "Polling interval (seconds)",
+                    "prefix_network_name": "Add network name as a prefix for all non-network entities",
                     "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
                     "timeout": "Polling timeout (seconds)"
                 },

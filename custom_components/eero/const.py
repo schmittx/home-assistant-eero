@@ -46,14 +46,8 @@ ACTIVITIES_DATA_USAGE_PREMIUM = [
 ]
 
 ATTR_BLOCKED_APPS = "blocked_apps"
-ATTR_DNS_CACHING_ENABLED = "dns_caching_enabled"
-ATTR_IPV6_ENABLED = "ipv6_enabled"
-ATTR_TARGET_EERO = "target_eero"
 ATTR_TARGET_NETWORK = "target_network"
 ATTR_TARGET_PROFILE = "target_profile"
-ATTR_THREAD_ENABLED = "thread_enabled"
-ATTR_TIME_OFF = "time_off"
-ATTR_TIME_ON = "time_on"
 
 CONF_ACTIVITY = "activity"
 CONF_ACTIVITY_CLIENTS = "clients"
@@ -90,11 +84,7 @@ MODEL_PROFILE = "Profile"
 
 RELEASE_URL = "https://support.eero.com/hc/en-us/articles/209636523-eero-Software-Release-Notes"
 
-SERVICE_ENABLE_DNS_CACHING = "enable_dns_caching"
-SERVICE_ENABLE_IPV6 = "enable_ipv6"
-SERVICE_ENABLE_THREAD = "enable_thread"
 SERVICE_SET_BLOCKED_APPS = "set_blocked_apps"
-SERVICE_SET_NIGHTLIGHT_MODE = "set_nightlight_mode"
 
 SUPPORTED_APPS = [
     "activision_blizzard",
@@ -171,6 +161,7 @@ SUPPORTED_APPS = [
     "zoom_video",
 ]
 
+CONF_PREFIX_NETWORK_NAME = "prefix_network_name"
 CONF_SAVE_RESPONSES = "save_responses"
 CONF_SHOW_EERO_LOGO = "show_eero_logo"
 CONF_TIMEOUT = "timeout"
@@ -178,6 +169,7 @@ CONF_TIMEOUT = "timeout"
 VALUES_SCAN_INTERVAL = [30, 60, 120, 300, 600]
 VALUES_TIMEOUT = [10, 15, 30, 45, 60]
 
+DEFAULT_PREFIX_NETWORK_NAME = True
 DEFAULT_SAVE_LOCATION = f"/config/custom_components/{DOMAIN}/api/responses"
 DEFAULT_SAVE_RESPONSES = False
 DEFAULT_SCAN_INTERVAL = VALUES_SCAN_INTERVAL[2]

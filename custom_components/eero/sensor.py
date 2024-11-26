@@ -44,6 +44,7 @@ from .const import (
     CONF_CLIENTS,
     CONF_EEROS,
     CONF_NETWORKS,
+    CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
@@ -280,6 +281,7 @@ async def async_setup_entry(
                             network.id,
                             None,
                             description,
+                            entry[CONF_PREFIX_NETWORK_NAME],
                         )
                     )
 
@@ -293,6 +295,7 @@ async def async_setup_entry(
                                     network.id,
                                     backup_network.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 
@@ -314,6 +317,7 @@ async def async_setup_entry(
                                     network.id,
                                     eero.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 
@@ -335,6 +339,7 @@ async def async_setup_entry(
                                     network.id,
                                     profile.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 
@@ -357,6 +362,7 @@ async def async_setup_entry(
                                     network.id,
                                     client.id,
                                     description,
+                                    entry[CONF_PREFIX_NETWORK_NAME],
                                 )
                             )
 
