@@ -191,8 +191,12 @@ class EeroProfile(EeroResource):
         )
 
     @property
-    def blocked_applications(self) -> list[str | None] | None:
-        return self.data.get("premium_dns", {}).get("blocked_applications")
+    def blocked_applications(self) -> list[str]:
+        return self.data.get("premium_dns", {}).get("blocked_applications", [])
+
+    @property
+    def blocked_applications_count(self) -> int:
+        return len(self.blocked_applications)
 
     def set_blocked_applications(self, blocked_applications: list) -> None:
         if not isinstance(blocked_applications, list):
@@ -231,7 +235,7 @@ class EeroProfile(EeroResource):
         return bool(self.connected_clients_count != 0)
 
     @property
-    def connected_clients_count(self)  -> int | None:
+    def connected_clients_count(self) -> int:
         return len([client for client in self.clients if client.connected])
 
     @property

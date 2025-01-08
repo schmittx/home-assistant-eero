@@ -34,7 +34,7 @@ DEVICE_TYPE_AIR_PURIFIER = "air_purifier"
 DEVICE_TYPE_ALARM_SYSTEM = "alarm_system"
 DEVICE_TYPE_AUDIO = "audio"
 DEVICE_TYPE_BED = "bed"
-DEVICE_TYPE_CABLE_BOX = "cable_box",
+DEVICE_TYPE_CABLE_BOX = "cable_box"
 DEVICE_TYPE_CAR = "car"
 DEVICE_TYPE_COFFEE_MAKER = "coffee_maker"
 DEVICE_TYPE_DESKTOP_COMPUTER = "desktop_computer"
@@ -59,7 +59,7 @@ DEVICE_TYPE_PHONE = "phone"
 DEVICE_TYPE_PLUG = "plug"
 DEVICE_TYPE_PRINTER = "printer"
 DEVICE_TYPE_REFRIGERATOR = "refrigerator"
-DEVICE_TYPE_REMOTE = "remote",
+DEVICE_TYPE_REMOTE = "remote"
 DEVICE_TYPE_SCALE = "scale"
 DEVICE_TYPE_SECURITY_CAMERA = "security_camera"
 DEVICE_TYPE_SMOKE_DETECTOR = "smoke_detector"
@@ -232,4 +232,86 @@ PREFERRED_UPDATE_HOUR_MAP = {
     "9pm_10pm": 21,
     "10pm_11pm": 22,
     "11pm_12am": 23,
+}
+
+APP_CATEGORY_ADULT = "adult"
+APP_CATEGORY_CHAT_MESSAGING = "chat_messaging"
+APP_CATEGORY_GAMES = "games"
+APP_CATEGORY_SHOPPING = "shopping"
+APP_CATEGORY_SOCIAL_MEDIA = "social_media"
+APP_CATEGORY_STREAMING = "streaming"
+
+SUPPORTED_APPS = {
+    "activision_blizzard": [APP_CATEGORY_GAMES],
+    "alibaba": [APP_CATEGORY_SHOPPING],
+    "amazon": [APP_CATEGORY_SHOPPING],
+    "amazon_video": [APP_CATEGORY_STREAMING],
+    "apple": [APP_CATEGORY_SHOPPING],
+    "apple_itunes": [APP_CATEGORY_SHOPPING],
+    "audible": [APP_CATEGORY_STREAMING],
+    "badoo": [APP_CATEGORY_ADULT],
+    "blizzard": [APP_CATEGORY_GAMES],
+    "bytedance": [APP_CATEGORY_SOCIAL_MEDIA],
+    "cbs": [APP_CATEGORY_STREAMING],
+    "clash_of_clans": [APP_CATEGORY_GAMES],
+    "clash_royale": [APP_CATEGORY_GAMES],
+    "costco": [APP_CATEGORY_SHOPPING],
+    "craigslist": [APP_CATEGORY_ADULT, APP_CATEGORY_SHOPPING],
+    "discord": [APP_CATEGORY_CHAT_MESSAGING],
+    "disney": [APP_CATEGORY_SHOPPING, APP_CATEGORY_STREAMING],
+    "disney_plus": [APP_CATEGORY_STREAMING],
+    "disqus": [APP_CATEGORY_CHAT_MESSAGING, APP_CATEGORY_SOCIAL_MEDIA],
+    "ebay": [APP_CATEGORY_SHOPPING],
+    "electronic_arts": [APP_CATEGORY_GAMES],
+    "epic_games": [APP_CATEGORY_GAMES],
+    "etsy": [APP_CATEGORY_SHOPPING],
+    "facebook": [APP_CATEGORY_SOCIAL_MEDIA],
+    "facebook_messenger": [APP_CATEGORY_CHAT_MESSAGING],
+    "gmail": [APP_CATEGORY_CHAT_MESSAGING],
+    "google_hangouts": [APP_CATEGORY_CHAT_MESSAGING],
+    "google_voice": [APP_CATEGORY_STREAMING],
+    "hbo": [APP_CATEGORY_STREAMING],
+    "hulu": [APP_CATEGORY_STREAMING],
+    "iheartradio": [APP_CATEGORY_STREAMING],
+    "instagram": [APP_CATEGORY_SOCIAL_MEDIA],
+    "kik": [APP_CATEGORY_CHAT_MESSAGING],
+    "last.fm": [APP_CATEGORY_STREAMING],
+    "linkedin": [APP_CATEGORY_SOCIAL_MEDIA],
+    "microsoft_outlook": [APP_CATEGORY_CHAT_MESSAGING],
+    "microsoft_teams": [APP_CATEGORY_CHAT_MESSAGING],
+    "minecraft": [APP_CATEGORY_GAMES],
+    "netflix": [APP_CATEGORY_STREAMING],
+    "nintendo": [APP_CATEGORY_GAMES],
+    "okcupid": [APP_CATEGORY_ADULT],
+    "pandora": [APP_CATEGORY_STREAMING],
+    "pinterest": [APP_CATEGORY_SOCIAL_MEDIA],
+    "playstation": [APP_CATEGORY_GAMES, APP_CATEGORY_SHOPPING],
+    "plex": [APP_CATEGORY_STREAMING],
+    "reddit": [APP_CATEGORY_ADULT, APP_CATEGORY_CHAT_MESSAGING, APP_CATEGORY_SOCIAL_MEDIA],
+    "roblox": [APP_CATEGORY_GAMES],
+    "signal": [APP_CATEGORY_CHAT_MESSAGING],
+    "skype": [APP_CATEGORY_CHAT_MESSAGING, APP_CATEGORY_STREAMING],
+    "slack": [APP_CATEGORY_CHAT_MESSAGING],
+    "snapchat": [APP_CATEGORY_CHAT_MESSAGING],
+    "soundcloud": [APP_CATEGORY_STREAMING],
+    "spotify": [APP_CATEGORY_STREAMING],
+    "steam": [APP_CATEGORY_GAMES, APP_CATEGORY_SHOPPING],
+    "stream": [APP_CATEGORY_CHAT_MESSAGING],
+    "target": [APP_CATEGORY_SHOPPING],
+    "ticketmaster": [APP_CATEGORY_SHOPPING],
+    "tiktok": [APP_CATEGORY_SOCIAL_MEDIA],
+    "tinder": [APP_CATEGORY_ADULT, APP_CATEGORY_SOCIAL_MEDIA],
+    "tumblr": [APP_CATEGORY_SOCIAL_MEDIA],
+    "twitch": [APP_CATEGORY_GAMES, APP_CATEGORY_STREAMING],
+    "twitter": [APP_CATEGORY_SOCIAL_MEDIA],
+    "ubisoft": [APP_CATEGORY_GAMES],
+    "vimeo": [APP_CATEGORY_STREAMING],
+    "walmart": [APP_CATEGORY_SHOPPING],
+    "wechat": [APP_CATEGORY_CHAT_MESSAGING],
+    "whatsapp": [APP_CATEGORY_CHAT_MESSAGING],
+    "xbox": [APP_CATEGORY_GAMES],
+    "xbox_live": [APP_CATEGORY_GAMES],
+    "yahoo_mail": [APP_CATEGORY_CHAT_MESSAGING],
+    "youtube": [APP_CATEGORY_STREAMING],
+    "zoom_video": [APP_CATEGORY_CHAT_MESSAGING],
 }

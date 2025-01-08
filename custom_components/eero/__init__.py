@@ -24,10 +24,12 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .api import EeroAPI, EeroException
+from .api.const import SUPPORTED_APPS
 from .api.network import EeroNetwork
 from .api.resource import EeroResource
+from .config_flow import EeroConfigFlow
 from .const import (
-    ACTIVITY_MAP_TO_HASS,
+    ACTIVITIES_PREMIUM,
     ATTR_BLOCKED_APPS,
     ATTR_TARGET_NETWORK,
     ATTR_TARGET_PROFILE,
@@ -37,17 +39,22 @@ from .const import (
     CONF_ACTIVITY_NETWORK,
     CONF_ACTIVITY_PROFILES,
     CONF_BACKUP_NETWORKS,
-    CONF_CLIENTS,
     CONF_EEROS,
+    CONF_FILTER_EXCLUDE,
+    CONF_FILTER_INCLUDE,
     CONF_NETWORKS,
     CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
+    CONF_RESOURCES,
     CONF_SAVE_RESPONSES,
     CONF_SHOW_EERO_LOGO,
+    CONF_SUFFIX_CONNECTION_TYPE,
     CONF_TIMEOUT,
     CONF_USER_TOKEN,
     CONF_WIRED_CLIENTS,
+    CONF_WIRED_CLIENTS_FILTER,
     CONF_WIRELESS_CLIENTS,
+    CONF_WIRELESS_CLIENTS_FILTER,
     DATA_API,
     DATA_COORDINATOR,
     DATA_UPDATE_LISTENER,
@@ -56,20 +63,23 @@ from .const import (
     DEFAULT_SAVE_RESPONSES,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHOW_EERO_LOGO,
+    DEFAULT_SUFFIX_CONNECTION_TYPE,
     DEFAULT_TIMEOUT,
+    DEFAULT_WIRED_CLIENTS_FILTER,
+    DEFAULT_WIRELESS_CLIENTS_FILTER,
     DOMAIN,
     MANUFACTURER,
     MODEL_BACKUP_NETWORK,
-    MODEL_CLIENT,
+    MODEL_CLIENT_WIRED,
+    MODEL_CLIENT_WIRELESS,
     MODEL_NETWORK,
     MODEL_PROFILE,
     SERVICE_SET_BLOCKED_APPS,
-    SUPPORTED_APPS,
 )
 
 SET_BLOCKED_APPS_SCHEMA = vol.Schema(
     {
-        vol.Required(ATTR_BLOCKED_APPS): vol.All(cv.ensure_list, [vol.In(SUPPORTED_APPS)]),
+        vol.Required(ATTR_BLOCKED_APPS): vol.All(cv.ensure_list, [vol.In(SUPPORTED_APPS.keys())]),
         vol.Optional(ATTR_TARGET_PROFILE, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
         vol.Optional(ATTR_TARGET_NETWORK, default=[]): vol.All(cv.ensure_list, [vol.Any(cv.positive_int, cv.string)]),
     }
@@ -92,44 +102,151 @@ PLATFORMS = [
 _LOGGER = logging.getLogger(__name__)
 
 
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+    """Migrate old entry."""
+    if config_entry.version > EeroConfigFlow.VERSION:
+        return False
+
+    _LOGGER.info(f"Migrating configuration from version: {config_entry.version}.{config_entry.minor_version}")
+
+    if config_entry.version < EeroConfigFlow.VERSION:
+
+        data = dict(config_entry.data)
+        _LOGGER.debug(f"Initial data:\n{data}")
+
+        options = dict(config_entry.options)
+        _LOGGER.debug(f"Initial options:\n{options}")
+
+        resources = {}
+        for network_id in options.get(CONF_NETWORKS, data.get(CONF_NETWORKS, [])):
+            _LOGGER.info(f"Migrating configuration for network: {network_id}")
+            resources[network_id] = {
+                CONF_BACKUP_NETWORKS: [],
+                CONF_EEROS: [],
+                CONF_PROFILES: [],
+                CONF_WIRED_CLIENTS: [],
+                CONF_WIRED_CLIENTS_FILTER: DEFAULT_WIRED_CLIENTS_FILTER,
+                CONF_WIRELESS_CLIENTS: [],
+                CONF_WIRELESS_CLIENTS_FILTER: DEFAULT_WIRELESS_CLIENTS_FILTER,
+            }
+
+        device_registry = dr.async_get(hass)
+        for conf in [CONF_BACKUP_NETWORKS, CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
+            for device_entry in dr.async_entries_for_config_entry(device_registry, config_entry.entry_id):
+                if network_device_id := device_entry.via_device_id:
+                    network_id = list(device_registry.async_get(network_device_id).identifiers)[0][1]
+                    network_name = device_registry.async_get(network_device_id).name
+                    resource_id = list(device_entry.identifiers)[0][1]
+                    if any(
+                        [
+                            resource_id in options.get(conf, data.get(conf, [])),
+                            resource_id in data.get(CONF_RESOURCES, {}).get(network_id, {}).get(conf, []),
+                            resource_id in options.get(CONF_RESOURCES, {}).get(network_id, {}).get(conf, []),
+                        ]
+                    ):
+                        _LOGGER.info(f"Migrating configuration for resource: {resource_id} in network: {network_id}\n- Name: {device_entry.name}\n- Type: {device_entry.model}\n- Network: {network_name}")
+                        resources[network_id][conf].append(resource_id)
+
+        data[CONF_RESOURCES] = resources
+        _LOGGER.debug(f"Migrated data:\n{data}")
+
+        options[CONF_RESOURCES] = resources
+        _LOGGER.debug(f"Migrated options:\n{options}")
+
+        hass.config_entries.async_update_entry(
+            entry=config_entry,
+            data=data,
+            options=options,
+            version=EeroConfigFlow.VERSION,
+            minor_version=EeroConfigFlow.MINOR_VERSION,
+        )
+
+    _LOGGER.info(f"Successfully migrated configuration to version: {config_entry.version}.{config_entry.minor_version}")
+
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up a config entry."""
     data = config_entry.data
     options = config_entry.options
 
     conf_networks = options.get(CONF_NETWORKS, data.get(CONF_NETWORKS, []))
-    conf_backup_networks = options.get(CONF_BACKUP_NETWORKS, data.get(CONF_BACKUP_NETWORKS, []))
-    conf_eeros = options.get(CONF_EEROS, data.get(CONF_EEROS, []))
-    conf_profiles = options.get(CONF_PROFILES, data.get(CONF_PROFILES, []))
-    conf_wired_clients = options.get(CONF_WIRED_CLIENTS, data.get(CONF_WIRED_CLIENTS, []))
-    conf_wireless_clients = options.get(CONF_WIRELESS_CLIENTS, data.get(CONF_WIRELESS_CLIENTS, []))
-    conf_clients = conf_wired_clients + conf_wireless_clients
+    conf_resources = options.get(CONF_RESOURCES, data.get(CONF_RESOURCES, {}))
     conf_activity = options.get(CONF_ACTIVITY, data.get(CONF_ACTIVITY, {}))
-    if not conf_networks:
-        conf_backup_networks, conf_eeros, conf_profiles, conf_clients = [], [], [], []
-    conf_identifiers = [(DOMAIN, resource_id) for resource_id in conf_networks + conf_backup_networks + conf_eeros + conf_profiles + conf_clients]
 
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
+
     for device_entry in dr.async_entries_for_config_entry(device_registry, config_entry.entry_id):
-        if all([bool(resource_id not in conf_identifiers) for resource_id in device_entry.identifiers]):
-            device_registry.async_remove_device(device_entry.id)
-        else:
-            for entity_entry in er.async_entries_for_device(entity_registry, device_entry.id):
-                unique_id = entity_entry.unique_id.split("-")
-                activity = conf_activity.get(unique_id[0], {})
-                if unique_id[-1] in list(ACTIVITY_MAP_TO_HASS.keys()):
-                    if any(
+        _LOGGER.debug(f"Checking entries for device: {device_entry.name} - {device_entry.model}")
+        for network_id, resources in conf_resources.items():
+            conf_identifiers = [(DOMAIN, resource_id) for resource_id in [network_id] + resources[CONF_BACKUP_NETWORKS] + resources[CONF_EEROS] + resources[CONF_PROFILES]]
+            conf_wired_client_identifiers = [(DOMAIN, resource_id) for resource_id in resources[CONF_WIRED_CLIENTS]]
+            conf_wireless_client_identifiers = [(DOMAIN, resource_id) for resource_id in resources[CONF_WIRELESS_CLIENTS]]
+
+            if any(
+                [
+                    all(
                         [
-                            device_entry.model == MODEL_NETWORK and unique_id[-1] not in activity.get(CONF_ACTIVITY_NETWORK, []),
-                            MANUFACTURER in device_entry.model and unique_id[-1] not in activity.get(CONF_ACTIVITY_EEROS, []),
-                            device_entry.model == MODEL_PROFILE and unique_id[-1] not in activity.get(CONF_ACTIVITY_PROFILES, []),
-                            device_entry.model == MODEL_CLIENT and unique_id[-1] not in activity.get(CONF_ACTIVITY_CLIENTS, []),
+                            device_entry.model not in [MODEL_CLIENT_WIRED, MODEL_CLIENT_WIRELESS],
+                            all([bool(identifier not in conf_identifiers) for identifier in device_entry.identifiers]),
+                        ]
+                    ),
+                    all(
+                        [
+                            device_entry.model == MODEL_CLIENT_WIRED,
+                            all([bool(identifier in conf_wired_client_identifiers) for identifier in device_entry.identifiers]),
+                            resources[CONF_WIRED_CLIENTS_FILTER] == CONF_FILTER_EXCLUDE,
+                        ]
+                    ),
+                    all(
+                        [
+                            device_entry.model == MODEL_CLIENT_WIRED,
+                            all([bool(identifier not in conf_wired_client_identifiers) for identifier in device_entry.identifiers]),
+                            resources[CONF_WIRED_CLIENTS_FILTER] == CONF_FILTER_INCLUDE,
+                        ]
+                    ),
+                    all(
+                        [
+                            device_entry.model == MODEL_CLIENT_WIRELESS,
+                            all([bool(identifier in conf_wireless_client_identifiers) for identifier in device_entry.identifiers]),
+                            resources[CONF_WIRELESS_CLIENTS_FILTER] == CONF_FILTER_EXCLUDE,
+                        ]
+                    ),
+                    all(
+                        [
+                            device_entry.model == MODEL_CLIENT_WIRELESS,
+                            all([bool(identifier not in conf_wireless_client_identifiers) for identifier in device_entry.identifiers]),
+                            resources[CONF_WIRELESS_CLIENTS_FILTER] == CONF_FILTER_INCLUDE,
+                        ]
+                    ),
+                ]
+            ):
+                _LOGGER.debug(f"Removing device entry: {device_entry.name} - {device_entry.model}")
+                device_registry.async_remove_device(device_entry.id)
+            else:
+                for entity_entry in er.async_entries_for_device(entity_registry, device_entry.id):
+                    unique_id = entity_entry.unique_id.split("-")
+                    activity = conf_activity.get(unique_id[0], {})
+                    if all(
+                        [
+                            unique_id[-1] in ACTIVITIES_PREMIUM,
+                            any(
+                                [
+                                    device_entry.model == MODEL_NETWORK and unique_id[-1] not in activity.get(CONF_ACTIVITY_NETWORK, []),
+                                    MANUFACTURER in device_entry.model and unique_id[-1] not in activity.get(CONF_ACTIVITY_EEROS, []),
+                                    device_entry.model == MODEL_PROFILE and unique_id[-1] not in activity.get(CONF_ACTIVITY_PROFILES, []),
+                                    device_entry.model in [MODEL_CLIENT_WIRED, MODEL_CLIENT_WIRELESS] and unique_id[-1] not in activity.get(CONF_ACTIVITY_CLIENTS, []),
+                                ]
+                            ),
                         ]
                     ):
-                        entity_registry.async_remove(entity_entry.entity_id)
+                            _LOGGER.debug(f"Removing entity: {entity_entry.name} from device entry: {device_entry.name} - {device_entry.model}")
+                            entity_registry.async_remove(entity_entry.entity_id)
 
     conf_prefix_network_name = options.get(CONF_PREFIX_NETWORK_NAME, data.get(CONF_PREFIX_NETWORK_NAME, DEFAULT_PREFIX_NETWORK_NAME))
+    conf_suffix_connection_type = options.get(CONF_SUFFIX_CONNECTION_TYPE, data.get(CONF_SUFFIX_CONNECTION_TYPE, DEFAULT_SUFFIX_CONNECTION_TYPE))
     conf_save_responses = options.get(CONF_SAVE_RESPONSES, data.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES))
     conf_scan_interval = options.get(CONF_SCAN_INTERVAL, data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     conf_show_eero_logo = options.get(CONF_SHOW_EERO_LOGO, data.get(CONF_SHOW_EERO_LOGO, DEFAULT_SHOW_EERO_LOGO))
@@ -153,8 +270,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         try:
             async with async_timeout.timeout(conf_timeout):
                 return await hass.async_add_executor_job(api.update, conf_networks)
-        except EeroException as exception:
-            raise UpdateFailed(f"Error communicating with API: {exception.error}")
+        except EeroException:
+            raise UpdateFailed("Error communicating with API")
 
     coordinator = DataUpdateCoordinator(
         hass=hass,
@@ -168,12 +285,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config_entry.entry_id] = {
         CONF_ACTIVITY: conf_activity,
-        CONF_BACKUP_NETWORKS: conf_backup_networks,
-        CONF_CLIENTS: conf_clients,
-        CONF_EEROS: conf_eeros,
         CONF_NETWORKS: conf_networks,
         CONF_PREFIX_NETWORK_NAME: conf_prefix_network_name,
-        CONF_PROFILES: conf_profiles,
+        CONF_RESOURCES: conf_resources,
+        CONF_SUFFIX_CONNECTION_TYPE: conf_suffix_connection_type,
         DATA_API: api,
         DATA_COORDINATOR: coordinator,
         DATA_UPDATE_LISTENER: config_entry.add_update_listener(async_update_listener),
@@ -203,7 +318,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                     validated_profile.append(profile)
         return validated_profile
 
-    if conf_profiles:
+    if [profile for resources in conf_resources.values() for profile in resources[CONF_PROFILES]]:
         hass.services.async_register(
             DOMAIN,
             SERVICE_SET_BLOCKED_APPS,
@@ -243,6 +358,7 @@ class EeroEntity(CoordinatorEntity):
         resource_id: str,
         description: EeroEntityDescription,
         prefix_network_name: bool = DEFAULT_PREFIX_NETWORK_NAME,
+        suffix_connection_type: bool = DEFAULT_SUFFIX_CONNECTION_TYPE,
     ) -> None:
         """Initialize device."""
         super().__init__(coordinator)
@@ -250,6 +366,7 @@ class EeroEntity(CoordinatorEntity):
         self.resource_id = resource_id
         self.entity_description = description
         self.prefix_network_name = prefix_network_name
+        self.suffix_connection_type = suffix_connection_type
 
     @property
     def network(self) -> EeroNetwork | None:
@@ -290,8 +407,9 @@ class EeroEntity(CoordinatorEntity):
         elif self.resource.is_profile:
             model = MODEL_PROFILE
         elif self.resource.is_client:
-            model = MODEL_CLIENT
-            name = self.resource.name_connection_type
+            model = MODEL_CLIENT_WIRELESS if self.resource.wireless else MODEL_CLIENT_WIRED
+            if self.suffix_connection_type:
+                name = self.resource.name_connection_type
 
         entry_type, suggested_area, sw_version, hw_version, via_device = None, None, None, None, None
         if any(
@@ -332,14 +450,16 @@ class EeroEntity(CoordinatorEntity):
     def name(self) -> str:
         """Return the name of the entity."""
         if self.resource.is_client:
-            name = f"{self.resource.name_connection_type} {self.entity_description.name}"
+            name = self.resource.name
+            if self.suffix_connection_type:
+                name = self.resource.name_connection_type
             if self.prefix_network_name:
-                return f"{self.network.name} {name}"
-            return name
+                name = f"{self.network.name} {name}"
+            return f"{name} {self.entity_description.name}"
         elif self.resource.is_backup_network or self.resource.is_eero or self.resource.is_profile:
             name = f"{self.resource.name} {self.entity_description.name}"
             if self.prefix_network_name:
-                return f"{self.network.name} {name}"
+                name = f"{self.network.name} {name}"
             return name
         return f"{self.resource.name} {self.entity_description.name}"
 

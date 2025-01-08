@@ -18,14 +18,17 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_BACKUP_NETWORKS,
-    CONF_CLIENTS,
     CONF_EEROS,
     CONF_NETWORKS,
     CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
+    CONF_RESOURCES,
+    CONF_SUFFIX_CONNECTION_TYPE,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
+from .util import client_allowed
+
 
 @dataclass
 class EeroBinarySensorEntityDescription(EeroEntityDescription, BinarySensorEntityDescription):
@@ -76,11 +79,12 @@ async def async_setup_entry(
                             None,
                             description,
                             entry[CONF_PREFIX_NETWORK_NAME],
+                            entry[CONF_SUFFIX_CONNECTION_TYPE],
                         )
                     )
 
             for backup_network in network.backup_networks:
-                if backup_network.id in entry[CONF_BACKUP_NETWORKS]:
+                if backup_network.id in entry[CONF_RESOURCES][network.id][CONF_BACKUP_NETWORKS]:
                     for key, description in SUPPORTED_KEYS.items():
                         if hasattr(backup_network, key):
                             entities.append(
@@ -90,11 +94,12 @@ async def async_setup_entry(
                                     backup_network.id,
                                     description,
                                     entry[CONF_PREFIX_NETWORK_NAME],
+                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
                                 )
                             )
 
             for eero in network.eeros:
-                if eero.id in entry[CONF_EEROS]:
+                if eero.id in entry[CONF_RESOURCES][network.id][CONF_EEROS]:
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
@@ -106,11 +111,12 @@ async def async_setup_entry(
                                     eero.id,
                                     description,
                                     entry[CONF_PREFIX_NETWORK_NAME],
+                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
                                 )
                             )
 
             for profile in network.profiles:
-                if profile.id in entry[CONF_PROFILES]:
+                if profile.id in entry[CONF_RESOURCES][network.id][CONF_PROFILES]:
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
@@ -122,11 +128,12 @@ async def async_setup_entry(
                                     profile.id,
                                     description,
                                     entry[CONF_PREFIX_NETWORK_NAME],
+                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
                                 )
                             )
 
             for client in network.clients:
-                if client.id in entry[CONF_CLIENTS]:
+                if client_allowed(client, entry[CONF_RESOURCES][network.id]):
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
@@ -138,6 +145,7 @@ async def async_setup_entry(
                                     client.id,
                                     description,
                                     entry[CONF_PREFIX_NETWORK_NAME],
+                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
                                 )
                             )
 

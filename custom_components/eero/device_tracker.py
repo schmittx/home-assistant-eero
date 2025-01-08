@@ -25,13 +25,15 @@ from homeassistant.helpers.typing import StateType
 
 from . import EeroEntity, EeroEntityDescription
 from .const import (
-    CONF_CLIENTS,
     CONF_NETWORKS,
     CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
+    CONF_RESOURCES,
+    CONF_SUFFIX_CONNECTION_TYPE,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
+from .util import client_allowed
 
 @dataclass
 class EeroDeviceTrackerEntityDescription(EeroEntityDescription):
@@ -64,7 +66,7 @@ async def async_setup_entry(
     for network in coordinator.data.networks:
         if network.id in entry[CONF_NETWORKS]:
             for profile in network.profiles:
-                if profile.id in entry[CONF_PROFILES]:
+                if profile.id in entry[CONF_RESOURCES][network.id][CONF_PROFILES]:
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
@@ -75,11 +77,12 @@ async def async_setup_entry(
                                 profile.id,
                                 description,
                                 entry[CONF_PREFIX_NETWORK_NAME],
+                                entry[CONF_SUFFIX_CONNECTION_TYPE],
                             )
                         )
 
             for client in network.clients:
-                if client.id in entry[CONF_CLIENTS]:
+                if client_allowed(client, entry[CONF_RESOURCES][network.id]):
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
@@ -90,6 +93,7 @@ async def async_setup_entry(
                                 client.id,
                                 description,
                                 entry[CONF_PREFIX_NETWORK_NAME],
+                                entry[CONF_SUFFIX_CONNECTION_TYPE],
                             )
                         )
 
@@ -104,7 +108,7 @@ class EeroDeviceTrackerEntity(EeroEntity):
     @property
     def name(self) -> str | None:
         """Return the name of the entity."""
-        if self.resource.is_client:
+        if self.resource.is_client and self.suffix_connection_type:
             name = self.resource.name_connection_type
         else:
             name = self.resource.name

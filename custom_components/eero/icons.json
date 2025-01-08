@@ -1,0 +1,7 @@
+{
+    "services": {
+        "set_blocked_apps": {
+            "service": "mdi:account-cancel"
+        }
+    }
+}

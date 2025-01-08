@@ -34,10 +34,12 @@
                     "eeros": "Eero devices",
                     "profiles": "Profiles",
                     "wired_clients": "Wired clients",
+                    "wired_clients_filter": "Wired clients filter behavior",
                     "wireless_clients": "Wireless clients",
+                    "wireless_clients_filter": "Wireless clients filter behavior",
                     "backup_networks": "Backup Networks"
                 },
-                "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.",
+                "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource (the behavior can be inverted for clients by changing the filter method). Individual entities can then be disabled as desired.",
                 "title": "Select network resources"
             },
             "activity": {
@@ -56,9 +58,10 @@
                     "scan_interval": "Polling interval (seconds)",
                     "prefix_network_name": "Add network name as a prefix for all non-network entities",
                     "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
+                    "suffix_connection_type": "Add connection type (wired or wireless) as a suffix for all client devices and entities",
                     "timeout": "Polling timeout (seconds)"
                 },
-                "description": "Server responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
+                "description": "The format for device and entity naming can be adjusted.\n\nServer responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
                 "title": "Advanced options"
             }
         }
@@ -77,10 +80,12 @@
                     "eeros": "Eero devices",
                     "profiles": "Profiles",
                     "wired_clients": "Wired clients",
+                    "wired_clients_filter": "Wired clients filter behavior",
                     "wireless_clients": "Wireless clients",
+                    "wireless_clients_filter": "Wireless clients filter behavior",
                     "backup_networks": "Backup Networks"
                 },
-                "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource. Individual entities can then be disabled as desired.\n\nDeselecting a resource will delete that device entry and all associated entities.",
+                "description": "Network: {network}\n\nA new device entry and all applicable entities will be created within Home Assistant for each selected resource (the behavior can be inverted for clients by changing the filter method). Individual entities can then be disabled as desired.\n\nDeselecting a resource will delete (or add, depending on filter method) that device entry and all associated entities.",
                 "title": "Select network resources"
             },
             "activity": {
@@ -99,10 +104,51 @@
                     "scan_interval": "Polling interval (seconds)",
                     "prefix_network_name": "Add network name as a prefix for all non-network entities",
                     "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
+                    "suffix_connection_type": "Add connection type (wired or wireless) as a suffix for all client devices and entities",
                     "timeout": "Polling timeout (seconds)"
                 },
-                "description": "Server responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
+                "description": "The format for device and entity naming can be adjusted.\n\nServer responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
                 "title": "Advanced options"
+            }
+        }
+    },
+    "services": {
+        "set_blocked_apps": {
+            "name": "Set blocked apps",
+            "description": "Set the blocked apps for a profile.",
+            "fields": {
+                "blocked_apps": {
+                    "name": "Blocked apps",
+                    "description": "(Required) List of apps to block. Passing an empty list will unblock all supported apps."
+                },
+                "target_profile": {
+                    "name": "Target profile(s)",
+                    "description": "(Optional) Name(s) or ID(s) of profile(s) to set. Defaults to all profiles if not specified."
+                },
+                "target_network": {
+                    "name": "Target network(s)",
+                    "description": "(Optional) Name(s) or ID(s) of network(s) in which desired profile(s) are located. Defaults to all networks if not specified."
+                }
+            }
+        }
+    },
+    "selector": {
+        "all": {
+            "options": {
+                "adblock_day": "Ad Blocks (Day)",
+                "adblock_week": "Ad Blocks (Week)",
+                "adblock_month": "Ad Blocks (Month)",
+                "data_usage_day": "Data Usage (Day)",
+                "data_usage_week": "Data Usage (Week)",
+                "data_usage_month": "Data Usage (Month)",
+                "exclude": "Exclude selected",
+                "include": "Include selected",
+                "inspected_day": "Scans (Day)",
+                "inspected_week": "Scans (Week)",
+                "inspected_month": "Scans (Month)",
+                "blocked_day": "Threat Blocks (Day)",
+                "blocked_week": "Threat Blocks (Week)",
+                "blocked_month": "Threat Blocks (Month)"
             }
         }
     },

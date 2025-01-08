@@ -40,20 +40,28 @@ class EeroException(Exception):
             self,
             code: int = None,
             error: str = None,
+            message: str = None,
+            payload: str = None,
             server_time: str = None,
         ):
         super(EeroException, self).__init__()
         self.code = code
         self.error = error
+        self.message = message
+        self.payload = payload
         self.server_time = server_time
-        message = "\n- EeroException"
+        exception = self.__class__.__name__
         if self.code:
-            message = f"{message}\n- Code: {self.code}"
+            exception = f"{exception}\n- Code: {self.code}"
         if self.error:
-            message = f"{message}\n- Error: {self.error}"
+            exception = f"{exception}\n- Error: {self.error}"
+        if self.message:
+            exception = f"{exception}\n- Message: {self.message}"
+        if self.payload:
+            exception = f"{exception}\n- Payload: {self.payload}"
         if self.server_time:
-            message = f"{message}\n- Server time: {self.server_time}"
-        _LOGGER.debug(message)
+            exception = f"{exception}\n- Server time: {self.server_time}"
+        _LOGGER.warning(exception)
 
 
 class EeroAPI(object):
@@ -84,22 +92,21 @@ class EeroAPI(object):
             return
         _LOGGER.debug(f"Calling API with method: {method} and URL: {url}")
         if method == METHOD_DELETE:
-            response = self.refresh(lambda:
+            response = self.parse_response(lambda:
                 self.session.delete(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
         elif method == METHOD_GET:
-            response = self.refresh(lambda:
+            response = self.parse_response(lambda:
                 self.session.get(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
         elif method == METHOD_POST:
-            response = self.refresh(lambda:
+            response = self.parse_response(lambda:
                 self.session.post(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
         elif method == METHOD_PUT:
-            response = self.refresh(lambda:
+            response = self.parse_response(lambda:
                 self.session.put(url=f"{API_ENDPOINT}{url}", cookies=self.cookie, **kwargs)
             )
-        response = self.parse_response(response=response)
         self.save_response(response=response, name=url)
         return response
 
@@ -131,11 +138,15 @@ class EeroAPI(object):
 
     def get_release_notes(self, url: str) -> dict[str, Any] | None:
         if url:
-            response = self.session.get(url=url)
-            if response.status_code not in [200]:
-                _LOGGER.warning(f"Unable to get release notes\n- Code: {response.status_code}\n- URL: {url}")
-                return None
-            text = json.loads(response.text)
+            response = self.timeout(lambda: self.session.get(url=url))
+            if not response.ok:
+                raise EeroException(
+                    code=response.status_code,
+                    error=response.reason,
+                    message=f"Unable to get release notes from URL: {url}",
+                    payload=response.text,
+                )
+            text = self.decode_json(response)
             self.save_response(response=text, name="release_notes")
             return text
         return None
@@ -168,38 +179,54 @@ class EeroAPI(object):
         )
         return response
 
-    def parse_response(self, response: requests.Response) -> dict[str, Any]:
-        text = json.loads(response.text)
-        if response.status_code not in [200, 202]:
-            _LOGGER.error(f"Parsing response was unsuccessful with status code: {response.status_code}")
-            meta = text.get("meta")
+    def decode_json(self, response: requests.Response) -> dict[str, Any]:
+        try:
+            return json.loads(response.text)
+        except json.decoder.JSONDecodeError:
             raise EeroException(
-                code=meta.get("code"),
-                error=meta.get("error"),
-                server_time=meta.get("server_time"),
-            )
-        return text.get("data")
+                code=response.status_code,
+                error=response.reason,
+                message="Unable to decode JSON",
+                payload=response.text,
+            )     
 
-    def refresh(self, function: Callable) -> requests.Response:
-        response = function()
-        if response.status_code not in [200]:
-            text = json.loads(response.text)
-            error = text.get("meta", {}).get("error")
+    def parse_response(self, function: Callable) -> dict[str, Any]:
+        response = self.timeout(function)
+        if not response.ok:
+            text = self.decode_json(response)
+            meta = text.get("meta", {})
+            code, error = meta.get("code"), meta.get("error")
             if all(
                 [
-                    response.status_code == 401,
+                    code == 401,
                     any(
                         [
                             error == "error.session.invalid",
                             error == "error.session.refresh",
                         ]
-                    )
+                    ),
                 ]
             ):
-                _LOGGER.warning(f"Session has expired and is invalid\n- Code: {response.status_code}\n- Error: {error}")
+                _LOGGER.debug("Session has expired and is invalid")
                 self.login_refresh()
-                response = function()
-        return response
+                response = self.timeout(function)
+            else:
+                raise EeroException(
+                    code=response.status_code,
+                    error=response.reason,
+                    message=f"Bad response received from URL: {response.url}",
+                    payload=response.text,
+                )
+        text = self.decode_json(response)
+        return text.get("data")
+
+    def timeout(self, function: Callable) -> requests.Response:
+        try:
+            return function()
+        except requests.exceptions.Timeout:
+            raise EeroException(
+                message="Request timed out",
+            )
 
     def save_response(self, response: dict[str, Any] | None, name="response") -> None:
         if self.save_location and response:

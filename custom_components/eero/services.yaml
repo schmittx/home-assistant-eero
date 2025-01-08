@@ -1,13 +1,12 @@
 
 set_blocked_apps:
-  description: Set the blocked apps for a profile.
   fields:
     blocked_apps:
-      description: (Required) List of apps to block. Passing an empty list will unblock all supported apps.
+      required: True
       example: netflix
     target_profile:
-      description: (Optional) Name(s) or ID(s) of profile(s) to set. Defaults to all profiles if not specified.
+      required: False
       example: John Doe or 1234567
     target_network:
-      description: (Optional) Name(s) or ID(s) of network(s) in which desired profile(s) are located. Defaults to all networks if not specified.
+      required: False
       example: My Network or 1234567    

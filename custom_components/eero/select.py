@@ -14,6 +14,8 @@ from .const import (
     CONF_EEROS,
     CONF_NETWORKS,
     CONF_PREFIX_NETWORK_NAME,
+    CONF_RESOURCES,
+    CONF_SUFFIX_CONNECTION_TYPE,
     DATA_COORDINATOR,
     DOMAIN,
 )
@@ -65,11 +67,12 @@ async def async_setup_entry(
                             None,
                             description,
                             entry[CONF_PREFIX_NETWORK_NAME],
+                            entry[CONF_SUFFIX_CONNECTION_TYPE],
                         )
                     )
 
             for eero in network.eeros:
-                if eero.id in entry[CONF_EEROS]:
+                if eero.id in entry[CONF_RESOURCES][network.id][CONF_EEROS]:
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
@@ -81,6 +84,7 @@ async def async_setup_entry(
                                     eero.id,
                                     description,
                                     entry[CONF_PREFIX_NETWORK_NAME],
+                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
                                 )
                             )
 
