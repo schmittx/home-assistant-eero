@@ -311,6 +311,10 @@ class EeroNetwork(EeroResource):
         return [EeroFirmware(firmware) for firmware in self.data.get("updates", {}).get("release_notes", {}).get("history", [])]
 
     @property
+    def gateway_ip(self) -> str | None:
+        return self.data.get("gateway_ip")
+
+    @property
     def gateway_mac_address(self) -> str | None:
         for eero in self.eeros:
             if eero.is_gateway:

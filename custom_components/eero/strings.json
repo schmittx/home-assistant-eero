@@ -235,6 +235,12 @@
                         "state": {
                             "network_not_found": "Network not found"
                         }
+                    },
+                    "mac_address": {
+                        "name": "MAC address"
+                    },
+                    "name": {
+                        "name": "Name"
                     }
                 }
             }

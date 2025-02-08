@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -167,6 +167,14 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         activity_type=True,
     ),
     EeroSensorEntityDescription(
+        key="gateway_ip",
+        name="Gateway IP",
+        extra_attrs={
+            "mac_address": lambda resource: getattr(resource, "gateway_mac_address"),
+            "name": lambda resource: getattr(resource, "gateway_name"),
+        },
+    ),
+    EeroSensorEntityDescription(
         key="inspected_day",
         name="Scans Day",
         native_unit_of_measurement="scans",
@@ -195,7 +203,6 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         key="last_active",
         name="Last Active",
         device_class=SensorDeviceClass.TIMESTAMP,
-        native_value=lambda resource, key: datetime.fromisoformat(getattr(resource, key).replace("Z", "+00:00")),
     ),
     EeroSensorEntityDescription(
         key="public_ip",
@@ -380,7 +387,7 @@ class EeroSensorEntity(EeroEntity, SensorEntity):
     """Representation of an Eero sensor entity."""
 
     @property
-    def native_value(self) -> StateType | date | datetime:
+    def native_value(self) -> StateType | datetime:
         """Return the value reported by the sensor."""
         return self.entity_description.native_value(self.resource, self.entity_description.key)
 
