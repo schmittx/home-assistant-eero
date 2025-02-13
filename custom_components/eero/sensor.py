@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -41,12 +41,11 @@ from .const import (
     CONF_ACTIVITY_NETWORK,
     CONF_ACTIVITY_PROFILES,
     CONF_BACKUP_NETWORKS,
+    CONF_MISCELLANEOUS,
     CONF_EEROS,
     CONF_NETWORKS,
-    CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
     CONF_RESOURCES,
-    CONF_SUFFIX_CONNECTION_TYPE,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
@@ -203,7 +202,6 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         key="last_active",
         name="Last Active",
         device_class=SensorDeviceClass.TIMESTAMP,
-        native_value=lambda resource, key: datetime.fromisoformat(getattr(resource, key).replace("Z", "+00:00")),
     ),
     EeroSensorEntityDescription(
         key="public_ip",
@@ -291,8 +289,7 @@ async def async_setup_entry(
                             network.id,
                             None,
                             description,
-                            entry[CONF_PREFIX_NETWORK_NAME],
-                            entry[CONF_SUFFIX_CONNECTION_TYPE],
+                            entry[CONF_MISCELLANEOUS][network.id],
                         )
                     )
 
@@ -306,8 +303,7 @@ async def async_setup_entry(
                                     network.id,
                                     backup_network.id,
                                     description,
-                                    entry[CONF_PREFIX_NETWORK_NAME],
-                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                    entry[CONF_MISCELLANEOUS][network.id],
                                 )
                             )
 
@@ -329,8 +325,7 @@ async def async_setup_entry(
                                     network.id,
                                     eero.id,
                                     description,
-                                    entry[CONF_PREFIX_NETWORK_NAME],
-                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                    entry[CONF_MISCELLANEOUS][network.id],
                                 )
                             )
 
@@ -352,8 +347,7 @@ async def async_setup_entry(
                                     network.id,
                                     profile.id,
                                     description,
-                                    entry[CONF_PREFIX_NETWORK_NAME],
-                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                    entry[CONF_MISCELLANEOUS][network.id],
                                 )
                             )
 
@@ -376,8 +370,7 @@ async def async_setup_entry(
                                     network.id,
                                     client.id,
                                     description,
-                                    entry[CONF_PREFIX_NETWORK_NAME],
-                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                    entry[CONF_MISCELLANEOUS][network.id],
                                 )
                             )
 
@@ -388,7 +381,7 @@ class EeroSensorEntity(EeroEntity, SensorEntity):
     """Representation of an Eero sensor entity."""
 
     @property
-    def native_value(self) -> StateType | date | datetime:
+    def native_value(self) -> StateType | datetime:
         """Return the value reported by the sensor."""
         return self.entity_description.native_value(self.resource, self.entity_description.key)
 

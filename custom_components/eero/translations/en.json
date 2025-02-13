@@ -5,7 +5,8 @@
         },
         "error": {
             "invalid_code": "Invalid code",
-            "invalid_login": "Invalid login"
+            "invalid_login": "Invalid login",
+            "invalid_scan_interval_timeout": "Polling timeout should be set less than scan interval in order to avoid potential problems."
         },
         "step": {
             "user": {
@@ -52,21 +53,30 @@
                 "description": "Network: {network}\n\nEach metric requires an exclusive call to the eero API and you may encounter timeout errors if selecting multiple metrics.",
                 "title": "Select activity metrics"
             },
+            "miscellaneous": {
+                "data": {
+                    "consider_home": "Consider home interval (applicable to device tracker entities only)",
+                    "prefix_network_name": "Add network name as a prefix for all non-network entities",
+                    "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
+                    "suffix_connection_type": "Add connection type (wired or wireless) as a suffix for all client devices and entities"
+                },
+                "description": "Network: {network}",
+                "title": "Miscellaneous options"
+            },
             "advanced": {
                 "data": {
                     "save_responses": "Save server responses to custom_components/eero/api/responses",
-                    "scan_interval": "Polling interval (seconds)",
-                    "prefix_network_name": "Add network name as a prefix for all non-network entities",
-                    "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
-                    "suffix_connection_type": "Add connection type (wired or wireless) as a suffix for all client devices and entities",
-                    "timeout": "Polling timeout (seconds)"
+                    "scan_interval": "Polling interval",
+                    "timeout": "Polling timeout"
                 },
-                "description": "The format for device and entity naming can be adjusted.\n\nServer responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
                 "title": "Advanced options"
             }
         }
     },
     "options": {
+        "error": {
+            "invalid_scan_interval_timeout": "Polling timeout should be set less than scan interval in order to avoid potential problems."
+        },
         "step": {
             "networks": {
                 "data": {
@@ -98,16 +108,22 @@
                 "description": "Network: {network}\n\nEach metric requires an exclusive call to the eero API and you may encounter timeout errors if selecting multiple metrics.",
                 "title": "Select activity metrics"
             },
+            "miscellaneous": {
+                "data": {
+                    "consider_home": "Consider home interval (applicable to device tracker entities only)",
+                    "prefix_network_name": "Add network name as a prefix for all non-network entities",
+                    "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
+                    "suffix_connection_type": "Add connection type (wired or wireless) as a suffix for all client devices and entities"
+                },
+                "description": "Network: {network}",
+                "title": "Miscellaneous options"
+            },
             "advanced": {
                 "data": {
                     "save_responses": "Save server responses to custom_components/eero/api/responses",
-                    "scan_interval": "Polling interval (seconds)",
-                    "prefix_network_name": "Add network name as a prefix for all non-network entities",
-                    "show_eero_logo": "Show the Eero logo instead of a QR code if the network is disabled",
-                    "suffix_connection_type": "Add connection type (wired or wireless) as a suffix for all client devices and entities",
-                    "timeout": "Polling timeout (seconds)"
+                    "scan_interval": "Polling interval",
+                    "timeout": "Polling timeout"
                 },
-                "description": "The format for device and entity naming can be adjusted.\n\nServer responses can be saved to a file for debugging and development support.\n\nThe default QR code for a disabled network can be configured.\n\nPolling interval and timeout can be adjusted if errors are encountered.",
                 "title": "Advanced options"
             }
         }

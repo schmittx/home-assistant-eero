@@ -1,6 +1,8 @@
 """Eero API"""
 from __future__ import annotations
 
+from datetime import datetime
+
 from .client import EeroClient
 from .const import METHOD_POST, METHOD_PUT
 from .resource import EeroResource
@@ -278,6 +280,12 @@ class EeroProfile(EeroResource):
         for profile in self.network.data.get("activity", {}).get("profiles", {}).get("inspected_week", []):
             if profile["insights_url"] == self.url_insights:
                 return profile["sum"]
+        return None
+
+    @property
+    def last_active(self) -> datetime | None:
+        if last_active := [client.last_active for client in self.clients if client.last_active is not None]:
+            return max(last_active)
         return None
 
     @property

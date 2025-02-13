@@ -63,7 +63,7 @@ class EeroBackupNetwork(EeroResource):
         if all(
             [
                 not self.auto_join_enabled,
-                self.api.show_eero_logo,
+                self.api.show_eero_logo.get(self.network.id),
             ]
         ):
             return self.api.default_qr_code

@@ -357,7 +357,7 @@ class EeroNetwork(EeroResource):
         if all(
             [
                 not self.guest_network_enabled,
-                self.api.show_eero_logo,
+                self.api.show_eero_logo.get(self.id),
             ]
         ):
             return self.api.default_qr_code

@@ -17,10 +17,9 @@ from homeassistant.util import dt as dt_util
 from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_BACKUP_NETWORKS,
+    CONF_MISCELLANEOUS,
     CONF_NETWORKS,
-    CONF_PREFIX_NETWORK_NAME,
     CONF_RESOURCES,
-    CONF_SUFFIX_CONNECTION_TYPE,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
@@ -71,8 +70,7 @@ async def async_setup_entry(
                             network.id,
                             None,
                             description,
-                            entry[CONF_PREFIX_NETWORK_NAME],
-                            entry[CONF_SUFFIX_CONNECTION_TYPE],
+                            entry[CONF_MISCELLANEOUS][network.id],
                             hass,
                         )
                     )
@@ -87,8 +85,7 @@ async def async_setup_entry(
                                     network.id,
                                     backup_network.id,
                                     description,
-                                    entry[CONF_PREFIX_NETWORK_NAME],
-                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                    entry[CONF_MISCELLANEOUS][network.id],
                                     hass,
                                 )
                             )
@@ -108,8 +105,7 @@ class EeroImageEntity(EeroEntity, ImageEntity):
         network_id: str,
         resource_id: str,
         description: EeroImageEntityDescription,
-        prefix_network_name: bool,
-        suffix_connection_type: bool,
+        miscellaneous: dict[str, Any],
         hass: HomeAssistant,
     ) -> None:
         """Initialize device."""
@@ -118,8 +114,7 @@ class EeroImageEntity(EeroEntity, ImageEntity):
             network_id,
             resource_id,
             description,
-            prefix_network_name,
-            suffix_connection_type,
+            miscellaneous,
         )
         ImageEntity.__init__(self, hass)
         self._current_image: bytes | None = None

@@ -1,6 +1,7 @@
 """Eero API"""
 from __future__ import annotations
 
+from datetime import datetime
 import logging
 
 from .const import DEVICE_CATEGORY_TYPE_MAP, METHOD_PUT
@@ -170,8 +171,10 @@ class EeroClient(EeroResource):
         return self.data.get("is_private")
 
     @property
-    def last_active(self) -> str | None:
-        return self.data.get("last_active")
+    def last_active(self) -> datetime | None:
+        if last_active := self.data.get("last_active"):
+            return datetime.fromisoformat(last_active)
+        return None
 
     @property
     def mac(self) -> str | None:

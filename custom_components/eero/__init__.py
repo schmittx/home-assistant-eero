@@ -1,12 +1,13 @@
 """The Eero integration."""
 from __future__ import annotations
 
-import async_timeout
+from asyncio import timeout
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
 import voluptuous as vol
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_NAME, CONF_SCAN_INTERVAL
@@ -39,9 +40,11 @@ from .const import (
     CONF_ACTIVITY_NETWORK,
     CONF_ACTIVITY_PROFILES,
     CONF_BACKUP_NETWORKS,
+    CONF_CONSIDER_HOME,
     CONF_EEROS,
     CONF_FILTER_EXCLUDE,
     CONF_FILTER_INCLUDE,
+    CONF_MISCELLANEOUS,
     CONF_NETWORKS,
     CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
@@ -58,6 +61,7 @@ from .const import (
     DATA_API,
     DATA_COORDINATOR,
     DATA_UPDATE_LISTENER,
+    DEFAULT_CONSIDER_HOME,
     DEFAULT_PREFIX_NETWORK_NAME,
     DEFAULT_SAVE_LOCATION,
     DEFAULT_SAVE_RESPONSES,
@@ -117,40 +121,57 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         options = dict(config_entry.options)
         _LOGGER.debug(f"Initial options:\n{options}")
 
-        resources = {}
-        for network_id in options.get(CONF_NETWORKS, data.get(CONF_NETWORKS, [])):
-            _LOGGER.info(f"Migrating configuration for network: {network_id}")
-            resources[network_id] = {
-                CONF_BACKUP_NETWORKS: [],
-                CONF_EEROS: [],
-                CONF_PROFILES: [],
-                CONF_WIRED_CLIENTS: [],
-                CONF_WIRED_CLIENTS_FILTER: DEFAULT_WIRED_CLIENTS_FILTER,
-                CONF_WIRELESS_CLIENTS: [],
-                CONF_WIRELESS_CLIENTS_FILTER: DEFAULT_WIRELESS_CLIENTS_FILTER,
-            }
+        if config_entry.version <= 1:
 
-        device_registry = dr.async_get(hass)
-        for conf in [CONF_BACKUP_NETWORKS, CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
-            for device_entry in dr.async_entries_for_config_entry(device_registry, config_entry.entry_id):
-                if network_device_id := device_entry.via_device_id:
-                    network_id = list(device_registry.async_get(network_device_id).identifiers)[0][1]
-                    network_name = device_registry.async_get(network_device_id).name
-                    resource_id = list(device_entry.identifiers)[0][1]
-                    if any(
-                        [
-                            resource_id in options.get(conf, data.get(conf, [])),
-                            resource_id in data.get(CONF_RESOURCES, {}).get(network_id, {}).get(conf, []),
-                            resource_id in options.get(CONF_RESOURCES, {}).get(network_id, {}).get(conf, []),
-                        ]
-                    ):
-                        _LOGGER.info(f"Migrating configuration for resource: {resource_id} in network: {network_id}\n- Name: {device_entry.name}\n- Type: {device_entry.model}\n- Network: {network_name}")
-                        resources[network_id][conf].append(resource_id)
+            resources = {}
+            for network_id in options.get(CONF_NETWORKS, data.get(CONF_NETWORKS, [])):
+                _LOGGER.info(f"Migrating resources for network: {network_id}")
+                resources[network_id] = {
+                    CONF_BACKUP_NETWORKS: [],
+                    CONF_EEROS: [],
+                    CONF_PROFILES: [],
+                    CONF_WIRED_CLIENTS: [],
+                    CONF_WIRED_CLIENTS_FILTER: DEFAULT_WIRED_CLIENTS_FILTER,
+                    CONF_WIRELESS_CLIENTS: [],
+                    CONF_WIRELESS_CLIENTS_FILTER: DEFAULT_WIRELESS_CLIENTS_FILTER,
+                }
 
-        data[CONF_RESOURCES] = resources
+            device_registry = dr.async_get(hass)
+            for conf in [CONF_BACKUP_NETWORKS, CONF_EEROS, CONF_PROFILES, CONF_WIRED_CLIENTS, CONF_WIRELESS_CLIENTS]:
+                for device_entry in dr.async_entries_for_config_entry(device_registry, config_entry.entry_id):
+                    if network_device_id := device_entry.via_device_id:
+                        network_id = list(device_registry.async_get(network_device_id).identifiers)[0][1]
+                        network_name = device_registry.async_get(network_device_id).name
+                        resource_id = list(device_entry.identifiers)[0][1]
+                        if any(
+                            [
+                                resource_id in options.get(conf, data.get(conf, [])),
+                                resource_id in data.get(CONF_RESOURCES, {}).get(network_id, {}).get(conf, []),
+                                resource_id in options.get(CONF_RESOURCES, {}).get(network_id, {}).get(conf, []),
+                            ]
+                        ):
+                            _LOGGER.info(f"Migrating resource: {resource_id} in network: {network_id}\n- Name: {device_entry.name}\n- Type: {device_entry.model}\n- Network: {network_name}")
+                            resources[network_id][conf].append(resource_id)
+
+            data[CONF_RESOURCES] = resources
+            options[CONF_RESOURCES] = resources
+
+        if config_entry.version <= 2:
+
+            miscellaneous = {}
+            for network_id in options.get(CONF_NETWORKS, data.get(CONF_NETWORKS, [])):
+                _LOGGER.info(f"Migrating miscellaneous options for network: {network_id}")
+                miscellaneous[network_id] = {
+                    CONF_CONSIDER_HOME: options.get(CONF_CONSIDER_HOME, data.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME)),
+                    CONF_PREFIX_NETWORK_NAME: options.get(CONF_PREFIX_NETWORK_NAME, data.get(CONF_PREFIX_NETWORK_NAME, DEFAULT_PREFIX_NETWORK_NAME)),
+                    CONF_SUFFIX_CONNECTION_TYPE: options.get(CONF_SUFFIX_CONNECTION_TYPE, data.get(CONF_SUFFIX_CONNECTION_TYPE, DEFAULT_SUFFIX_CONNECTION_TYPE)),
+                    CONF_SHOW_EERO_LOGO: options.get(CONF_SHOW_EERO_LOGO, data.get(CONF_SHOW_EERO_LOGO, DEFAULT_SHOW_EERO_LOGO)),
+                }
+
+            data[CONF_MISCELLANEOUS] = miscellaneous
+            options[CONF_MISCELLANEOUS] = miscellaneous
+
         _LOGGER.debug(f"Migrated data:\n{data}")
-
-        options[CONF_RESOURCES] = resources
         _LOGGER.debug(f"Migrated options:\n{options}")
 
         hass.config_entries.async_update_entry(
@@ -174,6 +195,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     conf_networks = options.get(CONF_NETWORKS, data.get(CONF_NETWORKS, []))
     conf_resources = options.get(CONF_RESOURCES, data.get(CONF_RESOURCES, {}))
     conf_activity = options.get(CONF_ACTIVITY, data.get(CONF_ACTIVITY, {}))
+    conf_miscellaneous = options.get(CONF_MISCELLANEOUS, data.get(CONF_MISCELLANEOUS, {}))
+    conf_save_responses = options.get(CONF_SAVE_RESPONSES, data.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES))
+    conf_scan_interval = options.get(CONF_SCAN_INTERVAL, data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+    conf_timeout = options.get(CONF_TIMEOUT, data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT))
 
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
@@ -245,19 +270,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                             _LOGGER.debug(f"Removing entity: {entity_entry.name} from device entry: {device_entry.name} - {device_entry.model}")
                             entity_registry.async_remove(entity_entry.entity_id)
 
-    conf_prefix_network_name = options.get(CONF_PREFIX_NETWORK_NAME, data.get(CONF_PREFIX_NETWORK_NAME, DEFAULT_PREFIX_NETWORK_NAME))
-    conf_suffix_connection_type = options.get(CONF_SUFFIX_CONNECTION_TYPE, data.get(CONF_SUFFIX_CONNECTION_TYPE, DEFAULT_SUFFIX_CONNECTION_TYPE))
-    conf_save_responses = options.get(CONF_SAVE_RESPONSES, data.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES))
-    conf_scan_interval = options.get(CONF_SCAN_INTERVAL, data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
-    conf_show_eero_logo = options.get(CONF_SHOW_EERO_LOGO, data.get(CONF_SHOW_EERO_LOGO, DEFAULT_SHOW_EERO_LOGO))
-    conf_timeout = options.get(CONF_TIMEOUT, data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT))
-
-    conf_save_location = DEFAULT_SAVE_LOCATION if conf_save_responses else None
-
     api = EeroAPI(
         activity=conf_activity,
-        save_location=conf_save_location,
-        show_eero_logo=conf_show_eero_logo,
+        save_location=DEFAULT_SAVE_LOCATION if conf_save_responses else None,
+        show_eero_logo={network_id: miscellaneous[CONF_SHOW_EERO_LOGO] for network_id, miscellaneous in conf_miscellaneous.items()},
         user_token=data[CONF_USER_TOKEN],
     )
 
@@ -268,7 +284,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         so entities can quickly look up their data.
         """
         try:
-            async with async_timeout.timeout(conf_timeout):
+            async with timeout(conf_timeout):
                 return await hass.async_add_executor_job(api.update, conf_networks)
         except EeroException:
             raise UpdateFailed("Error communicating with API")
@@ -282,13 +298,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     )
     await coordinator.async_refresh()
 
+    for network in coordinator.data.networks:
+        if conf_miscellaneous_network := conf_miscellaneous.get(network.id):
+            conf_consider_home = conf_miscellaneous_network[CONF_CONSIDER_HOME]
+            if conf_consider_home and timedelta(minutes=conf_consider_home) <= timedelta(seconds=conf_scan_interval):
+                _LOGGER.info(f"For network: {network.name_unique} - Consider home interval, {int(conf_consider_home)} minute(s), should be set larger than polling interval, {int(conf_scan_interval)} seconds, otherwise it has no functionality.")
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config_entry.entry_id] = {
         CONF_ACTIVITY: conf_activity,
+        CONF_MISCELLANEOUS: conf_miscellaneous,
         CONF_NETWORKS: conf_networks,
-        CONF_PREFIX_NETWORK_NAME: conf_prefix_network_name,
         CONF_RESOURCES: conf_resources,
-        CONF_SUFFIX_CONNECTION_TYPE: conf_suffix_connection_type,
         DATA_API: api,
         DATA_COORDINATOR: coordinator,
         DATA_UPDATE_LISTENER: config_entry.add_update_listener(async_update_listener),
@@ -326,6 +347,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             schema=SET_BLOCKED_APPS_SCHEMA,
         )
 
+    for network in coordinator.data.networks:
+        if network.id in conf_networks:
+            device_registry.async_get_or_create(
+                config_entry_id=config_entry.entry_id,
+                identifiers={(DOMAIN, network.id)},
+                manufacturer=MANUFACTURER,
+                name=network.name,
+                model=MODEL_NETWORK,
+            )
+
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
     return True
@@ -357,16 +388,15 @@ class EeroEntity(CoordinatorEntity):
         network_id: str,
         resource_id: str,
         description: EeroEntityDescription,
-        prefix_network_name: bool = DEFAULT_PREFIX_NETWORK_NAME,
-        suffix_connection_type: bool = DEFAULT_SUFFIX_CONNECTION_TYPE,
+        miscellaneous: dict[str, Any],
     ) -> None:
         """Initialize device."""
         super().__init__(coordinator)
         self.network_id = network_id
         self.resource_id = resource_id
         self.entity_description = description
-        self.prefix_network_name = prefix_network_name
-        self.suffix_connection_type = suffix_connection_type
+        self.prefix_network_name = miscellaneous[CONF_PREFIX_NETWORK_NAME]
+        self.suffix_connection_type =  miscellaneous[CONF_SUFFIX_CONNECTION_TYPE]
 
     @property
     def network(self) -> EeroNetwork | None:

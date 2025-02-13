@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Any, final
 
 from homeassistant.components.device_tracker import (
@@ -22,14 +23,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util import dt as dt_util
 
 from . import EeroEntity, EeroEntityDescription
 from .const import (
+    CONF_CONSIDER_HOME,
+    CONF_MISCELLANEOUS,
     CONF_NETWORKS,
-    CONF_PREFIX_NETWORK_NAME,
     CONF_PROFILES,
     CONF_RESOURCES,
-    CONF_SUFFIX_CONNECTION_TYPE,
     DATA_COORDINATOR,
     DOMAIN as EERO_DOMAIN,
 )
@@ -76,8 +79,7 @@ async def async_setup_entry(
                                 network.id,
                                 profile.id,
                                 description,
-                                entry[CONF_PREFIX_NETWORK_NAME],
-                                entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                entry[CONF_MISCELLANEOUS][network.id],
                             )
                         )
 
@@ -92,8 +94,7 @@ async def async_setup_entry(
                                 network.id,
                                 client.id,
                                 description,
-                                entry[CONF_PREFIX_NETWORK_NAME],
-                                entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                entry[CONF_MISCELLANEOUS][network.id],
                             )
                         )
 
@@ -104,6 +105,25 @@ class EeroDeviceTrackerEntity(EeroEntity):
     """Representation of an Eero device tracker entity."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: DataUpdateCoordinator,
+        network_id: str,
+        resource_id: str,
+        description: EeroDeviceTrackerEntityDescription,
+        miscellaneous: dict[str, Any],
+    ) -> None:
+        """Initialize device."""
+        super().__init__(
+            coordinator,
+            network_id,
+            resource_id,
+            description,
+            miscellaneous,
+        )
+        self.consider_home: timedelta = timedelta(minutes=miscellaneous[CONF_CONSIDER_HOME])
+        self.last_seen: datetime | None = None
 
     @property
     def name(self) -> str | None:
@@ -119,6 +139,11 @@ class EeroDeviceTrackerEntity(EeroEntity):
     @property
     def is_connected(self) -> bool | None:
         """Return true if the device is connected to the network."""
+        if self.consider_home:
+            if not self.resource.connected:
+                return bool(self.last_seen and (dt_util.utcnow() - self.last_seen) < self.consider_home)
+            self.last_seen = dt_util.utcnow()
+            return True
         return self.resource.connected
 
     @property

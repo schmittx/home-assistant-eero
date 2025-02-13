@@ -12,10 +12,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import EeroEntity, EeroEntityDescription
 from .const import (
     CONF_EEROS,
+    CONF_MISCELLANEOUS,
     CONF_NETWORKS,
-    CONF_PREFIX_NETWORK_NAME,
     CONF_RESOURCES,
-    CONF_SUFFIX_CONNECTION_TYPE,
     DATA_COORDINATOR,
     DOMAIN,
 )
@@ -66,8 +65,7 @@ async def async_setup_entry(
                             network.id,
                             None,
                             description,
-                            entry[CONF_PREFIX_NETWORK_NAME],
-                            entry[CONF_SUFFIX_CONNECTION_TYPE],
+                            entry[CONF_MISCELLANEOUS][network.id],
                         )
                     )
 
@@ -83,8 +81,7 @@ async def async_setup_entry(
                                     network.id,
                                     eero.id,
                                     description,
-                                    entry[CONF_PREFIX_NETWORK_NAME],
-                                    entry[CONF_SUFFIX_CONNECTION_TYPE],
+                                    entry[CONF_MISCELLANEOUS][network.id],
                                 )
                             )
 

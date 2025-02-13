@@ -70,7 +70,7 @@ class EeroAPI(object):
         self,
         activity: dict = {},
         save_location: str = None,
-        show_eero_logo: bool = False,
+        show_eero_logo: dict[str, bool] = {},
         user_token: str = None,
     ) -> None:
         self.activity = activity
