@@ -69,11 +69,13 @@ class EeroAPI(object):
     def __init__(
         self,
         activity: dict = {},
+        profiles: dict = {},
         save_location: str = None,
         show_eero_logo: dict[str, bool] = {},
         user_token: str = None,
     ) -> None:
         self.activity = activity
+        self.profiles = profiles
         self.data = EeroAccount(self, {})
         self.default_qr_code: bytes | None = None
         self.save_location = save_location
@@ -115,16 +117,16 @@ class EeroAPI(object):
         now = datetime.datetime.now(tz=pytz.timezone(timezone))
         if period == PERIOD_DAY:
             start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            end = start + relativedelta.relativedelta(days=1) - datetime.timedelta(minutes=1)
+            end = start + relativedelta.relativedelta(days=1) - datetime.timedelta(seconds=1)
             cadence = CADENCE_HOURLY
         elif period == PERIOD_WEEK:
             start = now - relativedelta.relativedelta(days=now.weekday()+1)
             start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-            end = start + relativedelta.relativedelta(weeks=1) - datetime.timedelta(minutes=1)
+            end = start + relativedelta.relativedelta(weeks=1) - datetime.timedelta(seconds=1)
             cadence = CADENCE_DAILY
         elif period == PERIOD_MONTH:
             start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            end = start + relativedelta.relativedelta(months=1) - datetime.timedelta(minutes=1)
+            end = start + relativedelta.relativedelta(months=1) - datetime.timedelta(seconds=1)
             cadence = CADENCE_DAILY
         else:
             return (start, end, cadence)
@@ -276,7 +278,7 @@ class EeroAPI(object):
                     ):
                         backup_access_points = self.call(
                             method=METHOD_GET,
-                            url=f"{network['url']}/backup_access_points",
+                            url=f"{network_url}/backup_access_points",
                         )
                         network_data["backup_access_points"] = {
                             "count": len(backup_access_points),
@@ -297,18 +299,30 @@ class EeroAPI(object):
                     )
                     network_data["updates"] = update_data
 
-                    network_id = network_data["url"].replace("/2.2/networks/", "")
+                    network_id = network_url.replace("/2.2/networks/", "")
                     activity_data = {}
                     for resource, activities in self.activity.get(network_id, {}).items():
                         resource = RESOURCE_MAP.get(resource, resource)
                         activity_data[resource] = {}
                         for activity in activities:
-                            activity_data[resource][activity] = self.update_activity(
-                                activity=activity,
-                                network_url=network["url"],
-                                resource=resource,
-                                timezone=network_data["timezone"]["value"],
-                            )
+                            if resource == "profiles":
+                                activity_data[resource][activity] = {}
+                                for profile_id in self.profiles.get(network_id):
+                                    activity_data[resource][activity][profile_id] = self.update_activity(
+                                        activity=activity,
+                                        network_url=network_url,
+                                        profile_id=profile_id,
+                                        resource=resource,
+                                        timezone=network_data["timezone"]["value"],
+                                    )
+                            else:
+                                activity_data[resource][activity] = self.update_activity(
+                                    activity=activity,
+                                    network_url=network_url,
+                                    profile_id=None,
+                                    resource=resource,
+                                    timezone=network_data["timezone"]["value"],
+                                )
                     network_data["activity"] = activity_data
                     networks.append(network_data)
             account["networks"]["data"] = networks
@@ -322,12 +336,15 @@ class EeroAPI(object):
             self,
             activity: str,
             network_url: str,
+            profile_id: int,
             resource: str,
             timezone: str,
         ) -> list[dict]:
         activity_url = ACTIVITY_MAP[activity][0].format(network_url)
         if resource != "network":
             activity_url = f"{activity_url}/{resource}"
+        if resource == "profiles":
+            activity_url = f"{activity_url}/{profile_id}"
         start, end, cadence = self.define_period(
             period=ACTIVITY_MAP[activity][2],
             timezone=timezone,

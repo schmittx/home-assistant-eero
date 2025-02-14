@@ -242,24 +242,33 @@ class EeroProfile(EeroResource):
 
     @property
     def data_usage_day(self) -> tuple[int | None, int | None]:
-        for profile in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_day", []):
-            if str(profile["profile_id"]) == self.id:
-                return (profile["download"], profile["upload"])
-        return (None, None)
+        down, up = None, None
+        for series in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_day", {}).get(self.id, []):
+            if series["type"] == "download":
+                down = series["sum"]
+            elif series["type"] == "upload":
+                up = series["sum"]
+        return (down, up)
 
     @property
     def data_usage_month(self) -> tuple[int | None, int | None]:
-        for profile in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_month", []):
-            if str(profile["profile_id"]) == self.id:
-                return (profile["download"], profile["upload"])
-        return (None, None)
+        down, up = None, None
+        for series in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_month", {}).get(self.id, []):
+            if series["type"] == "download":
+                down = series["sum"]
+            elif series["type"] == "upload":
+                up = series["sum"]
+        return (down, up)
 
     @property
     def data_usage_week(self) -> tuple[int | None, int | None]:
-        for profile in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_week", []):
-            if str(profile["profile_id"]) == self.id:
-                return (profile["download"], profile["upload"])
-        return (None, None)
+        down, up = None, None
+        for series in self.network.data.get("activity", {}).get("profiles", {}).get("data_usage_week", {}).get(self.id, []):
+            if series["type"] == "download":
+                down = series["sum"]
+            elif series["type"] == "upload":
+                up = series["sum"]
+        return (down, up)
 
     @property
     def inspected_day(self) -> int | None:

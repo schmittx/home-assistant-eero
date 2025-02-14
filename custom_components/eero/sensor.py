@@ -277,7 +277,6 @@ async def async_setup_entry(
                 if any(
                     [
                         description.premium_type and not network.premium_enabled,
-                        description.activity_type and not network.premium_enabled,
                         description.activity_type and key not in activity.get(CONF_ACTIVITY_NETWORK, []),
                     ]
                 ):
@@ -313,7 +312,6 @@ async def async_setup_entry(
                         if any(
                             [
                                 description.premium_type and not network.premium_enabled,
-                                description.activity_type and not network.premium_enabled,
                                 description.activity_type and key not in activity.get(CONF_ACTIVITY_EEROS, []),
                             ]
                         ):
@@ -335,7 +333,6 @@ async def async_setup_entry(
                         if any(
                             [
                                 description.premium_type and not network.premium_enabled,
-                                description.activity_type and not network.premium_enabled,
                                 description.activity_type and key not in activity.get(CONF_ACTIVITY_PROFILES, []),
                             ]
                         ):
@@ -357,7 +354,6 @@ async def async_setup_entry(
                         if any(
                             [
                                 description.premium_type and not network.premium_enabled,
-                                description.activity_type and not network.premium_enabled,
                                 description.activity_type and key not in activity.get(CONF_ACTIVITY_CLIENTS, []),
                                 description.wireless_only and not client.wireless,
                             ]

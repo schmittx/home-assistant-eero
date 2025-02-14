@@ -272,6 +272,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     api = EeroAPI(
         activity=conf_activity,
+        profiles={network_id: resources[CONF_PROFILES] for network_id, resources in conf_resources.items()},
         save_location=DEFAULT_SAVE_LOCATION if conf_save_responses else None,
         show_eero_logo={network_id: miscellaneous[CONF_SHOW_EERO_LOGO] for network_id, miscellaneous in conf_miscellaneous.items()},
         user_token=data[CONF_USER_TOKEN],
