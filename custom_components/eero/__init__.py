@@ -24,7 +24,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-from .api import EeroAPI, EeroException
+from .api import EeroAPI, EeroException, EeroUpdateConfig
 from .api.const import SUPPORTED_APPS
 from .api.network import EeroNetwork
 from .api.resource import EeroResource
@@ -271,12 +271,37 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                             entity_registry.async_remove(entity_entry.entity_id)
 
     api = EeroAPI(
-        activity=conf_activity,
-        profiles={network_id: resources[CONF_PROFILES] for network_id, resources in conf_resources.items()},
         save_location=DEFAULT_SAVE_LOCATION if conf_save_responses else None,
         show_eero_logo={network_id: miscellaneous[CONF_SHOW_EERO_LOGO] for network_id, miscellaneous in conf_miscellaneous.items()},
         user_token=data[CONF_USER_TOKEN],
     )
+
+    conf_update = {}
+    for network_id, resources in conf_resources.items():
+        conf_update[network_id] = EeroUpdateConfig(
+            activity=conf_activity[network_id],
+            profiles=resources[CONF_PROFILES],
+            get_backup_access_points=bool(resources[CONF_BACKUP_NETWORKS]),
+            get_devices=any(
+                [
+                    resources[CONF_WIRED_CLIENTS_FILTER] == CONF_FILTER_EXCLUDE,
+                    all(
+                        [
+                            resources[CONF_WIRED_CLIENTS_FILTER] == CONF_FILTER_INCLUDE,
+                            bool(resources[CONF_WIRED_CLIENTS]),
+                        ]
+                    ),
+                    resources[CONF_WIRELESS_CLIENTS_FILTER] == CONF_FILTER_EXCLUDE,
+                    all(
+                        [
+                            resources[CONF_WIRELESS_CLIENTS_FILTER] == CONF_FILTER_INCLUDE,
+                            bool(resources[CONF_WIRELESS_CLIENTS]),
+                        ]
+                    ),
+                ]
+            ),
+            get_release_notes=True,
+        )
 
     async def async_update_data():
         """Fetch data from API endpoint.
@@ -286,7 +311,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         """
         try:
             async with timeout(conf_timeout):
-                return await hass.async_add_executor_job(api.update, conf_networks)
+                return await hass.async_add_executor_job(api.update, conf_update)
         except EeroException:
             raise UpdateFailed("Error communicating with API")
 

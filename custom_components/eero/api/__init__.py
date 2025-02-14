@@ -36,6 +36,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EeroException(Exception):
+
     def __init__(
             self,
             code: int = None,
@@ -43,7 +44,7 @@ class EeroException(Exception):
             message: str = None,
             payload: str = None,
             server_time: str = None,
-        ):
+        ) -> None:
         super(EeroException, self).__init__()
         self.code = code
         self.error = error
@@ -68,14 +69,10 @@ class EeroAPI(object):
 
     def __init__(
         self,
-        activity: dict = {},
-        profiles: dict = {},
         save_location: str = None,
         show_eero_logo: dict[str, bool] = {},
         user_token: str = None,
     ) -> None:
-        self.activity = activity
-        self.profiles = profiles
         self.data = EeroAccount(self, {})
         self.default_qr_code: bytes | None = None
         self.save_location = save_location
@@ -247,16 +244,20 @@ class EeroAPI(object):
                 )
             file.close()
 
-    def update(self, conf_networks: list[int] | None = None) -> EeroAccount:
+    def update(
+            self,
+            config: dict[str, EeroUpdateConfig] = {},
+    ) -> EeroAccount:
         try:
             account = self.call(method=METHOD_GET, url=URL_ACCOUNT)
             networks = []
             for network in account["networks"]["data"]:
                 network_url = network["url"]
+                network_id = network_url.replace("/2.2/networks/", "")
                 if any(
                     [
-                        conf_networks is None,
-                        conf_networks and network_url.replace("/2.2/networks/", "") in conf_networks,
+                        not config,
+                        network_id in config.keys(),
                     ]
                 ):
                     network_data = self.call(method=METHOD_GET, url=network_url)
@@ -264,8 +265,15 @@ class EeroAPI(object):
                         method=METHOD_GET,
                         url=network_data["resources"]["thread"],
                     )
+
                     if all(
                         [
+                            any(
+                                [
+                                    not config,
+                                    config.get(network_id, EeroUpdateConfig()).get_backup_access_points,
+                                ]
+                            ),
                             backup_access_point_ok(
                                 capable=network_data["capabilities"]["backup_access_point"]["capable"],
                                 requirements=network_data["capabilities"]["backup_access_point"]["requirements"],
@@ -284,30 +292,39 @@ class EeroAPI(object):
                             "count": len(backup_access_points),
                             "data": backup_access_points,
                         }
-                    for resource in ["profiles", "devices"]:
-                        resource_data = self.call(
-                            method=METHOD_GET,
-                            url=network_data["resources"][resource],
-                        )
-                        network_data[resource] = {
-                            "count": len(resource_data),
-                            "data": resource_data,
-                        }
+
+                    if any(
+                        [
+                            not config,
+                            config.get(network_id, EeroUpdateConfig()).get_devices,
+                        ]
+                    ):
+                        network_data["devices"] = self.get_resource_data(network_data, "devices")
+
+                    if any(
+                        [
+                            not config,
+                            config.get(network_id, EeroUpdateConfig()).get_profiles,
+                        ]
+                    ):
+                        network_data["profiles"] = self.get_resource_data(network_data, "profiles")
+
                     update_data = network_data["updates"]
-                    update_data["release_notes"] = self.get_release_notes(
-                        url=update_data["manifest_resource"],
-                    )
+                    if config.get(network_id, EeroUpdateConfig()).get_release_notes:
+                        update_data["release_notes"] = self.get_release_notes(
+                            url=update_data["manifest_resource"],
+                        )
                     network_data["updates"] = update_data
 
                     network_id = network_url.replace("/2.2/networks/", "")
                     activity_data = {}
-                    for resource, activities in self.activity.get(network_id, {}).items():
+                    for resource, activities in config.get(network_id, EeroUpdateConfig()).activity.items():
                         resource = RESOURCE_MAP.get(resource, resource)
                         activity_data[resource] = {}
                         for activity in activities:
                             if resource == "profiles":
                                 activity_data[resource][activity] = {}
-                                for profile_id in self.profiles.get(network_id):
+                                for profile_id in config.get(network_id, EeroUpdateConfig()).profiles:
                                     activity_data[resource][activity][profile_id] = self.update_activity(
                                         activity=activity,
                                         network_url=network_url,
@@ -331,6 +348,20 @@ class EeroAPI(object):
         except EeroException:
             return self.data
         return self.data
+
+    def get_resource_data(
+            self,
+            network_data: dict,
+            resource: str,
+    ) -> dict:
+        resource_data = self.call(
+            method=METHOD_GET,
+            url=network_data["resources"][resource],
+        )
+        return {
+            "count": len(resource_data),
+            "data": resource_data,
+        }
 
     def update_activity(
             self,
@@ -363,3 +394,22 @@ class EeroAPI(object):
             json=json,
         )
         return data.get("insights", data.get("series", data.get("values")))
+
+
+class EeroUpdateConfig:
+    """A class that describes an Eero update config."""
+
+    def __init__(
+        self,
+        activity: dict = {},
+        profiles: list = [],
+        get_backup_access_points: bool = False,
+        get_devices: bool = False,
+        get_release_notes: bool = False,
+    ) -> None:
+        self.activity = activity
+        self.profiles = profiles
+        self.get_backup_access_points = get_backup_access_points
+        self.get_devices = get_devices
+        self.get_profiles = bool(profiles)
+        self.get_release_notes = get_release_notes
