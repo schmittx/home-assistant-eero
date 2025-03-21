@@ -1,7 +1,7 @@
 """Support for Eero binary sensor entities."""
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -34,6 +34,7 @@ class EeroBinarySensorEntityDescription(EeroEntityDescription, BinarySensorEntit
     """Class to describe an Eero binary sensor entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.DIAGNOSTIC
+    extra_attrs_wireless_only: dict[str, Callable] | None = None
 
 BINARY_SENSOR_DESCRIPTIONS: list[EeroBinarySensorEntityDescription] = [
     EeroBinarySensorEntityDescription(
@@ -47,6 +48,15 @@ BINARY_SENSOR_DESCRIPTIONS: list[EeroBinarySensorEntityDescription] = [
         key="connected",
         name="Connected",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        extra_attrs_wireless_only={
+            "bandwidth_receive": lambda resource: getattr(resource, "channel_width_rx"),
+            "bandwidth_transmit": lambda resource: getattr(resource, "channel_width_tx"),
+            "channel": lambda resource: getattr(resource, "channel"),
+            "operating_band": lambda resource: "{} {}".format(
+                getattr(resource, "interface_frequency")[0],
+                getattr(resource, "interface_frequency")[1],
+            ),
+        },
     ),
 ]
 
@@ -162,7 +172,11 @@ class EeroBinarySensorEntity(EeroEntity, BinarySensorEntity):
         is lowercase snake_case.
         """
         attrs = {}
-        if self.entity_description.extra_attrs and self.is_on:
-            for key, func in self.entity_description.extra_attrs.items():
-                attrs[key] = func(self.resource)
+        if self.is_on:
+            if self.entity_description.extra_attrs:
+                for key, func in self.entity_description.extra_attrs.items():
+                    attrs[key] = func(self.resource)
+            if self.entity_description.extra_attrs_wireless_only and self.resource.is_client and self.resource.wireless:
+                for key, func in self.entity_description.extra_attrs_wireless_only.items():
+                    attrs[key] = func(self.resource)
         return attrs

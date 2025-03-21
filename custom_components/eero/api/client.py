@@ -97,6 +97,18 @@ class EeroClient(EeroResource):
         return None
 
     @property
+    def channel(self) -> int | None:
+        return self.data.get("channel")
+
+    @property
+    def channel_width_rx(self) -> str | None:
+        return self.data.get("connectivity", {}).get("rx_rate_info", {}).get("channel_width")
+
+    @property
+    def channel_width_tx(self) -> str | None:
+        return self.data.get("connectivity", {}).get("tx_rate_info", {}).get("channel_width")
+
+    @property
     def connected(self) -> bool | None:
         return self.data.get("connected")
 
@@ -157,6 +169,13 @@ class EeroClient(EeroResource):
             if device["insights_url"] == self.url_insights:
                 return device["sum"]
         return None
+
+    @property
+    def interface_frequency(self) -> tuple[str | None, str | None]:
+        return (
+            self.data.get("interface", {}).get("frequency"),
+            self.data.get("interface", {}).get("frequency_unit"),
+        )
 
     @property
     def ip(self) -> str | None:
@@ -235,10 +254,13 @@ class EeroClient(EeroResource):
         )
 
     @property
-    def signal(self) -> int | None:
+    def signal(self) -> tuple[int | None, str | None]:
         if signal := self.data.get("connectivity", {}).get("signal"):
-            return int(signal.replace(" dBm", ""))
-        return signal
+            return (
+                int(signal.split()[0]),
+                signal.split()[1],
+            )
+        return (None, None)
 
     @property
     def source_location(self) -> str | None:

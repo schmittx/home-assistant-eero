@@ -169,6 +169,24 @@
         }
     },
     "entity": {
+        "binary_sensor": {
+            "all": {
+                "state_attributes": {
+                    "bandwidth_receive": {
+                        "name": "Bandwidth receive"
+                    },
+                    "bandwidth_transmit": {
+                        "name": "Bandwidth transmit"
+                    },
+                    "channel": {
+                        "name": "Channel"
+                    },
+                    "operating_band": {
+                        "name": "Operating band"
+                    }
+                }
+            }
+        },
         "camera": {
             "all": {
                 "state": {

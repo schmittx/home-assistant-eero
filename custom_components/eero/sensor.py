@@ -58,6 +58,10 @@ DEVICE_CATEGORIES = [
     DEVICE_CATEGORY_OTHER,
 ]
 
+SIGNAL_STRENGTH_UNIT_MAP = {
+    "dBm": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+}
+
 SPEED_UNIT_MAP = {
     "Kbps": UnitOfDataRate.KILOBITS_PER_SECOND,
     "Mbps": UnitOfDataRate.MEGABITS_PER_SECOND,
@@ -212,7 +216,8 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         name="Signal Strength",
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        native_value=lambda resource, key: getattr(resource, key)[0],
+        native_unit_of_measurement=lambda resource, key: SIGNAL_STRENGTH_UNIT_MAP.get(getattr(resource, key)[1], getattr(resource, key)[1]),
         wireless_only=True,
     ),
     EeroSensorEntityDescription(
@@ -221,6 +226,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_value=lambda resource, key: getattr(resource, key)[0],
+        native_unit_of_measurement=lambda resource, key: SPEED_UNIT_MAP.get(getattr(resource, key)[1], getattr(resource, key)[1]),
         extra_attrs={
             "last_updated": lambda resource: getattr(resource, "speed_date"),
         },
@@ -231,6 +237,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         native_value=lambda resource, key: getattr(resource, key)[0],
+        native_unit_of_measurement=lambda resource, key: SPEED_UNIT_MAP.get(getattr(resource, key)[1], getattr(resource, key)[1]),
         extra_attrs={
             "last_updated": lambda resource: getattr(resource, "speed_date"),
         },
@@ -384,9 +391,8 @@ class EeroSensorEntity(EeroEntity, SensorEntity):
     @property
     def native_unit_of_measurement(self) -> str | None:
         """Return the unit of measurement of the sensor, if any."""
-        if self.entity_description.key.startswith("speed"):
-            native_unit = getattr(self.resource, self.entity_description.key)[1]
-            return SPEED_UNIT_MAP.get(native_unit, native_unit)
+        if callable(self.entity_description.native_unit_of_measurement):
+            return self.entity_description.native_unit_of_measurement(self.resource, self.entity_description.key)
         return self.entity_description.native_unit_of_measurement
 
     @property
