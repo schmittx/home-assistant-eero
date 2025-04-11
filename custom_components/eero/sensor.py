@@ -260,6 +260,13 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
     ),
+    EeroSensorEntityDescription(
+        key="wan_router_ip",
+        name="WAN Router IP",
+        extra_attrs={
+            "subnet_mask": lambda resource: getattr(resource, "wan_subnet_mask"),
+        },
+    ),
 ]
 
 

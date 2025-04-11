@@ -275,6 +275,9 @@
                     },
                     "name": {
                         "name": "Name"
+                    },
+                    "subnet_mask": {
+                        "name": "Subnet mask"
                     }
                 }
             }

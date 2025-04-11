@@ -469,10 +469,6 @@ class EeroNetwork(EeroResource):
             )
 
     @property
-    def public_ip(self) -> str | None:
-        return self.data.get("ip_settings", {}).get("public_ip")
-
-    @property
     def postal_code(self) -> str | None:
         return self.data.get("geo_ip", {}).get("postalCode")
 
@@ -513,6 +509,10 @@ class EeroNetwork(EeroResource):
             capable=self.premium_capable,
             status=self.premium_status,
         )
+
+    @property
+    def public_ip(self) -> str | None:
+        return self.data.get("ip_settings", {}).get("public_ip")
 
     @property
     def qr_code(self) -> bytes | None:
@@ -667,6 +667,14 @@ class EeroNetwork(EeroResource):
     @property
     def url_updates(self) -> str | None:
         return self.data.get("resources", {}).get("updates")
+
+    @property
+    def wan_router_ip(self) -> str | None:
+        return self.data.get("lease", {}).get("dhcp", {}).get("router")
+
+    @property
+    def wan_subnet_mask(self) -> str | None:
+        return self.data.get("lease", {}).get("dhcp", {}).get("mask")
 
     @property
     def wpa3(self) -> bool | None:
