@@ -421,6 +421,8 @@ class EeroSensorEntity(EeroEntity, SensorEntity):
         if self.entity_description.key.startswith("data_usage"):
             attrs["download"], attrs["upload"] = getattr(self.resource, self.entity_description.key)
         if self.entity_description.key.endswith("clients_count"):
+            if self.resource.is_eero or self.resource.is_profile:
+                attrs["clients"] = sorted(getattr(self.resource, "connected_clients_names"))
             for category in DEVICE_CATEGORIES:
                 attr = f"{self.entity_description.key}_{category}"
                 if hasattr(self.resource, attr):

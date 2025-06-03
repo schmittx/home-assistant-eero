@@ -238,7 +238,11 @@ class EeroProfile(EeroResource):
 
     @property
     def connected_clients_count(self) -> int:
-        return len([client for client in self.clients if client.connected])
+        return len(self.connected_clients_names)
+
+    @property
+    def connected_clients_names(self) -> list[str]:
+        return [client.name for client in self.clients if client.connected]
 
     @property
     def data_usage_day(self) -> tuple[int | None, int | None]:

@@ -21,6 +21,10 @@ class EeroDevice(EeroResource):
         return self.data.get("connected_clients_count")
 
     @property
+    def connected_clients_names(self) -> list[str]:
+        return [client.name for client in self.network.clients if client.source_location == self.name]
+
+    @property
     def current_firmware(self) -> EeroFirmware:
         history = {firmware.os_version: firmware for firmware in self.network.firmware_history}
         return history.get(self.os_version.split("-")[0], EeroFirmware())
