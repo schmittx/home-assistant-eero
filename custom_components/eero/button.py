@@ -37,6 +37,13 @@ BUTTON_DESCRIPTIONS: list[EeroButtonEntityDescription] = [
         request_refresh=False,
     ),
     EeroButtonEntityDescription(
+        key="run_internet_backup_test",
+        name="Run Internet Backup Test",
+        icon="mdi:web",
+        premium_type=True,
+        request_refresh=False,
+    ),
+    EeroButtonEntityDescription(
         key="run_speed_test",
         name="Run Speed Test",
         icon="mdi:speedometer",

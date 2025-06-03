@@ -532,6 +532,9 @@ class EeroNetwork(EeroResource):
     def region_name(self) -> str | None:
         return self.data.get("geo_ip", {}).get("regionName")
 
+    def run_internet_backup_test(self) -> None:
+        self.api.call(method=METHOD_POST, url=f"{self.url}/backup_access_points/connectivity_check")
+
     def run_speed_test(self) -> None:
         self.api.call(method=METHOD_POST, url=f"{self.url}/speedtest")
 
