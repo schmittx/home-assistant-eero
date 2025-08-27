@@ -469,6 +469,11 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
         self.user_input = {}
 
     @property
+    def config_title(self) -> str:
+        """Return the config title."""
+        return f"{self.config_entry.data[CONF_NAME]} ({self.config_entry.data[CONF_LOGIN]})"
+
+    @property
     def data(self) -> dict[str, Any]:
         """Return the data from a config entry."""
         return self.config_entry.data
