@@ -1,4 +1,5 @@
 """Support for Eero update entities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -26,11 +27,13 @@ from .const import (
     RELEASE_URL,
 )
 
+
 @dataclass
 class EeroUpdateEntityDescription(EeroEntityDescription, UpdateEntityDescription):
     """Class to describe an Eero update entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
+
 
 UPDATE_DESCRIPTIONS: list[EeroUpdateEntityDescription] = [
     EeroUpdateEntityDescription(
@@ -60,7 +63,7 @@ async def async_setup_entry(
         if network.id in entry[CONF_NETWORKS]:
             for eero in network.eeros:
                 if eero.id in entry[CONF_RESOURCES][network.id][CONF_EEROS]:
-                    for key, description in SUPPORTED_KEYS.items():
+                    for description in SUPPORTED_KEYS.values():
                         if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
@@ -125,9 +128,7 @@ class EeroUpdateEntity(UpdateEntity, EeroEntity):
     def supported_features(self) -> int:
         """Flag supported features."""
         if self.resource.target_firmware.features:
-            return (
-                UpdateEntityFeature.INSTALL | UpdateEntityFeature.RELEASE_NOTES
-            )
+            return UpdateEntityFeature.INSTALL | UpdateEntityFeature.RELEASE_NOTES
         return UpdateEntityFeature.INSTALL
 
     @property

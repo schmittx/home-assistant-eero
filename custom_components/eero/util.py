@@ -1,7 +1,6 @@
 """The Eero integration."""
-from __future__ import annotations
 
-import voluptuous as vol
+from __future__ import annotations
 
 from .api.client import EeroClient
 from .const import (

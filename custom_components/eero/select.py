@@ -1,4 +1,5 @@
 """Support for Eero select entities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -19,11 +20,13 @@ from .const import (
     DOMAIN,
 )
 
+
 @dataclass
 class EeroSelectEntityDescription(EeroEntityDescription, SelectEntityDescription):
     """Class to describe an Eero select entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
+
 
 SELECT_DESCRIPTIONS: list[EeroSelectEntityDescription] = [
     EeroSelectEntityDescription(
@@ -40,9 +43,9 @@ SELECT_DESCRIPTIONS: list[EeroSelectEntityDescription] = [
 
 
 async def async_setup_entry(
-        hass: HomeAssistant,
-        config_entry: ConfigEntry,
-        async_add_entities: AddEntitiesCallback,
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up an Eero select entity based on a config entry."""
     entry = hass.data[DOMAIN][config_entry.entry_id]
@@ -58,7 +61,7 @@ async def async_setup_entry(
             for key, description in SUPPORTED_KEYS.items():
                 if description.premium_type and not network.premium_enabled:
                     continue
-                elif hasattr(network, key):
+                if hasattr(network, key):
                     entities.append(
                         EeroSelectEntity(
                             coordinator,
@@ -74,7 +77,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(eero, key):
+                        if hasattr(eero, key):
                             entities.append(
                                 EeroSelectEntity(
                                     coordinator,

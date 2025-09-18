@@ -1,4 +1,5 @@
 """Support for Eero device tracker entities."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -14,11 +15,7 @@ from homeassistant.components.device_tracker import (
     SourceType,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    ATTR_MANUFACTURER,
-    STATE_HOME,
-    STATE_NOT_HOME,
-)
+from homeassistant.const import ATTR_MANUFACTURER, STATE_HOME, STATE_NOT_HOME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -38,12 +35,14 @@ from .const import (
 )
 from .util import client_allowed
 
+
 @dataclass
 class EeroDeviceTrackerEntityDescription(EeroEntityDescription):
     """Class to describe an Eero device tracker entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.DIAGNOSTIC
     source_type: str[SourceType] = SourceType.ROUTER
+
 
 DEVICE_TRACKER_DESCRIPTIONS: list[EeroDeviceTrackerEntityDescription] = [
     EeroDeviceTrackerEntityDescription(
@@ -70,7 +69,7 @@ async def async_setup_entry(
         if network.id in entry[CONF_NETWORKS]:
             for profile in network.profiles:
                 if profile.id in entry[CONF_RESOURCES][network.id][CONF_PROFILES]:
-                    for key, description in SUPPORTED_KEYS.items():
+                    for description in SUPPORTED_KEYS.values():
                         if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
@@ -85,7 +84,7 @@ async def async_setup_entry(
 
             for client in network.clients:
                 if client_allowed(client, entry[CONF_RESOURCES][network.id]):
-                    for key, description in SUPPORTED_KEYS.items():
+                    for description in SUPPORTED_KEYS.values():
                         if description.premium_type and not network.premium_enabled:
                             continue
                         entities.append(
@@ -122,7 +121,9 @@ class EeroDeviceTrackerEntity(EeroEntity):
             description,
             miscellaneous,
         )
-        self.consider_home: timedelta = timedelta(minutes=miscellaneous[CONF_CONSIDER_HOME])
+        self.consider_home: timedelta = timedelta(
+            minutes=miscellaneous[CONF_CONSIDER_HOME]
+        )
         self.last_seen: datetime | None = None
 
     @property
@@ -141,7 +142,10 @@ class EeroDeviceTrackerEntity(EeroEntity):
         """Return true if the device is connected to the network."""
         if self.consider_home:
             if not self.resource.connected:
-                return bool(self.last_seen and (dt_util.utcnow() - self.last_seen) < self.consider_home)
+                return bool(
+                    self.last_seen
+                    and (dt_util.utcnow() - self.last_seen) < self.consider_home
+                )
             self.last_seen = dt_util.utcnow()
             return True
         return self.resource.connected

@@ -1,4 +1,5 @@
-"""Eero API"""
+"""Eero API."""
+
 ACTIVITY_ADBLOCK_DAY = "adblock_day"
 ACTIVITY_ADBLOCK_WEEK = "adblock_week"
 ACTIVITY_ADBLOCK_MONTH = "adblock_month"
@@ -117,7 +118,9 @@ DEVICE_CATEGORY_TYPE_MAP = {
     DEVICE_TYPE_GENERIC: DEVICE_CATEGORY_OTHER,
 }
 
-EERO_LOGO_ICON = "/config/custom_components/eero/api/images/logo_icon_white_background.png"
+EERO_LOGO_ICON = (
+    "/config/custom_components/eero/api/images/logo_icon_white_background.png"
+)
 
 INSIGHT_TYPE_ADBLOCK = "adblock"
 INSIGHT_TYPE_BLOCKED = "blocked"
@@ -287,7 +290,11 @@ SUPPORTED_APPS = {
     "pinterest": [APP_CATEGORY_SOCIAL_MEDIA],
     "playstation": [APP_CATEGORY_GAMES, APP_CATEGORY_SHOPPING],
     "plex": [APP_CATEGORY_STREAMING],
-    "reddit": [APP_CATEGORY_ADULT, APP_CATEGORY_CHAT_MESSAGING, APP_CATEGORY_SOCIAL_MEDIA],
+    "reddit": [
+        APP_CATEGORY_ADULT,
+        APP_CATEGORY_CHAT_MESSAGING,
+        APP_CATEGORY_SOCIAL_MEDIA,
+    ],
     "roblox": [APP_CATEGORY_GAMES],
     "signal": [APP_CATEGORY_CHAT_MESSAGING],
     "skype": [APP_CATEGORY_CHAT_MESSAGING, APP_CATEGORY_STREAMING],

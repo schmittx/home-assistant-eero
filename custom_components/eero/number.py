@@ -1,14 +1,12 @@
 """Support for Eero number entities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from homeassistant.components.number import (
-    NumberEntity,
-    NumberEntityDescription,
-)
+from homeassistant.components.number import NumberEntity, NumberEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfTime
+from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -23,11 +21,13 @@ from .const import (
     DOMAIN as EERO_DOMAIN,
 )
 
+
 @dataclass
 class EeroNumberEntityDescription(EeroEntityDescription, NumberEntityDescription):
     """Class to describe an Eero number entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
+
 
 NUMBER_DESCRIPTIONS: list[EeroNumberEntityDescription] = [
     EeroNumberEntityDescription(
@@ -59,7 +59,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(eero, key):
+                        if hasattr(eero, key):
                             entities.append(
                                 EeroNumberEntity(
                                     coordinator,

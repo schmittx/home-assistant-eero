@@ -1,4 +1,5 @@
 """Support for Eero binary sensor entities."""
+
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
@@ -30,18 +31,21 @@ from .util import client_allowed
 
 
 @dataclass
-class EeroBinarySensorEntityDescription(EeroEntityDescription, BinarySensorEntityDescription):
+class EeroBinarySensorEntityDescription(
+    EeroEntityDescription, BinarySensorEntityDescription
+):
     """Class to describe an Eero binary sensor entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.DIAGNOSTIC
     extra_attrs_wireless_only: dict[str, Callable] | None = None
+
 
 BINARY_SENSOR_DESCRIPTIONS: list[EeroBinarySensorEntityDescription] = [
     EeroBinarySensorEntityDescription(
         key="block_apps_enabled",
         name="Block Apps",
         extra_attrs={
-            "blocked_apps": lambda resource: sorted(getattr(resource, "blocked_applications")),
+            "blocked_apps": lambda resource: sorted(resource.blocked_applications),
         },
     ),
     EeroBinarySensorEntityDescription(
@@ -49,13 +53,10 @@ BINARY_SENSOR_DESCRIPTIONS: list[EeroBinarySensorEntityDescription] = [
         name="Connected",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         extra_attrs_wireless_only={
-            "bandwidth_receive": lambda resource: getattr(resource, "channel_width_rx"),
-            "bandwidth_transmit": lambda resource: getattr(resource, "channel_width_tx"),
-            "channel": lambda resource: getattr(resource, "channel"),
-            "operating_band": lambda resource: "{} {}".format(
-                getattr(resource, "interface_frequency")[0],
-                getattr(resource, "interface_frequency")[1],
-            ),
+            "bandwidth_receive": lambda resource: resource.channel_width_rx,
+            "bandwidth_transmit": lambda resource: resource.channel_width_tx,
+            "channel": lambda resource: resource.channel,
+            "operating_band": lambda resource: f"{resource.interface_frequency[0]} {resource.interface_frequency[1]}",
         },
     ),
 ]
@@ -80,7 +81,7 @@ async def async_setup_entry(
             for key, description in SUPPORTED_KEYS.items():
                 if description.premium_type and not network.premium_enabled:
                     continue
-                elif hasattr(network, key):
+                if hasattr(network, key):
                     entities.append(
                         EeroBinarySensorEntity(
                             coordinator,
@@ -92,7 +93,10 @@ async def async_setup_entry(
                     )
 
             for backup_network in network.backup_networks:
-                if backup_network.id in entry[CONF_RESOURCES][network.id][CONF_BACKUP_NETWORKS]:
+                if (
+                    backup_network.id
+                    in entry[CONF_RESOURCES][network.id][CONF_BACKUP_NETWORKS]
+                ):
                     for key, description in SUPPORTED_KEYS.items():
                         if hasattr(backup_network, key):
                             entities.append(
@@ -110,7 +114,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(eero, key):
+                        if hasattr(eero, key):
                             entities.append(
                                 EeroBinarySensorEntity(
                                     coordinator,
@@ -126,7 +130,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(profile, key):
+                        if hasattr(profile, key):
                             entities.append(
                                 EeroBinarySensorEntity(
                                     coordinator,
@@ -142,7 +146,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(client, key):
+                        if hasattr(client, key):
                             entities.append(
                                 EeroBinarySensorEntity(
                                     coordinator,
@@ -176,7 +180,14 @@ class EeroBinarySensorEntity(EeroEntity, BinarySensorEntity):
             if self.entity_description.extra_attrs:
                 for key, func in self.entity_description.extra_attrs.items():
                     attrs[key] = func(self.resource)
-            if self.entity_description.extra_attrs_wireless_only and self.resource.is_client and self.resource.wireless:
-                for key, func in self.entity_description.extra_attrs_wireless_only.items():
+            if (
+                self.entity_description.extra_attrs_wireless_only
+                and self.resource.is_client
+                and self.resource.wireless
+            ):
+                for (
+                    key,
+                    func,
+                ) in self.entity_description.extra_attrs_wireless_only.items():
                     attrs[key] = func(self.resource)
         return attrs

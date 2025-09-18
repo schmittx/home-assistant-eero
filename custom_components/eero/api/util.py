@@ -1,13 +1,16 @@
-"""Eero API"""
+"""Eero API."""
+
 from __future__ import annotations
 
 import io
+
 import pyqrcode
 
 from .const import STATE_ACTIVE, STATE_TRIALING
 
 
 def generate_qr_code(ssid: str, password: str | None) -> bytes | None:
+    """Generate QR code."""
     if ssid is None:
         return None
     if password:
@@ -30,10 +33,12 @@ def generate_qr_code(ssid: str, password: str | None) -> bytes | None:
 
 
 def backup_access_point_ok(capable: bool | None, requirements: dict | None) -> bool:
-    return capable and all([bool(value) for value in requirements.values()])
+    """Backup access point OK."""
+    return capable and all(bool(value) for value in requirements.values())
 
 
 def premium_ok(capable: bool | None, status: str | None) -> bool:
+    """Premium OK."""
     return all(
         [
             capable,

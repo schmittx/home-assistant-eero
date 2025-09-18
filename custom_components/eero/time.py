@@ -1,15 +1,12 @@
 """Support for Eero time entities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import time
 
-from homeassistant.components.time import (
-    TimeEntity,
-    TimeEntityDescription,
-)
+from homeassistant.components.time import TimeEntity, TimeEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -24,11 +21,13 @@ from .const import (
     DOMAIN as EERO_DOMAIN,
 )
 
+
 @dataclass
 class EeroTimeEntityDescription(EeroEntityDescription, TimeEntityDescription):
     """Class to describe an Eero time entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
+
 
 TIME_DESCRIPTIONS: list[EeroTimeEntityDescription] = [
     EeroTimeEntityDescription(
@@ -52,9 +51,7 @@ async def async_setup_entry(
     coordinator = entry[DATA_COORDINATOR]
     entities: list[EeroTimeEntity] = []
 
-    SUPPORTED_KEYS = {
-        description.key: description for description in TIME_DESCRIPTIONS
-    }
+    SUPPORTED_KEYS = {description.key: description for description in TIME_DESCRIPTIONS}
 
     for network in coordinator.data.networks:
         if network.id in entry[CONF_NETWORKS]:
@@ -63,7 +60,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(eero, key):
+                        if hasattr(eero, key):
                             entities.append(
                                 EeroTimeEntity(
                                     coordinator,

@@ -1,4 +1,5 @@
 """Constants used by the Eero integration."""
+
 from .api.const import (
     ACTIVITY_ADBLOCK_DAY,
     ACTIVITY_ADBLOCK_MONTH,
@@ -13,7 +14,6 @@ from .api.const import (
     ACTIVITY_INSPECTED_MONTH,
     ACTIVITY_INSPECTED_WEEK,
 )
-
 
 ACTIVITIES_DEFAULT = [
     ACTIVITY_DATA_USAGE_WEEK,
@@ -83,7 +83,9 @@ MODEL_EERO = "eero"
 MODEL_NETWORK = "Network"
 MODEL_PROFILE = "Profile"
 
-RELEASE_URL = "https://support.eero.com/hc/en-us/articles/209636523-eero-Software-Release-Notes"
+RELEASE_URL = (
+    "https://support.eero.com/hc/en-us/articles/209636523-eero-Software-Release-Notes"
+)
 
 SERVICE_SET_BLOCKED_APPS = "set_blocked_apps"
 

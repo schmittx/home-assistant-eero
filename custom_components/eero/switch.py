@@ -1,4 +1,5 @@
 """Support for Eero switch entities."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -27,12 +28,14 @@ from .const import (
 )
 from .util import client_allowed
 
+
 @dataclass
 class EeroSwitchEntityDescription(EeroEntityDescription, SwitchEntityDescription):
     """Class to describe an Eero switch entity."""
 
     device_class: str[SwitchDeviceClass] | None = SwitchDeviceClass.SWITCH
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
+
 
 SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
     EeroSwitchEntityDescription(
@@ -104,7 +107,7 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         name="Dynamic DNS",
         premium_type=True,
         extra_attrs={
-            "domain": lambda resource: getattr(resource, "ddns_subdomain"),
+            "domain": lambda resource: resource.ddns_subdomain,
         },
     ),
     EeroSwitchEntityDescription(
@@ -116,9 +119,9 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         key="guest_network_enabled",
         name="Guest Network",
         extra_attrs={
-            "guest_network_name": lambda resource: getattr(resource, "guest_network_name"),
-            "guest_network_password": lambda resource: getattr(resource, "guest_network_password"),
-            "connected_guest_clients": lambda resource: getattr(resource, "connected_guest_clients_count"),
+            "guest_network_name": lambda resource: resource.guest_network_name,
+            "guest_network_password": lambda resource: resource.guest_network_password,
+            "connected_guest_clients": lambda resource: resource.connected_guest_clients_count,
         },
     ),
     EeroSwitchEntityDescription(
@@ -130,7 +133,7 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         key="pause_5g_enabled",
         name="5 GHz Band Paused",
         extra_attrs={
-            "expiration": lambda resource: getattr(resource, "pause_5g_expiration"),
+            "expiration": lambda resource: resource.pause_5g_expiration,
         },
     ),
     EeroSwitchEntityDescription(
@@ -155,13 +158,13 @@ SWITCH_DESCRIPTIONS: list[EeroSwitchEntityDescription] = [
         key="thread_enabled",
         name="Thread Enabled",
         extra_attrs={
-            "thread_network_key": lambda resource: getattr(resource, "thread_master_key"),
-            "thread_network_name": lambda resource: getattr(resource, "thread_name"),
-            "channel": lambda resource: getattr(resource, "thread_channel"),
-            "pan_id": lambda resource: getattr(resource, "thread_pan_id"),
-            "extended_pan_id": lambda resource: getattr(resource, "thread_xpan_id"),
-            "commissioning_credential": lambda resource: getattr(resource, "thread_commissioning_credential"),
-            "active_operational_dataset": lambda resource: getattr(resource, "thread_active_operational_dataset"),
+            "thread_network_key": lambda resource: resource.thread_master_key,
+            "thread_network_name": lambda resource: resource.thread_name,
+            "channel": lambda resource: resource.thread_channel,
+            "pan_id": lambda resource: resource.thread_pan_id,
+            "extended_pan_id": lambda resource: resource.thread_xpan_id,
+            "commissioning_credential": lambda resource: resource.thread_commissioning_credential,
+            "active_operational_dataset": lambda resource: resource.thread_active_operational_dataset,
         },
     ),
     EeroSwitchEntityDescription(
@@ -199,7 +202,7 @@ async def async_setup_entry(
             for key, description in SUPPORTED_KEYS.items():
                 if description.premium_type and not network.premium_enabled:
                     continue
-                elif hasattr(network, key):
+                if hasattr(network, key):
                     entities.append(
                         EeroSwitchEntity(
                             coordinator,
@@ -211,7 +214,10 @@ async def async_setup_entry(
                     )
 
             for backup_network in network.backup_networks:
-                if backup_network.id in entry[CONF_RESOURCES][network.id][CONF_BACKUP_NETWORKS]:
+                if (
+                    backup_network.id
+                    in entry[CONF_RESOURCES][network.id][CONF_BACKUP_NETWORKS]
+                ):
                     for key, description in SUPPORTED_KEYS.items():
                         if hasattr(backup_network, key):
                             entities.append(
@@ -229,7 +235,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(profile, key):
+                        if hasattr(profile, key):
                             entities.append(
                                 EeroSwitchEntity(
                                     coordinator,
@@ -245,7 +251,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(client, key):
+                        if hasattr(client, key):
                             entities.append(
                                 EeroSwitchEntity(
                                     coordinator,

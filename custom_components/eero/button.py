@@ -1,4 +1,5 @@
 """Support for Eero button entities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -23,11 +24,13 @@ from .const import (
     DOMAIN as EERO_DOMAIN,
 )
 
+
 @dataclass
 class EeroButtonEntityDescription(EeroEntityDescription, ButtonEntityDescription):
     """Class to describe an Eero button entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
+
 
 BUTTON_DESCRIPTIONS: list[EeroButtonEntityDescription] = [
     EeroButtonEntityDescription(
@@ -71,7 +74,7 @@ async def async_setup_entry(
             for key, description in SUPPORTED_KEYS.items():
                 if description.premium_type and not network.premium_enabled:
                     continue
-                elif hasattr(network, key):
+                if hasattr(network, key):
                     entities.append(
                         EeroButtonEntity(
                             coordinator,
@@ -87,7 +90,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(eero, key):
+                        if hasattr(eero, key):
                             entities.append(
                                 EeroButtonEntity(
                                     coordinator,

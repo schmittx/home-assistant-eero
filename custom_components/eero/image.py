@@ -1,4 +1,5 @@
 """Support for Eero image entities."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -33,6 +34,7 @@ class EeroImageEntityDescription(EeroEntityDescription, ImageEntityDescription):
     ssid: str | None = None
     password: str | None = None
     state: Callable[[Any], bool] | None = None
+
 
 IMAGE_DESCRIPTIONS: list[EeroImageEntityDescription] = [
     EeroImageEntityDescription(
@@ -76,7 +78,10 @@ async def async_setup_entry(
                     )
 
             for backup_network in network.backup_networks:
-                if backup_network.id in entry[CONF_RESOURCES][network.id][CONF_BACKUP_NETWORKS]:
+                if (
+                    backup_network.id
+                    in entry[CONF_RESOURCES][network.id][CONF_BACKUP_NETWORKS]
+                ):
                     for key, description in SUPPORTED_KEYS.items():
                         if hasattr(backup_network, key):
                             entities.append(
@@ -89,7 +94,6 @@ async def async_setup_entry(
                                     hass,
                                 )
                             )
-
 
     async_add_entities(entities)
 

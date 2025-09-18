@@ -1,4 +1,5 @@
 """Support for Eero light entities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -25,13 +26,17 @@ from .const import (
     DOMAIN as EERO_DOMAIN,
 )
 
+
 @dataclass
 class EeroLightEntityDescription(EeroEntityDescription, LightEntityDescription):
     """Class to describe an Eero light entity."""
 
     entity_category: str[EntityCategory] | None = EntityCategory.CONFIG
     color_mode: str[ColorMode] = ColorMode.BRIGHTNESS
-    supported_color_modes: set[ColorMode] = field(default_factory=lambda: {ColorMode.BRIGHTNESS})
+    supported_color_modes: set[ColorMode] = field(
+        default_factory=lambda: {ColorMode.BRIGHTNESS}
+    )
+
 
 LIGHT_DESCRIPTIONS: list[EeroLightEntityDescription] = [
     EeroLightEntityDescription(
@@ -62,7 +67,7 @@ async def async_setup_entry(
                     for key, description in SUPPORTED_KEYS.items():
                         if description.premium_type and not network.premium_enabled:
                             continue
-                        elif hasattr(eero, key):
+                        if hasattr(eero, key):
                             entities.append(
                                 EeroLightEntity(
                                     coordinator,
