@@ -489,7 +489,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
         return None
 
-    async def async_step_advanced(self, user_input):
+    async def async_step_advanced(self, user_input=None):
         """Handle a flow initialized by the user."""
         errors = {}
 
@@ -511,22 +511,15 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     title=self.config_title, data=self.user_input
                 )
 
-        user_input = {}
-        conf_save_responses = user_input.get(
-            CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES
-        )
-        conf_scan_interval = user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        conf_timeout = user_input.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
-
         return self.async_show_form(
             step_id="advanced",
             data_schema=vol.Schema(
                 {
                     vol.Optional(
-                        CONF_SAVE_RESPONSES, default=conf_save_responses
+                        CONF_SAVE_RESPONSES, default=DEFAULT_SAVE_RESPONSES
                     ): BooleanSelector(),
                     vol.Optional(
-                        CONF_SCAN_INTERVAL, default=conf_scan_interval
+                        CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
                     ): NumberSelector(
                         NumberSelectorConfig(
                             min=MIN_SCAN_INTERVAL,
@@ -535,7 +528,7 @@ class EeroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             unit_of_measurement=UnitOfTime.SECONDS,
                         )
                     ),
-                    vol.Optional(CONF_TIMEOUT, default=conf_timeout): NumberSelector(
+                    vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): NumberSelector(
                         NumberSelectorConfig(
                             min=MIN_TIMEOUT,
                             max=MAX_TIMEOUT,
@@ -997,25 +990,16 @@ class EeroOptionsFlowHandler(config_entries.OptionsFlow):
                 self.user_input[CONF_TIMEOUT] = conf_timeout
                 return self.async_create_entry(title="", data=self.user_input)
 
-        conf_save_responses = user_input.get(
+        conf_save_responses = self.options.get(
             CONF_SAVE_RESPONSES,
-            self.options.get(
-                CONF_SAVE_RESPONSES,
-                self.data.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES),
-            ),
+            self.data.get(CONF_SAVE_RESPONSES, DEFAULT_SAVE_RESPONSES),
         )
-        conf_scan_interval = user_input.get(
+        conf_scan_interval = self.options.get(
             CONF_SCAN_INTERVAL,
-            self.options.get(
-                CONF_SCAN_INTERVAL,
-                self.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-            ),
+            self.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
         )
-        conf_timeout = user_input.get(
-            CONF_TIMEOUT,
-            self.options.get(
-                CONF_TIMEOUT, self.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
-            ),
+        conf_timeout = self.options.get(
+            CONF_TIMEOUT, self.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
         )
 
         return self.async_show_form(
