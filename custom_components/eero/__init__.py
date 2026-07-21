@@ -346,7 +346,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                     device_entry.name,
                     device_entry.model,
                 )
-                device_registry.async_remove_device(device_entry.id)
+                try:
+                    device_registry.async_remove_device(device_entry.id)
+                except (KeyError, ValueError):
+                    pass
             else:
                 for entity_entry in er.async_entries_for_device(
                     entity_registry, device_entry.id
