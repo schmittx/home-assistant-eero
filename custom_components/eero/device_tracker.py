@@ -5,21 +5,17 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, final
+from typing import Any
 
 from homeassistant.components.device_tracker import (
-    ATTR_HOST_NAME,
-    ATTR_IP,
-    ATTR_MAC,
-    ATTR_SOURCE_TYPE,
+    BaseScannerEntity,
     SourceType,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_MANUFACTURER, STATE_HOME, STATE_NOT_HOME
+from homeassistant.const import ATTR_MANUFACTURER
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
@@ -100,7 +96,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class EeroDeviceTrackerEntity(EeroEntity):
+class EeroDeviceTrackerEntity(EeroEntity, BaseScannerEntity):
     """Representation of an Eero device tracker entity."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -175,26 +171,6 @@ class EeroDeviceTrackerEntity(EeroEntity):
         if self.resource.is_client:
             return self.resource.hostname
         return None
-
-    @property
-    def state(self) -> str:
-        """Return the state of the device."""
-        if self.is_connected:
-            return STATE_HOME
-        return STATE_NOT_HOME
-
-    @final
-    @property
-    def state_attributes(self) -> dict[str, StateType]:
-        """Return the device state attributes."""
-        attr: dict[str, StateType] = {ATTR_SOURCE_TYPE: self.source_type}
-        if ip_address := self.ip_address:
-            attr[ATTR_IP] = ip_address
-        if mac_address := self.mac_address:
-            attr[ATTR_MAC] = mac_address
-        if hostname := self.hostname:
-            attr[ATTR_HOST_NAME] = hostname
-        return attr
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
