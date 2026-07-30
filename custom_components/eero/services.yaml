@@ -9,4 +9,32 @@ set_blocked_apps:
       example: John Doe or 1234567
     target_network:
       required: False
-      example: My Network or 1234567    
+      example: My Network or 1234567
+
+set_reservation:
+  name: Set DHCP reservation
+  description: Create or update a static DHCP reservation (pin an IP to a MAC).
+  fields:
+    mac:
+      required: True
+      example: "e2:0f:c3:f5:2c:85"
+    ip:
+      required: True
+      example: "192.168.4.65"
+    name:
+      required: False
+      example: "Chris iPhone"
+    target_network:
+      required: False
+      example: My Network or 1234567
+
+delete_reservation:
+  name: Delete DHCP reservation
+  description: Remove the static DHCP reservation for a MAC.
+  fields:
+    mac:
+      required: True
+      example: "e2:0f:c3:f5:2c:85"
+    target_network:
+      required: False
+      example: My Network or 1234567

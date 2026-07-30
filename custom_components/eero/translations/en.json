@@ -146,6 +146,42 @@
                     "description": "(Optional) Name(s) or ID(s) of network(s) in which desired profile(s) are located. Defaults to all networks if not specified."
                 }
             }
+        },
+        "set_reservation": {
+            "name": "Set DHCP reservation",
+            "description": "Create or update a static DHCP reservation, pinning an IP address to a device's MAC address.",
+            "fields": {
+                "mac": {
+                    "name": "MAC address",
+                    "description": "(Required) MAC address of the device to reserve."
+                },
+                "ip": {
+                    "name": "IP address",
+                    "description": "(Required) IP address to assign to the device."
+                },
+                "name": {
+                    "name": "Name",
+                    "description": "(Optional) Description shown for the reservation."
+                },
+                "target_network": {
+                    "name": "Target network(s)",
+                    "description": "(Optional) Name(s) or ID(s) of network(s). Defaults to all networks if not specified."
+                }
+            }
+        },
+        "delete_reservation": {
+            "name": "Delete DHCP reservation",
+            "description": "Remove the static DHCP reservation for a device's MAC address.",
+            "fields": {
+                "mac": {
+                    "name": "MAC address",
+                    "description": "(Required) MAC address of the device whose reservation should be removed."
+                },
+                "target_network": {
+                    "name": "Target network(s)",
+                    "description": "(Optional) Name(s) or ID(s) of network(s). Defaults to all networks if not specified."
+                }
+            }
         }
     },
     "selector": {

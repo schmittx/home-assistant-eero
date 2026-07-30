@@ -353,6 +353,18 @@ class EeroAPI:
                             network_data, "devices"
                         )
 
+                        # DHCP reservations
+                        # Defensive: never let this break the integration load.
+                        try:
+                            network_data["reservations"] = self.get_reservations(
+                                network_data
+                            )
+                        except Exception as exception:  # noqa: BLE001
+                            _LOGGER.warning(
+                                "eero reservations: fetch failed (%s)", exception
+                            )
+                            network_data["reservations"] = {"data": []}
+
                     if any(
                         [
                             not config,
@@ -425,6 +437,33 @@ class EeroAPI:
             "count": len(resource_data),
             "data": resource_data,
         }
+
+    def get_reservations(self, network_data: dict) -> dict:
+        """Get DHCP reservations for the network.
+
+        eero exposes reservations either as a named resource URL or at the
+        conventional ``{network_url}/reservations`` path. Try the resource map
+        first, then fall back. The raw response is logged once at DEBUG so the
+        exact shape can be confirmed on a real network.
+        """
+        resources = network_data.get("resources", {})
+        url = resources.get("reservations")
+        if not url:
+            network_url = network_data.get("url")
+            if network_url:
+                url = f"{network_url}/reservations"
+        if not url:
+            return {"data": []}
+        data = self.call(method=METHOD_GET, url=url)
+        _LOGGER.debug("eero reservations raw response from %s: %s", url, data)
+        # Normalise: accept a bare list, or {"data": [...]}, or {"reservations": [...]}
+        if isinstance(data, dict):
+            items = data.get("data") or data.get("reservations") or []
+        elif isinstance(data, list):
+            items = data
+        else:
+            items = []
+        return {"count": len(items), "data": items}
 
     def update_activity(
         self,

@@ -210,4 +210,12 @@ class EeroDeviceTrackerEntity(EeroEntity):
             if manufacturer := self.resource.manufacturer:
                 attrs[ATTR_MANUFACTURER] = manufacturer
             attrs["network_name"] = self.network.name
+        # DHCP reservation status (shown regardless of connection)
+        if self.resource.is_client:
+            try:
+                attrs["ip_reserved"] = self.resource.is_reserved
+                if reserved_ip := self.resource.reserved_ip:
+                    attrs["reserved_ip"] = reserved_ip
+            except Exception:  # noqa: BLE001
+                pass
         return attrs

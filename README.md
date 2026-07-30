@@ -34,6 +34,68 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 - Set blocked apps for profiles (requires Eero Plus subscription)
 - Update entities for Eero device firmware management
 - Control backup networks (requires Eero Plus subscription)
+- Read and manage DHCP reservations (static IPs) for clients
+
+## DHCP Reservations
+Client `device_tracker` entities expose whether their current IP is a static DHCP reservation:
+- `ip_reserved` (bool) — whether the client's IP is reserved
+- `reserved_ip` — the reserved IP address, when one exists
+
+Two services create or remove reservations (pin an IP to a MAC address):
+
+**`eero.set_reservation`** — create or update a reservation
+| Field | Required | Description |
+| --- | --- | --- |
+| `mac` | yes | MAC address of the device |
+| `ip` | yes | IP address to assign |
+| `name` | no | Description shown for the reservation |
+| `target_network` | no | Network name(s)/ID(s); defaults to all |
+
+**`eero.delete_reservation`** — remove a reservation
+| Field | Required | Description |
+| --- | --- | --- |
+| `mac` | yes | MAC address of the device |
+| `target_network` | no | Network name(s)/ID(s); defaults to all |
+
+### Example: one-tap "reserve" button on a dashboard
+Because each `device_tracker` exposes its live `mac` and `ip`, you can pin a device to
+its **current** IP straight from a dashboard button. A small script reads those
+attributes and toggles the reservation:
+
+```yaml
+# scripts.yaml
+eero_toggle_reservation:
+  alias: "eero: toggle reservation"
+  fields:
+    tracker:
+      description: The eero device_tracker to reserve/unreserve
+  sequence:
+    - choose:
+        - conditions: "{{ state_attr(tracker, 'ip_reserved') | default(false) }}"
+          sequence:
+            - service: eero.delete_reservation
+              data:
+                mac: "{{ state_attr(tracker, 'mac') }}"
+        - conditions: "{{ (state_attr(tracker, 'ip') | default('')) not in ['', 'None', none] }}"
+          sequence:
+            - service: eero.set_reservation
+              data:
+                mac: "{{ state_attr(tracker, 'mac') }}"
+                ip: "{{ state_attr(tracker, 'ip') }}"
+                name: "{{ state_attr(tracker, 'host_name') or tracker }}"
+```
+
+Any button can then call it with a device's entity, e.g. a `tap_action`:
+
+```yaml
+tap_action:
+  action: perform-action
+  perform_action: script.eero_toggle_reservation
+  data:
+    tracker: device_tracker.my_device
+```
+
+Tapping once reserves the device at its current IP; tapping again releases it.
 
 ## Coming Soon
 - TBD, feature requests are welcome.

@@ -918,6 +918,50 @@ class EeroNetwork(EeroResource):
         ]
 
     @property
+    def reservations(self) -> list[dict]:
+        """DHCP reservations."""
+        return self.data.get("reservations", {}).get("data", [])
+
+    def get_reservation(self, mac: str | None) -> dict | None:
+        """Return the reservation dict matching a client MAC, if any."""
+        if not mac:
+            return None
+        target = mac.lower().replace("-", ":")
+        for reservation in self.reservations:
+            r_mac = reservation.get("mac") or reservation.get("mac_address")
+            if r_mac and r_mac.lower().replace("-", ":") == target:
+                return reservation
+        return None
+
+    def create_reservation(
+        self, mac: str, ip: str, description: str = ""
+    ) -> dict | None:
+        """Create (or update) a DHCP reservation.
+
+        POSTs to the network's reservations collection. eero keys the
+        reservation on the MAC, so re-POSTing an existing MAC updates its IP.
+        """
+        return self.api.call(
+            method=METHOD_POST,
+            url=f"{self.url}/reservations",
+            json={"mac": mac, "ip": ip, "description": description},
+        )
+
+    def delete_reservation(self, mac: str) -> dict | None:
+        """Delete the DHCP reservation matching a MAC."""
+        reservation = self.get_reservation(mac)
+        if not reservation:
+            return None
+        url = reservation.get("url")
+        if not url:
+            reservation_id = reservation.get("id")
+            if reservation_id is not None:
+                url = f"{self.url}/reservations/{reservation_id}"
+        if not url:
+            return None
+        return self.api.call(method=METHOD_DELETE, url=url)
+
+    @property
     def eeros(self) -> list[EeroDevice | EeroDeviceBeacon | None]:
         """Eeros."""
         eeros = []
