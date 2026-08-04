@@ -140,7 +140,7 @@ class EeroDevice(EeroResource):
         if not isinstance(value, int):
             return None
         if not value:
-            return self.set_status_light_off
+            return self.set_status_light_off()
         self.api.call(
             method=METHOD_PUT,
             url=self.url_led,

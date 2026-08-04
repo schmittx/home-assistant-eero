@@ -138,7 +138,11 @@ class EeroUpdateEntity(UpdateEntity, EeroEntity):
         This helps to differentiate between the device or entity name
         versus the title of the software installed.
         """
-        return self.resource.target_firmware.title
+        # The API returns e.g. "eeroOS 7.16.1" but HA appends latest_version
+        # alongside the title, causing duplication. Strip the version suffix.
+        if title := self.resource.target_firmware.title:
+            return title.rsplit(" ", 1)[0] if " " in title else title
+        return None
 
     def install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
         """Install an update.

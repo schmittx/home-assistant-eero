@@ -281,7 +281,6 @@ class EeroAPI:
                     default=lambda o: "not-serializable",
                     sort_keys=True,
                 )
-            file.close()
 
     def update(
         self,

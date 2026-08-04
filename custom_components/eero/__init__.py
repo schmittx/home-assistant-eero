@@ -13,6 +13,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL, Platform
+from homeassistant.helpers.typing import UNDEFINED
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
     config_validation as cv,
@@ -346,7 +347,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
                     device_entry.name,
                     device_entry.model,
                 )
-                device_registry.async_remove_device(device_entry.id)
+                try:
+                    device_registry.async_remove_device(device_entry.id)
+                except (KeyError, ValueError):
+                    pass
             else:
                 for entity_entry in er.async_entries_for_device(
                     entity_registry, device_entry.id
@@ -395,7 +399,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     conf_update = {}
     for network_id, resources in conf_resources.items():
         conf_update[network_id] = EeroUpdateConfig(
-            activity=conf_activity[network_id],
+            activity=conf_activity.get(network_id, {}),
             profiles=resources[CONF_PROFILES],
             get_backup_access_points=bool(resources[CONF_BACKUP_NETWORKS]),
             get_devices=any(
@@ -562,6 +566,7 @@ class EeroEntity(CoordinatorEntity):
     ) -> None:
         """Initialize device."""
         super().__init__(coordinator)
+        self._attr_has_entity_name = True
         self.network_id = network_id
         self.resource_id = resource_id
         self.entity_description = description
@@ -570,7 +575,7 @@ class EeroEntity(CoordinatorEntity):
 
     @property
     def network(self) -> EeroNetwork | None:
-        """Return the state attributes."""
+        """Return the network for this entity."""
         for network in self.coordinator.data.networks:
             if network.id == self.network_id:
                 return network
@@ -578,7 +583,7 @@ class EeroEntity(CoordinatorEntity):
 
     @property
     def resource(self) -> EeroResource | None:
-        """Return the state attributes."""
+        """Return the resource for this entity."""
         if self.resource_id:
             for resource in self.network.resources:
                 if resource.id == self.resource_id:
@@ -592,13 +597,24 @@ class EeroEntity(CoordinatorEntity):
             return f"{self.network.id}-{self.entity_description.key}"
         return f"{self.network.id}-{self.resource.id}-{self.entity_description.key}"
 
+    def _device_name(self) -> str:
+        """Return the Home Assistant device name for this resource."""
+        if self.resource.is_client and self.suffix_connection_type:
+            name = self.resource.name_connection_type
+        else:
+            name = self.resource.name
+
+        if not self.resource.is_network and self.prefix_network_name:
+            return f"{self.network.name} {name}"
+        return name
+
     @property
     def device_info(self) -> dr.DeviceInfo:
         """Return device specific attributes.
 
         Implemented by platform classes.
         """
-        name = self.resource.name
+        name = self._device_name()
         if self.resource.is_network:
             model = MODEL_NETWORK
         elif self.resource.is_backup_network:
@@ -611,8 +627,6 @@ class EeroEntity(CoordinatorEntity):
             model = (
                 MODEL_CLIENT_WIRELESS if self.resource.wireless else MODEL_CLIENT_WIRED
             )
-            if self.suffix_connection_type:
-                name = self.resource.name_connection_type
 
         entry_type, suggested_area, sw_version, hw_version, via_device = (
             None,
@@ -656,25 +670,11 @@ class EeroEntity(CoordinatorEntity):
         )
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the entity."""
-        if self.resource.is_client:
-            name = self.resource.name
-            if self.suffix_connection_type:
-                name = self.resource.name_connection_type
-            if self.prefix_network_name:
-                name = f"{self.network.name} {name}"
-            return f"{name} {self.entity_description.name}"
-        if (
-            self.resource.is_backup_network
-            or self.resource.is_eero
-            or self.resource.is_profile
-        ):
-            name = f"{self.resource.name} {self.entity_description.name}"
-            if self.prefix_network_name:
-                name = f"{self.network.name} {name}"
-            return name
-        return f"{self.resource.name} {self.entity_description.name}"
+        if self.entity_description.name in (None, UNDEFINED):
+            return None
+        return self.entity_description.name
 
 
 @dataclass

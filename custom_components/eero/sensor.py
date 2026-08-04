@@ -157,7 +157,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_value=lambda resource, key: (
-            getattr(resource, key)[0] + getattr(resource, key)[1]
+            (getattr(resource, key)[0] or 0) + (getattr(resource, key)[1] or 0)
         ),
         native_unit_of_measurement=UnitOfInformation.BYTES,
         activity_type=True,
@@ -168,7 +168,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_value=lambda resource, key: (
-            getattr(resource, key)[0] + getattr(resource, key)[1]
+            (getattr(resource, key)[0] or 0) + (getattr(resource, key)[1] or 0)
         ),
         native_unit_of_measurement=UnitOfInformation.BYTES,
         activity_type=True,
@@ -179,7 +179,7 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_value=lambda resource, key: (
-            getattr(resource, key)[0] + getattr(resource, key)[1]
+            (getattr(resource, key)[0] or 0) + (getattr(resource, key)[1] or 0)
         ),
         native_unit_of_measurement=UnitOfInformation.BYTES,
         activity_type=True,

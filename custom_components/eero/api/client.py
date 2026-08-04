@@ -95,19 +95,17 @@ class EeroClient(EeroResource):
     def channel_width_rx(self) -> str | None:
         """Channel width RX."""
         return (
-            self.data.get("connectivity", {})
-            .get("rx_rate_info", {})
-            .get("channel_width")
-        )
+            (self.data.get("connectivity") or {})
+            .get("rx_rate_info") or {}
+        ).get("channel_width")
 
     @property
     def channel_width_tx(self) -> str | None:
         """Channel width TX."""
         return (
-            self.data.get("connectivity", {})
-            .get("tx_rate_info", {})
-            .get("channel_width")
-        )
+            (self.data.get("connectivity") or {})
+            .get("tx_rate_info") or {}
+        ).get("channel_width")
 
     @property
     def connected(self) -> bool | None:
