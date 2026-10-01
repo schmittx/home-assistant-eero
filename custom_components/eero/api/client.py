@@ -315,7 +315,12 @@ class EeroClient(EeroResource):
     @property
     def source_location(self) -> str | None:
         """Source location."""
-        return self.data.get("source", {}).get("location")
+        return (self.data.get("source") or {}).get("location")
+
+    @property
+    def source_model(self) -> str | None:
+        """Source model."""
+        return (self.data.get("source") or {}).get("model")
 
     @property
     def url_insights(self) -> str | None:

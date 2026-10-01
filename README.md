@@ -25,7 +25,7 @@ Custom component to allow control of Eero networks in [Home Assistant](https://h
 - Control network properties (ex. guest network, Eero Plus features, Eero Labs features)
 - Pause access for profiles and/or clients
 - Control content filters for profiles
-- Device tracker entities for clients and profiles
+- Device tracker entities for clients and profiles (clients report the eero they are, or were last, connected to in the `connected_to` and `connected_to_model` attributes)
 - Sensors for various metrics
 - Button entities to control features that require network restarts
 - Select and time entities to control nightlight features for Eero Beacon devices

@@ -204,10 +204,14 @@ class EeroDeviceTrackerEntity(EeroEntity):
         is lowercase snake_case.
         """
         attrs = {}
-        if self.is_connected and self.resource.is_client:
-            attrs["connected_to"] = self.resource.source_location
-            attrs["connection_type"] = self.resource.connection_type
-            if manufacturer := self.resource.manufacturer:
-                attrs[ATTR_MANUFACTURER] = manufacturer
-            attrs["network_name"] = self.network.name
+        if self.resource.is_client:
+            # The API keeps reporting the last source after a client disconnects
+            if location := self.resource.source_location:
+                attrs["connected_to"] = location
+                attrs["connected_to_model"] = self.resource.source_model
+            if self.is_connected:
+                attrs["connection_type"] = self.resource.connection_type
+                if manufacturer := self.resource.manufacturer:
+                    attrs[ATTR_MANUFACTURER] = manufacturer
+                attrs["network_name"] = self.network.name
         return attrs
