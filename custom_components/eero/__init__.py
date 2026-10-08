@@ -567,23 +567,45 @@ class EeroEntity(CoordinatorEntity):
         self.entity_description = description
         self.prefix_network_name = miscellaneous[CONF_PREFIX_NETWORK_NAME]
         self.suffix_connection_type = miscellaneous[CONF_SUFFIX_CONNECTION_TYPE]
+        self._last_resource = self._find_resource()
 
     @property
     def network(self) -> EeroNetwork | None:
-        """Return the state attributes."""
-        for network in self.coordinator.data.networks:
-            if network.id == self.network_id:
-                return network
-        return None
+        """Return this entity's network from the latest update."""
+        index = self.coordinator.data.resource_index
+        return index.get(self.network_id, (None, {}))[0]
+
+    def _find_resource(self) -> EeroResource | None:
+        """Return this entity's resource from the latest update, or None if gone."""
+        index = self.coordinator.data.resource_index
+        network, resources = index.get(self.network_id, (None, {}))
+        if network is None or not self.resource_id:
+            return network
+        return resources.get(self.resource_id)
 
     @property
     def resource(self) -> EeroResource | None:
-        """Return the state attributes."""
-        if self.resource_id:
-            for resource in self.network.resources:
-                if resource.id == self.resource_id:
-                    return resource
-        return self.network
+        """Return this entity's resource.
+
+        A resource that leaves the API response (a client eero no longer lists,
+        or one whose private MAC address rotated) keeps its last known copy, so
+        the properties Home Assistant reads while an entity is unavailable (name,
+        unit) still resolve. The copy is moved onto the current network so it
+        does not keep an old update in memory.
+        """
+        if (resource := self._find_resource()) is not None:
+            self._last_resource = resource
+            return resource
+        last, network = self._last_resource, self.network
+        if last is None or network is None or last.network in (None, network):
+            return last
+        self._last_resource = type(last)(last.api, network, last.data)
+        return self._last_resource
+
+    @property
+    def available(self) -> bool:
+        """Return True if the last update succeeded and still lists the resource."""
+        return super().available and self._find_resource() is not None
 
     @property
     def unique_id(self) -> str:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import cached_property
+
 from .network import EeroNetwork
 from .resource import EeroResource
 
@@ -45,3 +47,20 @@ class EeroAccount(EeroResource):
             EeroNetwork(self.api, self, network)
             for network in self.data.get("networks", {}).get("data", [])
         ]
+
+    @cached_property
+    def resource_index(
+        self,
+    ) -> dict[str, tuple[EeroNetwork, dict[str, EeroResource]]]:
+        """Networks by id, each with its resources by id.
+
+        Built once per account object. The integration creates a new one on every
+        update, so entities find their resource without rebuilding every list.
+        """
+        index = {}
+        for network in self.networks:
+            resources = {}
+            for resource in network.resources:
+                resources.setdefault(resource.id, resource)
+            index.setdefault(network.id, (network, resources))
+        return index
