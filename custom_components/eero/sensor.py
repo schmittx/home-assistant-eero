@@ -218,6 +218,16 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         name="IP Address",
     ),
     EeroSensorEntityDescription(
+        key="ip_address",
+        name="Node IP Address",
+        icon="mdi:ip-network",
+    ),
+    EeroSensorEntityDescription(
+        key="mac_address",
+        name="Node MAC Address",
+        icon="mdi:identifier",
+    ),
+    EeroSensorEntityDescription(
         key="last_active",
         name="Last Active",
         device_class=SensorDeviceClass.TIMESTAMP,
@@ -225,6 +235,26 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
     EeroSensorEntityDescription(
         key="public_ip",
         name="Public IP",
+    ),
+    EeroSensorEntityDescription(
+        key="thread_channel",
+        name="Thread Channel",
+        icon="mdi:radio-tower",
+    ),
+    EeroSensorEntityDescription(
+        key="thread_name",
+        name="Thread Network Name",
+        icon="mdi:lan",
+    ),
+    EeroSensorEntityDescription(
+        key="thread_pan_id",
+        name="Thread PAN ID",
+        icon="mdi:identifier",
+    ),
+    EeroSensorEntityDescription(
+        key="thread_xpan_id",
+        name="Thread Extended PAN ID",
+        icon="mdi:identifier",
     ),
     EeroSensorEntityDescription(
         key="signal",

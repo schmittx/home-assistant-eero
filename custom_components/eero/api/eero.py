@@ -82,6 +82,11 @@ class EeroDevice(EeroResource):
         return self.data.get("gateway")
 
     @property
+    def ip_address(self) -> str | None:
+        """LAN IP address."""
+        return self.data.get("ip_address")
+
+    @property
     def location(self) -> str | None:
         """Location."""
         return self.data.get("location")

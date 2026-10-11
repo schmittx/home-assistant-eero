@@ -12,7 +12,11 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL, Platform
+from homeassistant.const import (
+    CONF_NAME,
+    CONF_SCAN_INTERVAL,
+    Platform,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
     config_validation as cv,
@@ -621,6 +625,7 @@ class EeroEntity(CoordinatorEntity):
             None,
             None,
         )
+        connections: set[tuple[str, str]] = set()
         if any(
             [
                 self.resource.is_backup_network,
@@ -633,6 +638,12 @@ class EeroEntity(CoordinatorEntity):
             suggested_area = self.resource.location
             sw_version = self.resource.os_version
             hw_version = self.resource.model_number
+            if self.resource.mac_address:
+                connections = {
+                    (dr.CONNECTION_NETWORK_MAC, self.resource.mac_address)
+                }
+        elif self.resource.is_client and self.resource.mac:
+            connections = {(dr.CONNECTION_NETWORK_MAC, self.resource.mac)}
         if any(
             [
                 self.resource.is_backup_network,
@@ -644,6 +655,7 @@ class EeroEntity(CoordinatorEntity):
             via_device = (DOMAIN, self.network.id)
 
         return dr.DeviceInfo(
+            connections=connections,
             entry_type=entry_type,
             hw_version=hw_version,
             identifiers={(DOMAIN, self.resource.id)},
