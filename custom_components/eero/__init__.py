@@ -185,6 +185,16 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
                                 network_name,
                             )
                             resources[network_id][conf].append(resource_id)
+                            if device_entry.model == "Client" and conf in (
+                                CONF_WIRED_CLIENTS,
+                                CONF_WIRELESS_CLIENTS,
+                            ):
+                                device_registry.async_update_device(
+                                    device_entry.id,
+                                    model=MODEL_CLIENT_WIRELESS
+                                    if conf == CONF_WIRELESS_CLIENTS
+                                    else MODEL_CLIENT_WIRED,
+                                )
 
             data[CONF_RESOURCES] = resources
             options[CONF_RESOURCES] = resources
