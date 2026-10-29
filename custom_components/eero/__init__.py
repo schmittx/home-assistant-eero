@@ -428,18 +428,23 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         """
         try:
             async with timeout(conf_timeout):
-                return await hass.async_add_executor_job(api.update, conf_update)
-        except EeroException as error:
-            raise UpdateFailed("Error communicating with API") from error
+                account = await hass.async_add_executor_job(api.update, conf_update)
+            # The API may return its initial empty account after swallowing an error.
+            if account is None or (conf_networks and not account.networks):
+                raise UpdateFailed("Eero network data is not ready")
+            return account
+        except EeroException:
+            raise UpdateFailed("Error communicating with API") from None
 
     coordinator = DataUpdateCoordinator(
         hass=hass,
+        config_entry=config_entry,
         logger=_LOGGER,
         name=f"Eero ({data[CONF_NAME]})",
         update_method=async_update_data,
         update_interval=timedelta(seconds=conf_scan_interval),
     )
-    await coordinator.async_refresh()
+    await coordinator.async_config_entry_first_refresh()
 
     for network in coordinator.data.networks:
         if conf_miscellaneous_network := conf_miscellaneous.get(network.id):

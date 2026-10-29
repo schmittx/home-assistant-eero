@@ -1,0 +1,6 @@
+# Current and minimum-supported HA environments use their matching Python versions.
+homeassistant==2026.10.1; python_version >= '3.14'
+homeassistant==2025.2.0; python_version < '3.14'
+aiofiles==25.1.0
+pypng==0.0.20
+PyQRCode==1.2.1
