@@ -643,6 +643,21 @@ class EeroEntity(CoordinatorEntity):
         ):
             via_device = (DOMAIN, self.network.id)
 
+        # Home Assistant 2026.8 added `via_device_id`; 2026.9 deprecated
+        # `via_device` (removed in 2027.8). Passing `via_device` at all, even
+        # None, is reported, and on the image platform the report is raised,
+        # so the first image entity is never added.
+        via = {}
+        if via_device is not None:
+            registry = dr.async_get(self.hass)
+            if hasattr(registry, "async_get_device_by_identifier"):
+                if network_device := registry.async_get_device_by_identifier(
+                    via_device, self.platform.config_entry.entry_id
+                ):
+                    via["via_device_id"] = network_device.id
+            else:
+                via["via_device"] = via_device
+
         return dr.DeviceInfo(
             entry_type=entry_type,
             hw_version=hw_version,
@@ -652,7 +667,7 @@ class EeroEntity(CoordinatorEntity):
             name=name,
             suggested_area=suggested_area,
             sw_version=sw_version,
-            via_device=via_device,
+            **via,
         )
 
     @property
