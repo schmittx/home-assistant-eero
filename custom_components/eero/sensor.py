@@ -238,6 +238,14 @@ SENSOR_DESCRIPTIONS: list[EeroSensorEntityDescription] = [
         wireless_only=True,
     ),
     EeroSensorEntityDescription(
+        key="signal_bars",
+        name="Signal Bars",
+        icon="mdi:wifi",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="bars",
+        wireless_only=True,
+    ),
+    EeroSensorEntityDescription(
         key="speed_down",
         name="Download Speed",
         device_class=SensorDeviceClass.DATA_RATE,

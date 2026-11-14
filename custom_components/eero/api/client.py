@@ -313,6 +313,11 @@ class EeroClient(EeroResource):
         return (None, None)
 
     @property
+    def signal_bars(self) -> int | None:
+        """Signal bars (eero connection score, 0-5)."""
+        return self.data.get("connectivity", {}).get("score_bars")
+
+    @property
     def source_location(self) -> str | None:
         """Source location."""
         return self.data.get("source", {}).get("location")
